@@ -1,55 +1,16 @@
 #!/usr/bin/env python3
-"""在 v3.8.8 的 export/index.ts 上应用导出烘焙改动"""
-import io, sys
+"""在 v3.8.8 的 export/index.ts 上接入导出烘焙（v3：调用移到 mathRender.ts 的 bakeMathInHtml）"""
+import io
 
 SRC = "/tmp/pw/siyuan-src/app/src/protyle/export/index.ts"
 OUT = "/tmp/pw/stage/export-index.ts"
 
 s = io.open(SRC, encoding="utf-8").read()
 
-# ---------- H1: 顶部插入烘焙 helper ----------
+# ---------- H1: 导入 bakeMathInHtml ----------
 anchor1 = 'import {fetchPost, fetchSyncPost} from "../../util/fetch";\n'
 assert s.count(anchor1) == 1, "H1 锚点不唯一"
-helper = anchor1 + 'import {mathRender} from "../render/mathRender";\n' + """
-/**
- * 应用内预烘焙数学公式：用当前渲染器（KaTeX 或注册表注册的渲染器）把公式
- * 渲染为内联 SVG，展平 shadow DOM 后写回 HTML。
- * 使导出产物 / 导出预览自包含，不依赖导出端脚本与外部资源。
- */
-const bakeMathForExport = async (html: string) => {
-    if (!html || !html.includes('data-subtype="math"')) {
-        return html;
-    }
-    try {
-        const container = document.createElement("div");
-        container.className = "protyle-wysiwyg";
-        container.innerHTML = html;
-        const mathElements = Array.from(container.querySelectorAll('[data-subtype="math"]')) as HTMLElement[];
-        if (mathElements.length === 0) {
-            return html;
-        }
-        await mathRender(container, Constants.PROTYLE_CDN, true);
-        let baked = 0;
-        mathElements.forEach((el) => {
-            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
-            if (inner && inner.shadowRoot) {
-                const wrapper = document.createElement("span");
-                wrapper.innerHTML = inner.shadowRoot.innerHTML;
-                inner.replaceWith(wrapper);
-                baked++;
-            }
-        });
-        if (baked === 0) {
-            return html;
-        }
-        return container.innerHTML;
-    } catch (e) {
-        console.warn("[export] bake math failed:", e);
-        return html;
-    }
-};
-"""
-s = s.replace(anchor1, helper)
+s = s.replace(anchor1, anchor1 + 'import {bakeMathInHtml} from "../render/mathRender";\n')
 
 # ---------- H2: onExport 入口烘焙 ----------
 anchor2 = """    } : {js: "", css: ""};
@@ -58,7 +19,7 @@ assert s.count(anchor2) == 1, "H2 锚点不唯一"
 h2 = """    } : {js: "", css: ""};
     // 数学公式应用内预烘焙（导出产物自包含，不依赖导出端脚本）
     if (data && data.data && typeof data.data.content === "string") {
-        data.data.content = await bakeMathForExport(data.data.content);
+        data.data.content = await bakeMathInHtml(data.data.content);
     }
     const html = `<!DOCTYPE html>"""
 s = s.replace(anchor2, h2)
@@ -86,7 +47,7 @@ h3 = """    // 应用内预取导出内容并烘焙公式：Electron 预览窗�
             }, (response: any) => resolve(response));
         });
         if (previewResponse && previewResponse.code === 0 && previewResponse.data) {
-            bakedPreviewContent = await bakeMathForExport(previewResponse.data.content);
+            bakedPreviewContent = await bakeMathInHtml(previewResponse.data.content);
         }
     } catch (e) {
         console.warn("[export] prefetch preview content failed:", e);
@@ -123,21 +84,5 @@ h5 = """        previewElement.querySelectorAll('[data-type="NodeMathBlock"]').f
         })"""
 s = s.replace(anchor5, h5)
 
-# ---------- H6: 诊断钩子（便于自动化验证导出烘焙） ----------
-anchor6 = """        console.warn("[export] bake math failed:", e);
-        return html;
-    }
-};
-"""
-assert s.count(anchor6) == 1, "H6 锚点不唯一"
-h6 = """        console.warn("[export] bake math failed:", e);
-        return html;
-    }
-};
-// 诊断钩子：供自动化测试/排障直接验证导出烘焙（不参与正常流程）
-(window as any).__siyuanBakeMathForExport = bakeMathForExport;
-"""
-s = s.replace(anchor6, h6)
-
 io.open(OUT, "w", encoding="utf-8").write(s)
-print("export/index.ts 修改完成 ->", OUT)
+print("export/index.ts v3 修改完成 ->", OUT)

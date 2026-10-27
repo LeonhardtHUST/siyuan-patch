@@ -37,58 +37,18 @@ index 590c704..cdb40a2 100644
       * 插件实例就绪后存储数据发生变化时运行，思源会等待返回的 Promise；
       * 未覆盖该方法时则重载整个插件。
 diff --git a/app/src/protyle/export/index.ts b/app/src/protyle/export/index.ts
-index c490572..a69bed4 100644
+index c490572..9e187ab 100644
 --- a/app/src/protyle/export/index.ts
 +++ b/app/src/protyle/export/index.ts
-@@ -10,6 +10,47 @@ import {confirmDialog} from "../../dialog/confirmDialog";
+@@ -10,6 +10,7 @@ import {confirmDialog} from "../../dialog/confirmDialog";
  import {getThemeMode, setInlineStyle} from "../../util/assets";
  import {getCustomFontStyle} from "../../util/customFont";
  import {fetchPost, fetchSyncPost} from "../../util/fetch";
-+import {mathRender} from "../render/mathRender";
-+
-+/**
-+ * 应用内预烘焙数学公式：用当前渲染器（KaTeX 或注册表注册的渲染器）把公式
-+ * 渲染为内联 SVG，展平 shadow DOM 后写回 HTML。
-+ * 使导出产物 / 导出预览自包含，不依赖导出端脚本与外部资源。
-+ */
-+const bakeMathForExport = async (html: string) => {
-+    if (!html || !html.includes('data-subtype="math"')) {
-+        return html;
-+    }
-+    try {
-+        const container = document.createElement("div");
-+        container.className = "protyle-wysiwyg";
-+        container.innerHTML = html;
-+        const mathElements = Array.from(container.querySelectorAll('[data-subtype="math"]')) as HTMLElement[];
-+        if (mathElements.length === 0) {
-+            return html;
-+        }
-+        await mathRender(container, Constants.PROTYLE_CDN, true);
-+        let baked = 0;
-+        mathElements.forEach((el) => {
-+            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
-+            if (inner && inner.shadowRoot) {
-+                const wrapper = document.createElement("span");
-+                wrapper.innerHTML = inner.shadowRoot.innerHTML;
-+                inner.replaceWith(wrapper);
-+                baked++;
-+            }
-+        });
-+        if (baked === 0) {
-+            return html;
-+        }
-+        return container.innerHTML;
-+    } catch (e) {
-+        console.warn("[export] bake math failed:", e);
-+        return html;
-+    }
-+};
-+// 诊断钩子：供自动化测试/排障直接验证导出烘焙（不参与正常流程）
-+(window as any).__siyuanBakeMathForExport = bakeMathForExport;
++import {bakeMathInHtml} from "../render/mathRender";
  import {Dialog} from "../../dialog";
  import {replaceLocalPath} from "../../editor/rename";
  import {getScreenWidth, isInMobileApp, saveExportFile, setStorageVal} from "../util/compatibility";
-@@ -225,6 +266,30 @@ const renderPDF = async (id: string) => {
+@@ -225,6 +226,30 @@ const renderPDF = async (id: string) => {
      });
      const defaultExportPath = await getAvailableExportPath();
      // data-theme-mode="light" https://github.com/siyuan-note/siyuan/issues/7379
@@ -111,7 +71,7 @@ index c490572..a69bed4 100644
 +            }, (response: any) => resolve(response));
 +        });
 +        if (previewResponse && previewResponse.code === 0 && previewResponse.data) {
-+            bakedPreviewContent = await bakeMathForExport(previewResponse.data.content);
++            bakedPreviewContent = await bakeMathInHtml(previewResponse.data.content);
 +        }
 +    } catch (e) {
 +        console.warn("[export] prefetch preview content failed:", e);
@@ -119,7 +79,7 @@ index c490572..a69bed4 100644
      const html = `<!DOCTYPE html>
  <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="light" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
  <head>
-@@ -613,6 +678,10 @@ ${getIconScript(servePath)}
+@@ -613,6 +638,10 @@ ${getIconScript(servePath)}
          })
          Protyle.highlightRender(previewElement, "${servePath}stage/protyle", document.querySelector("#scale").value);
          previewElement.querySelectorAll('[data-type="NodeMathBlock"]').forEach((item) => {
@@ -130,7 +90,7 @@ index c490572..a69bed4 100644
              // 超级块内不能移除 width https://github.com/siyuan-note/siyuan/issues/14318
              item.removeAttribute('data-render');
          })
-@@ -693,7 +762,11 @@ ${getIconScript(servePath)}
+@@ -693,7 +722,11 @@ ${getIconScript(servePath)}
      }
      let previewReady = Promise.resolve();
      let previewRevision = 0;
@@ -142,13 +102,13 @@ index c490572..a69bed4 100644
          previewElement.innerHTML = '<div style="padding:8px 0 0 0" class="protyle-wysiwyg${window.siyuan.config.editor.displayBookmarkIcon ? " protyle-wysiwyg--attr" : ""}">' + data.content + '</div>';
          const wysElement = previewElement.querySelector(".protyle-wysiwyg");
          wysElement.setAttribute("data-doc-type", data.type || "NodeDocument");
-@@ -1172,6 +1245,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
+@@ -1172,6 +1205,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
  @media print { body { margin: 0; } }
  .protyle-wysiwyg {padding: 0; margin: 0;}`
      } : {js: "", css: ""};
 +    // 数学公式应用内预烘焙（导出产物自包含，不依赖导出端脚本）
 +    if (data && data.data && typeof data.data.content === "string") {
-+        data.data.content = await bakeMathForExport(data.data.content);
++        data.data.content = await bakeMathInHtml(data.data.content);
 +    }
      const html = `<!DOCTYPE html>
  <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="${isInMobile ? "light" : getThemeMode()}" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
@@ -210,7 +170,7 @@ index 0000000..364908c
 +    }
 +};
 diff --git a/app/src/protyle/render/mathRender.ts b/app/src/protyle/render/mathRender.ts
-index b92ab1f..34c9a40 100644
+index b92ab1f..dc98d1d 100644
 --- a/app/src/protyle/render/mathRender.ts
 +++ b/app/src/protyle/render/mathRender.ts
 @@ -1,13 +1,14 @@
@@ -229,7 +189,7 @@ index b92ab1f..34c9a40 100644
  
  const fitMathWidth = (mathElement: HTMLElement, blockElement: HTMLElement | false, isBlock: boolean) => {
      return new Promise<void>((resolve) => {
-@@ -32,124 +33,133 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+@@ -32,124 +33,175 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
      if (mathElements.length === 0) {
          return;
      }
@@ -316,11 +276,6 @@ index b92ab1f..34c9a40 100644
 -                        const baseElements = mathElement.querySelectorAll(".katex-html > .katex-base");
 -                        if (baseElements.length > 0) {
 -                            baseElements[baseElements.length - 1].insertAdjacentHTML("afterend", "<span class='fn__flex-1'></span>");
--                        }
--                        // https://github.com/siyuan-note/siyuan/issues/4334
--                        const newlineElement = mathElement.querySelector(".katex-html > .katex-newline");
--                        if (newlineElement) {
--                            newlineElement.parentElement.style.display = "block";
 +                    const isBlock = mathElement.tagName === "DIV";
 +                    const remoteKernel = getHostCapabilities().remoteKernel;
 +                    const security = getMathRenderSecurity(remoteKernel,
@@ -336,6 +291,11 @@ index b92ab1f..34c9a40 100644
 +                        if (security.sanitize) {
 +                            mathHTML = window.DOMPurify.sanitize(mathHTML);
                          }
+-                        // https://github.com/siyuan-note/siyuan/issues/4334
+-                        const newlineElement = mathElement.querySelector(".katex-html > .katex-newline");
+-                        if (newlineElement) {
+-                            newlineElement.parentElement.style.display = "block";
+-                        }
 -                    } else {
 -                        mathElement.classList.remove("ft__error");
 -                        mathElement.innerHTML = mathHTML;
@@ -403,8 +363,7 @@ index b92ab1f..34c9a40 100644
 -                            // 公式后的换行可能带有零宽边界字符，此时不添加内部占位符，避免划选被截断。
 -                            // https://ld246.com/article/1647329437541
 -                            mathElement.insertAdjacentHTML("beforeend", "&#xFEFF;");
-+                            applyInlineMathBoundaries(mathElement);
-                         }
+-                        }
 -                        // 光标无法移动到段首 https://ld246.com/article/1623551823742
 -                        if (mathElement.previousSibling?.textContent.endsWith("\n")) {
 -                            mathElement.insertAdjacentText("beforebegin", Constants.ZWSP);
@@ -414,7 +373,8 @@ index b92ab1f..34c9a40 100644
 -                        } else if (!hasPreviousSibling(mathElement)) {
 -                            // 段首公式前保留可编辑文本，使全选后的组合输入从文本边界开始。
 -                            mathElement.insertAdjacentText("beforebegin", Constants.ZWSP);
--                        }
++                            applyInlineMathBoundaries(mathElement);
+                         }
 -                    }
  
 -                    // 导出 PDF 时等待公式完成宽度适配后再继续
@@ -470,7 +430,49 @@ index b92ab1f..34c9a40 100644
 +
 +    // 未被认领的节点立即走 KaTeX，与渲染器并行；整体 Promise 在两者都完成后 resolve
 +    return Promise.all([katexPass(unrenderedMathElements), claimedPromise]).then((): undefined => undefined);
++};
++
++/**
++ * 导出烘焙：把 HTML 片段中的数学公式渲染为**内联 SVG**（展平 shadow DOM 后写回）。
++ *
++ * 用于导出 HTML 与 Electron PDF 预览：导出端（独立窗口/进程）没有 Typst 运行时，
++ * 在主窗口完成渲染并烘焙，产物自包含、不依赖导出端脚本。
++ * 渲染器由注册表决定（无注册器时即 KaTeX，行为与上游一致）。
++ */
++export const bakeMathInHtml = async (html: string) => {
++    if (!html || !html.includes('data-subtype="math"')) {
++        return html;
++    }
++    try {
++        const container = document.createElement("div");
++        container.className = "protyle-wysiwyg";
++        container.innerHTML = html;
++        const mathElements = Array.from(container.querySelectorAll('[data-subtype="math"]')) as HTMLElement[];
++        if (mathElements.length === 0) {
++            return html;
++        }
++        await mathRender(container, Constants.PROTYLE_CDN, true);
++        let baked = 0;
++        mathElements.forEach((el) => {
++            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
++            if (inner && inner.shadowRoot) {
++                const wrapper = document.createElement("span");
++                wrapper.innerHTML = inner.shadowRoot.innerHTML;
++                inner.replaceWith(wrapper);
++                baked++;
++            }
++        });
++        if (baked === 0) {
++            return html;
++        }
++        return container.innerHTML;
++    } catch (e) {
++        console.warn("[export] bake math failed:", e);
++        return html;
++    }
  };
++// 诊断钩子：供自动化验证/排障（不参与正常流程）
++(window as any).__siyuanBakeMathForExport = bakeMathInHtml;
 diff --git a/app/src/protyle/render/mathRendererRegistry.ts b/app/src/protyle/render/mathRendererRegistry.ts
 new file mode 100644
 index 0000000..9e04c83
