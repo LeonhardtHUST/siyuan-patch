@@ -10,7 +10,7 @@ s = io.open(SRC, encoding="utf-8").read()
 # ---------- H1: 顶部插入烘焙 helper ----------
 anchor1 = 'import {fetchPost, fetchSyncPost} from "../../util/fetch";\n'
 assert s.count(anchor1) == 1, "H1 锚点不唯一"
-helper = anchor1 + """
+helper = anchor1 + 'import {mathRender} from "../render/mathRender";\n' + """
 /**
  * 应用内预烘焙数学公式：用当前渲染器（KaTeX 或注册表注册的渲染器）把公式
  * 渲染为内联 SVG，展平 shadow DOM 后写回 HTML。
@@ -21,7 +21,6 @@ const bakeMathForExport = async (html: string) => {
         return html;
     }
     try {
-        const {Protyle: ProtyleClass} = await import("../index");
         const container = document.createElement("div");
         container.className = "protyle-wysiwyg";
         container.innerHTML = html;
@@ -29,7 +28,7 @@ const bakeMathForExport = async (html: string) => {
         if (mathElements.length === 0) {
             return html;
         }
-        await ProtyleClass.mathRender(container, Constants.PROTYLE_CDN, true);
+        await mathRender(container, Constants.PROTYLE_CDN, true);
         let baked = 0;
         mathElements.forEach((el) => {
             const inner = el.firstElementChild && el.firstElementChild.firstElementChild;

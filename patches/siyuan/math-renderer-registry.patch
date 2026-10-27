@@ -37,13 +37,14 @@ index 590c704..cdb40a2 100644
       * 插件实例就绪后存储数据发生变化时运行，思源会等待返回的 Promise；
       * 未覆盖该方法时则重载整个插件。
 diff --git a/app/src/protyle/export/index.ts b/app/src/protyle/export/index.ts
-index c490572..b062c9c 100644
+index c490572..a69bed4 100644
 --- a/app/src/protyle/export/index.ts
 +++ b/app/src/protyle/export/index.ts
 @@ -10,6 +10,47 @@ import {confirmDialog} from "../../dialog/confirmDialog";
  import {getThemeMode, setInlineStyle} from "../../util/assets";
  import {getCustomFontStyle} from "../../util/customFont";
  import {fetchPost, fetchSyncPost} from "../../util/fetch";
++import {mathRender} from "../render/mathRender";
 +
 +/**
 + * 应用内预烘焙数学公式：用当前渲染器（KaTeX 或注册表注册的渲染器）把公式
@@ -55,7 +56,6 @@ index c490572..b062c9c 100644
 +        return html;
 +    }
 +    try {
-+        const {Protyle: ProtyleClass} = await import("../index");
 +        const container = document.createElement("div");
 +        container.className = "protyle-wysiwyg";
 +        container.innerHTML = html;
@@ -63,7 +63,7 @@ index c490572..b062c9c 100644
 +        if (mathElements.length === 0) {
 +            return html;
 +        }
-+        await ProtyleClass.mathRender(container, Constants.PROTYLE_CDN, true);
++        await mathRender(container, Constants.PROTYLE_CDN, true);
 +        let baked = 0;
 +        mathElements.forEach((el) => {
 +            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
