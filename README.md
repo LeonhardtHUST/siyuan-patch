@@ -8,6 +8,14 @@
 
 This repository contains modified builds of [SiYuan Note](https://github.com/siyuan-note/siyuan), focusing on Linux, Windows, macOS, iOS, Android, and Docker server deployments. Linux and Windows desktop builds are available for both x86-64 and ARM64.
 
+> **Fork note (LeonhardtHUST)**: this fork adds the
+> [`math-renderer-registry`](PATCHES.md) patch — a generic extension point that lets plugins
+> claim math formula rendering **before** KaTeX runs (zero KaTeX cost), covering the editor,
+> formula editing and PDF export preview. The Typst rendering logic itself lives in
+> [siyuan-typst-plugin](https://github.com/LeonhardtHUST/siyuan-typst-plugin); this repository
+> only carries the generic injection point. Upstream is auto-synced daily — see
+> [PATCHES.md](PATCHES.md) for the patch list and build notes.
+
 ## Downloads
 
 ### Desktop
