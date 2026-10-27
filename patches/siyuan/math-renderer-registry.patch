@@ -170,7 +170,7 @@ index 0000000..364908c
 +    }
 +};
 diff --git a/app/src/protyle/render/mathRender.ts b/app/src/protyle/render/mathRender.ts
-index b92ab1f..dc98d1d 100644
+index b92ab1f..e492914 100644
 --- a/app/src/protyle/render/mathRender.ts
 +++ b/app/src/protyle/render/mathRender.ts
 @@ -1,13 +1,14 @@
@@ -189,7 +189,7 @@ index b92ab1f..dc98d1d 100644
  
  const fitMathWidth = (mathElement: HTMLElement, blockElement: HTMLElement | false, isBlock: boolean) => {
      return new Promise<void>((resolve) => {
-@@ -32,124 +33,175 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+@@ -32,124 +33,177 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
      if (mathElements.length === 0) {
          return;
      }
@@ -454,10 +454,12 @@ index b92ab1f..dc98d1d 100644
 +        await mathRender(container, Constants.PROTYLE_CDN, true);
 +        let baked = 0;
 +        mathElements.forEach((el) => {
-+            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
-+            if (inner && inner.shadowRoot) {
++            // 两种 DOM 形状：块级 div > spin > container(shadow)；行内 span > container(shadow)
++            const candidates = [el.firstElementChild, el.firstElementChild && el.firstElementChild.firstElementChild];
++            const inner = candidates.find((n) => n && (n as HTMLElement).shadowRoot);
++            if (inner && (inner as HTMLElement).shadowRoot) {
 +                const wrapper = document.createElement("span");
-+                wrapper.innerHTML = inner.shadowRoot.innerHTML;
++                wrapper.innerHTML = (inner as HTMLElement).shadowRoot!.innerHTML;
 +                inner.replaceWith(wrapper);
 +                baked++;
 +            }

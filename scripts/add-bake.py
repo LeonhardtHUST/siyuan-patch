@@ -32,10 +32,12 @@ export const bakeMathInHtml = async (html: string) => {
         await mathRender(container, Constants.PROTYLE_CDN, true);
         let baked = 0;
         mathElements.forEach((el) => {
-            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
-            if (inner && inner.shadowRoot) {
+            // 两种 DOM 形状：块级 div > spin > container(shadow)；行内 span > container(shadow)
+            const candidates = [el.firstElementChild, el.firstElementChild && el.firstElementChild.firstElementChild];
+            const inner = candidates.find((n) => n && (n as HTMLElement).shadowRoot);
+            if (inner && (inner as HTMLElement).shadowRoot) {
                 const wrapper = document.createElement("span");
-                wrapper.innerHTML = inner.shadowRoot.innerHTML;
+                wrapper.innerHTML = (inner as HTMLElement).shadowRoot!.innerHTML;
                 inner.replaceWith(wrapper);
                 baked++;
             }
