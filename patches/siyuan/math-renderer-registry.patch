@@ -36,6 +36,121 @@ index 590c704..cdb40a2 100644
      /**
       * 插件实例就绪后存储数据发生变化时运行，思源会等待返回的 Promise；
       * 未覆盖该方法时则重载整个插件。
+diff --git a/app/src/protyle/export/index.ts b/app/src/protyle/export/index.ts
+index c490572..3066a68 100644
+--- a/app/src/protyle/export/index.ts
++++ b/app/src/protyle/export/index.ts
+@@ -10,6 +10,45 @@ import {confirmDialog} from "../../dialog/confirmDialog";
+ import {getThemeMode, setInlineStyle} from "../../util/assets";
+ import {getCustomFontStyle} from "../../util/customFont";
+ import {fetchPost, fetchSyncPost} from "../../util/fetch";
++
++/**
++ * 应用内预烘焙数学公式：用当前渲染器（KaTeX 或注册表注册的渲染器）把公式
++ * 渲染为内联 SVG，展平 shadow DOM 后写回 HTML。
++ * 使导出产物 / 导出预览自包含，不依赖导出端脚本与外部资源。
++ */
++const bakeMathForExport = async (html: string) => {
++    if (!html || !html.includes('data-subtype="math"')) {
++        return html;
++    }
++    try {
++        const {Protyle: ProtyleClass} = await import("../index");
++        const container = document.createElement("div");
++        container.className = "protyle-wysiwyg";
++        container.innerHTML = html;
++        const mathElements = Array.from(container.querySelectorAll('[data-subtype="math"]')) as HTMLElement[];
++        if (mathElements.length === 0) {
++            return html;
++        }
++        await ProtyleClass.mathRender(container, Constants.PROTYLE_CDN, true);
++        let baked = 0;
++        mathElements.forEach((el) => {
++            const inner = el.firstElementChild && el.firstElementChild.firstElementChild;
++            if (inner && inner.shadowRoot) {
++                const wrapper = document.createElement("span");
++                wrapper.innerHTML = inner.shadowRoot.innerHTML;
++                inner.replaceWith(wrapper);
++                baked++;
++            }
++        });
++        if (baked === 0) {
++            return html;
++        }
++        return container.innerHTML;
++    } catch (e) {
++        console.warn("[export] bake math failed:", e);
++        return html;
++    }
++};
+ import {Dialog} from "../../dialog";
+ import {replaceLocalPath} from "../../editor/rename";
+ import {getScreenWidth, isInMobileApp, saveExportFile, setStorageVal} from "../util/compatibility";
+@@ -225,6 +264,30 @@ const renderPDF = async (id: string) => {
+     });
+     const defaultExportPath = await getAvailableExportPath();
+     // data-theme-mode="light" https://github.com/siyuan-note/siyuan/issues/7379
++    // 应用内预取导出内容并烘焙公式：Electron 预览窗口是独立进程，无法运行 Typst 渲染器，
++    // 因此在主窗口把公式渲染为内联 SVG 后注入预览页。
++    let bakedPreviewContent = "";
++    try {
++        const previewResponse = await new Promise<any>((resolve) => {
++            fetchPost("/api/export/exportPreviewHTML", {
++                id,
++                keepJSEmbed: true,
++                keepFold: localData.keepFold,
++                pdf: true,
++                excludeTitleImage: localData.titleImage === false,
++                addTitle: window.siyuan.config.export.addTitle,
++                customTitle: "",
++                merge: localData.mergeSubdocs,
++                mergeDocHeadingMode: localData.mergeDocHeadingMode,
++                mergeContentHeadingMode: localData.mergeContentHeadingMode,
++            }, (response: any) => resolve(response));
++        });
++        if (previewResponse && previewResponse.code === 0 && previewResponse.data) {
++            bakedPreviewContent = await bakeMathForExport(previewResponse.data.content);
++        }
++    } catch (e) {
++        console.warn("[export] prefetch preview content failed:", e);
++    }
+     const html = `<!DOCTYPE html>
+ <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="light" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
+ <head>
+@@ -613,6 +676,10 @@ ${getIconScript(servePath)}
+         })
+         Protyle.highlightRender(previewElement, "${servePath}stage/protyle", document.querySelector("#scale").value);
+         previewElement.querySelectorAll('[data-type="NodeMathBlock"]').forEach((item) => {
++            if (item.querySelector("svg")) {
++                // 已在主窗口烘焙为内联 SVG，保留 data-render 以免被 KaTeX 覆盖
++                return;
++            }
+             // 超级块内不能移除 width https://github.com/siyuan-note/siyuan/issues/14318
+             item.removeAttribute('data-render');
+         })
+@@ -693,7 +760,11 @@ ${getIconScript(servePath)}
+     }
+     let previewReady = Promise.resolve();
+     let previewRevision = 0;
++    const __bakedMathContent = ${JSON.stringify(bakedPreviewContent)};
+     const renderPreview = async (data) => {
++        if (typeof __bakedMathContent === "string" && __bakedMathContent) {
++            data = Object.assign({}, data, {content: __bakedMathContent});
++        }
+         previewElement.innerHTML = '<div style="padding:8px 0 0 0" class="protyle-wysiwyg${window.siyuan.config.editor.displayBookmarkIcon ? " protyle-wysiwyg--attr" : ""}">' + data.content + '</div>';
+         const wysElement = previewElement.querySelector(".protyle-wysiwyg");
+         wysElement.setAttribute("data-doc-type", data.type || "NodeDocument");
+@@ -1172,6 +1243,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
+ @media print { body { margin: 0; } }
+ .protyle-wysiwyg {padding: 0; margin: 0;}`
+     } : {js: "", css: ""};
++    // 数学公式应用内预烘焙（导出产物自包含，不依赖导出端脚本）
++    if (data && data.data && typeof data.data.content === "string") {
++        data.data.content = await bakeMathForExport(data.data.content);
++    }
+     const html = `<!DOCTYPE html>
+ <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="${isInMobile ? "light" : getThemeMode()}" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
+ <head>
 diff --git a/app/src/protyle/render/mathBoundaries.ts b/app/src/protyle/render/mathBoundaries.ts
 new file mode 100644
 index 0000000..364908c

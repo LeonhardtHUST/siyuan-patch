@@ -41,6 +41,9 @@
 - 修改 `app/src/protyle/render/mathRender.ts`（认领阶段 + KaTeX 分支重构）
 - 修改 `app/src/plugin/index.ts`（插件 API：`Plugin.prototype.registerMathRenderer(id, renderer)` /
   `unregisterMathRenderer(id)`，注册名自动加插件名前缀防冲突）
+- 修改 `app/src/protyle/export/index.ts`（**导出烘焙**：`bakeMathForExport()` 在应用内用当前
+  渲染器把公式渲染为内联 SVG 并展平 shadow DOM——导出 HTML 自包含、Electron PDF 预览窗口
+  无需 Typst 运行时；预览重渲染时跳过已烘焙节点）
 
 ### 插件侧用法（Typst 插件示例）
 
