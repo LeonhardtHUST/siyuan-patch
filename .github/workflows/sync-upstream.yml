@@ -1,0 +1,102 @@
+name: sync-upstream
+# 每日自动跟随上游（MohamedElashri/siyuan-patch）：
+# - 可 fast-forward 时直接同步 main
+# - 出现分叉（我们自己的 patch 提交与上游冲突）时：把上游推到 sync/upstream-<date> 分支 + 开 issue，
+#   绝不静默丢弃任一方
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/MohamedElashri/siyuan-patch.git
+          git fetch upstream main --tags
+
+      - name: Try fast-forward
+        id: ff
+        run: |
+          if git merge-base --is-ancestor HEAD upstream/main; then
+            git merge --ff-only upstream/main
+            git push origin main
+            echo "status=fast-forwarded" >> "$GITHUB_OUTPUT"
+            echo "new_head=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=diverged" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish upstream branch for manual merge
+        if: steps.ff.outputs.status == 'diverged'
+        run: |
+          BRANCH="sync/upstream-$(date -u +%Y%m%d)"
+          git push origin "upstream/main:refs/heads/${BRANCH}"
+          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
+
+      - name: Open issue when diverged
+        if: steps.ff.outputs.status == 'diverged'
+        uses: actions/github-script@v7
+        env:
+          BRANCH: ${{ env.BRANCH }}
+        with:
+          script: |
+            const label = "upstream-sync";
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+            });
+            const body = [
+              "上游 `MohamedElashri/siyuan-patch` 的 `main` 已与本 fork 分叉，无法快进合并。",
+              "",
+              `上游最新提交已推送到分支 \`${process.env.BRANCH}\`。`,
+              "",
+              "处理步骤：",
+              "1. 本地 `git fetch origin && git merge origin/" + process.env.BRANCH + "`",
+              "2. 解决冲突（重点：`patches/siyuan/math-renderer-registry.patch` 的上下文是否仍匹配新版本源码）",
+              "3. `git push` 后关闭本 issue",
+            ].join("\n");
+            if (open.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: "上游分叉，需要手动合并 (" + new Date().toISOString().slice(0, 10) + ")",
+                labels: [label],
+                body,
+              });
+            }
+
+      - name: Summary
+        run: |
+          echo "sync status: ${{ steps.ff.outputs.status }}"
+          echo "head: $(git rev-parse --short HEAD)"
