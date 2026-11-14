@@ -1,0 +1,166 @@
+name: watch-upstream
+
+# 上游 SiYuan 发新版本后自动"预演"打补丁：
+#   全部通过 → 触发 release-docker 构建镜像
+#   任一失败 → 开 issue（GitHub 会把通知邮件发到 assignee），不构建
+#
+# 幂等：目标版本的镜像已存在于 GHCR 时直接跳过，不重复构建、不重复开 issue。
+# 因此这个工作流可以放心每小时跑一次。
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "指定上游 tag（留空 = 自动取上游最新 release）"
+        required: false
+        default: ""
+      dry_run:
+        description: "true = 只预演打补丁，不触发构建"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+  packages: read
+  issues: write
+  actions: write
+
+concurrency:
+  group: watch-upstream
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: 取目标版本
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          tag="${INPUT_VERSION:-}"
+          if [ -z "$tag" ]; then
+            tag=$(gh api repos/siyuan-note/siyuan/releases/latest --jq .tag_name)
+          fi
+          if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+            echo "::error::拿不到上游版本"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "目标版本：$tag"
+
+      - name: 该版本镜像是否已构建
+        id: image
+        env:
+          TAG: ${{ steps.target.outputs.tag }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          slug="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')/siyuan"
+          tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${slug}:pull" | jq -r .token)
+          list=$(curl -fsS -H "Authorization: Bearer $tok" "https://ghcr.io/v2/${slug}/tags/list")
+          if echo "$list" | jq -e --arg t "$TAG" '(.tags // []) | index($t)' >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "镜像已存在，无需构建"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "镜像缺失，开始预演打补丁"
+          fi
+
+      # 预演：与 release-docker 完全相同的顺序，但只用 --check 不落地
+      - name: 预演打补丁
+        id: patches
+        if: steps.image.outputs.exists == 'false'
+        continue-on-error: true
+        env:
+          TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          set -uo pipefail
+          git clone --depth=1 --branch "$TAG" https://github.com/siyuan-note/siyuan.git upstream
+          failed=0
+          : > /tmp/report.md
+          for p in disable-update default-config mock-vip-user docker-build math-renderer-registry; do
+            if out=$(git -C upstream apply --check "patches/siyuan/${p}.patch" 2>&1); then
+              printf '✅ `%s.patch`\n\n' "$p" >> /tmp/report.md
+            else
+              failed=1
+              printf '❌ `%s.patch`\n\n```\n%s\n```\n\n' "$p" "$out" >> /tmp/report.md
+              echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $TAG"
+            fi
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+          exit "$failed"
+
+      - name: 补丁失配 → 开 issue
+        if: steps.patches.outputs.failed == '1'
+        id: notify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.target.outputs.tag }}
+          OWNER: ${{ github.repository_owner }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+        run: |
+          set -euo pipefail
+          title="patch-drift: ${TAG}"
+          if gh issue list --state open --search "in:title ${TAG}" --json title --jq '.[].title' | grep -qx "$title"; then
+            echo "已有同名 open issue，跳过创建"
+          else
+            {
+              echo "上游已发布 \`${TAG}\`，但补丁无法干净应用，**未触发构建**。"
+              echo
+              cat /tmp/report.md
+              echo "---"
+              echo "### 处理步骤"
+              echo '```bash'
+              echo "git clone --branch ${TAG} --depth=1 https://github.com/siyuan-note/siyuan.git"
+              echo "cd siyuan && git apply --check ../patches/siyuan/<patch>   # 逐个定位"
+              echo '```'
+              echo "1. 用 \`git apply --3way\` 或 \`patch -p1 --fuzz=3\` 重打，**核对语义**（不要只看能打上）"
+              echo "2. 更新 \`patches/siyuan/*.patch\` 并推送"
+              echo "3. 重跑 \`watch-upstream\`"
+            } > /tmp/issue.md
+            gh issue create --title "$title" --body-file /tmp/issue.md --assignee "$OWNER"
+          fi
+          # 只有配置了 SMTP secrets 才会真的发信；否则靠 issue 的 GitHub 通知邮件
+          if [ -n "${SMTP_HOST:-}" ]; then
+            echo "smtp=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "smtp=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 可选：SMTP 邮件告警
+        if: steps.patches.outputs.failed == '1' && steps.notify.outputs.smtp == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT || 465 }}
+          secure: true
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "[siyuan-patch] 补丁失配：${{ steps.target.outputs.tag }}"
+          to: ${{ secrets.MAIL_TO }}
+          from: siyuan-patch CI <${{ secrets.SMTP_USER }}>
+          body: |
+            上游 ${{ steps.target.outputs.tag }} 的补丁预演失败，未触发构建。
+            详情见 issue：patch-drift: ${{ steps.target.outputs.tag }}
+
+      - name: 触发镜像构建
+        if: steps.image.outputs.exists == 'false' && steps.patches.outputs.failed == '0' && inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          gh workflow run release-docker.yml -f version="$TAG"
+          echo "已触发 release-docker：$TAG"
+
+      - name: 补丁失配时让 job 失败
+        if: steps.patches.outputs.failed == '1'
+        run: |
+          echo "::error::补丁无法应用到 ${{ steps.target.outputs.tag }}，已开 issue"
+          exit 1

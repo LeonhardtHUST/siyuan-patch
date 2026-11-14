@@ -1,5 +1,5 @@
 diff --git a/app/src/plugin/index.ts b/app/src/plugin/index.ts
-index 590c704..cdb40a2 100644
+index ce61904..8b88c29 100644
 --- a/app/src/plugin/index.ts
 +++ b/app/src/plugin/index.ts
 @@ -29,6 +29,8 @@ import {
@@ -11,7 +11,7 @@ index 590c704..cdb40a2 100644
  import {registerPluginCommand} from "./commandAdapter";
  import {updatePluginKeymap} from "./keymap";
  import {
-@@ -154,6 +156,24 @@ export class Plugin {
+@@ -163,6 +165,24 @@ export class Plugin {
          // 卸载
      }
  
@@ -37,10 +37,10 @@ index 590c704..cdb40a2 100644
       * 插件实例就绪后存储数据发生变化时运行，思源会等待返回的 Promise；
       * 未覆盖该方法时则重载整个插件。
 diff --git a/app/src/protyle/export/index.ts b/app/src/protyle/export/index.ts
-index c490572..9e187ab 100644
+index 277587f..52955b6 100644
 --- a/app/src/protyle/export/index.ts
 +++ b/app/src/protyle/export/index.ts
-@@ -10,6 +10,7 @@ import {confirmDialog} from "../../dialog/confirmDialog";
+@@ -11,6 +11,7 @@ import {confirmDialog} from "../../dialog/confirmDialog";
  import {getThemeMode, setInlineStyle} from "../../util/assets";
  import {getCustomFontStyle} from "../../util/customFont";
  import {fetchPost, fetchSyncPost} from "../../util/fetch";
@@ -48,9 +48,9 @@ index c490572..9e187ab 100644
  import {Dialog} from "../../dialog";
  import {replaceLocalPath} from "../../editor/rename";
  import {getScreenWidth, isInMobileApp, saveExportFile, setStorageVal} from "../util/compatibility";
-@@ -225,6 +226,30 @@ const renderPDF = async (id: string) => {
-     });
-     const defaultExportPath = await getAvailableExportPath();
+@@ -234,6 +235,30 @@ const renderPDF = async (id: string) => {
+     const exportResourceVersion = Constants.NODE_ENV === "development" ?
+         `${Constants.SIYUAN_VERSION}-${Date.now()}` : Constants.SIYUAN_VERSION;
      // data-theme-mode="light" https://github.com/siyuan-note/siyuan/issues/7379
 +    // 应用内预取导出内容并烘焙公式：Electron 预览窗口是独立进程，无法运行 Typst 渲染器，
 +    // 因此在主窗口把公式渲染为内联 SVG 后注入预览页。
@@ -79,7 +79,7 @@ index c490572..9e187ab 100644
      const html = `<!DOCTYPE html>
  <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="light" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
  <head>
-@@ -613,6 +638,10 @@ ${getIconScript(servePath)}
+@@ -636,6 +661,10 @@ ${getIconScript(servePath)}
          })
          Protyle.highlightRender(previewElement, "${servePath}stage/protyle", document.querySelector("#scale").value);
          previewElement.querySelectorAll('[data-type="NodeMathBlock"]').forEach((item) => {
@@ -90,8 +90,8 @@ index c490572..9e187ab 100644
              // 超级块内不能移除 width https://github.com/siyuan-note/siyuan/issues/14318
              item.removeAttribute('data-render');
          })
-@@ -693,7 +722,11 @@ ${getIconScript(servePath)}
-     }
+@@ -757,7 +786,11 @@ ${getIconScript(servePath)}
+     }));
      let previewReady = Promise.resolve();
      let previewRevision = 0;
 +    const __bakedMathContent = ${JSON.stringify(bakedPreviewContent)};
@@ -102,8 +102,8 @@ index c490572..9e187ab 100644
          previewElement.innerHTML = '<div style="padding:8px 0 0 0" class="protyle-wysiwyg${window.siyuan.config.editor.displayBookmarkIcon ? " protyle-wysiwyg--attr" : ""}">' + data.content + '</div>';
          const wysElement = previewElement.querySelector(".protyle-wysiwyg");
          wysElement.setAttribute("data-doc-type", data.type || "NodeDocument");
-@@ -1172,6 +1205,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
- @media print { body { margin: 0; } }
+@@ -1227,6 +1260,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
+ }
  .protyle-wysiwyg {padding: 0; margin: 0;}`
      } : {js: "", css: ""};
 +    // 数学公式应用内预烘焙（导出产物自包含，不依赖导出端脚本）
@@ -115,7 +115,7 @@ index c490572..9e187ab 100644
  <head>
 diff --git a/app/src/protyle/render/mathBoundaries.ts b/app/src/protyle/render/mathBoundaries.ts
 new file mode 100644
-index 0000000..364908c
+index 0000000..10f33ab
 --- /dev/null
 +++ b/app/src/protyle/render/mathBoundaries.ts
 @@ -0,0 +1,50 @@
@@ -139,7 +139,7 @@ index 0000000..364908c
 +            mathElement.insertAdjacentText("afterend", "\n");
 +        } else {
 +            // https://ld246.com/article/1651595975481，https://ld246.com/article/1658903123429
-+            // 随着浏览器的升级，从 beforeend 修改为 afterend
++            // ZWSP 插到 KaTeX 外层之后，不进入公式内部
 +            mathElement.insertAdjacentText("afterend", Constants.ZWSP);
 +        }
 +    } else if (nextSibling && nextSibling.nodeType !== 3 &&
@@ -170,7 +170,7 @@ index 0000000..364908c
 +    }
 +};
 diff --git a/app/src/protyle/render/mathRender.ts b/app/src/protyle/render/mathRender.ts
-index b92ab1f..e492914 100644
+index 25df9fe..e492914 100644
 --- a/app/src/protyle/render/mathRender.ts
 +++ b/app/src/protyle/render/mathRender.ts
 @@ -1,13 +1,14 @@
@@ -341,7 +341,7 @@ index b92ab1f..e492914 100644
 +                                mathElement.style.display = "inline-block";
                              } else {
 -                                // https://ld246.com/article/1651595975481，https://ld246.com/article/1658903123429
--                                // 随着浏览器的升级，从 beforeend 修改为 afterend
+-                                // ZWSP 插到 KaTeX 外层之后，不进入公式内部
 -                                mathElement.insertAdjacentText("afterend", Constants.ZWSP);
 +                                mathElement.style.maxWidth = "";
 +                                mathElement.style.overflowX = "";

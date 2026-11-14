@@ -86,3 +86,39 @@ npx esbuild app/src/protyle/render/mathRender.ts --loader:.ts=ts --outfile=/dev/
   Package 设置里改为 public。
 - 上游同步：`.github/workflows/sync-upstream.yml` 每日自动快进；出现分叉会推
   `sync/upstream-<date>` 分支并开 issue，**补丁上下文失配是合并时的首要检查项**。
+
+## 上游跟随 / 自动构建 / 自动部署
+
+| 工作流 | 触发 | 作用 |
+|---|---|---|
+| `sync-upstream.yml` | 每天 03:17 | 跟随上游 fork（MohamedElashri）快进；出现分叉推分支并开 issue |
+| `watch-upstream.yml` | 每 6 小时 + 手动 | 检查 `siyuan-note/siyuan` 最新 release，先 `git apply --check` 预演全部补丁 |
+| `release-docker.yml` | 手动 / 被 watch 触发 | 构建并发布多架构镜像到 GHCR |
+| `deploy-siyuan.yml` | release-docker 成功后 / 手动 | 在服务器 self-hosted runner 上切换镜像、健康检查、失败回滚 |
+
+### watch-upstream
+
+1. 取上游最新 release tag；**GHCR 已有该 tag 的镜像 → 直接跳过**（幂等，不会重复构建/重复开 issue）
+2. `git clone --depth=1 --branch <tag>`，按 `release-docker` 相同顺序逐个 `git apply --check`
+3. 全部通过 → `gh workflow run release-docker -f version=<tag>`
+4. 任一失败 → 开 issue `patch-drift: <tag>`（assignee 会收到 GitHub 通知邮件）+ 可选 SMTP 邮件，**不构建**
+
+补丁失配的处理原则：**别只追求"能打上"**。`git apply --3way` / `patch -p1 --fuzz=3` 打上之后必须核对语义——
+上游很可能把要改的逻辑整体搬了位置（3.8.10 就把 `DownloadInstallPkg` 的检查从
+`skipNewVerInstallPkg()` 移到了 `checkDownloadInstallPkg()` 入口），照原样打上去能过编译但行为是错的。
+
+### deploy-siyuan
+
+- 目标版本 = GHCR 里最新的 `vX.Y.Z`（或手动指定）；与当前 `.env` 里一致则跳过
+- 改 `/opt/siyuan/.env` 的 `SIYUAN_TAG` → `docker compose pull` → `up -d`
+- 90 秒内 `/api/system/version` 必须返回目标版本，否则回滚到切换前的 tag 并开 issue
+
+`docker-compose.yml` 的镜像行已改为 `${SIYUAN_TAG:-v3.8.8}`，**`.env` 是版本唯一事实来源**。
+
+服务器侧：`/opt/actions-runner`，运行用户 `ghrunner`（docker 组），
+systemd 单元 `actions.runner.LeonhardtHUST-siyuan-patch.siyuan-vm`，
+labels `self-hosted,Linux,X64,siyuan,siyuan-server`。
+
+> ⚠️ 仓库是 public，而 self-hosted runner 持有 docker 权限。不要在任何 `pull_request` 触发的工作流上
+> 使用 `[self-hosted]` 标签——那等于把服务器交给外部 PR。当前 `deploy-siyuan` 只由
+> `workflow_run` / `workflow_dispatch` 触发，两者都只读默认分支，外部无法改写。
