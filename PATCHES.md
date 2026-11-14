@@ -104,8 +104,14 @@ npx esbuild app/src/protyle/render/mathRender.ts --loader:.ts=ts --outfile=/dev/
 4. 任一失败 → 开 issue `patch-drift: <tag>`（assignee 会收到 GitHub 通知邮件）+ 可选 SMTP 邮件，**不构建**
 
 补丁失配的处理原则：**别只追求"能打上"**。`git apply --3way` / `patch -p1 --fuzz=3` 打上之后必须核对语义——
-上游很可能把要改的逻辑整体搬了位置（3.8.10 就把 `DownloadInstallPkg` 的检查从
-`skipNewVerInstallPkg()` 移到了 `checkDownloadInstallPkg()` 入口），照原样打上去能过编译但行为是错的。
+上游很可能把要改的逻辑整体搬了位置，照原样打上去能过编译但行为是错的。
+
+> 实例：3.8.10 把 `DownloadInstallPkg` 的检查从 `skipNewVerInstallPkg()` 里移到了
+> `checkDownloadInstallPkg()` 入口。刷新 `disable-update.patch` 时，要么把强制关闭搬到新入口，
+> 要么（上游采用的做法，也是本仓库现在的做法）在 `skipNewVerInstallPkg()` 里把该检查补回去并先把
+> 标志位改写为 false——因为 `checkDownloadInstallPkg()` 会先调它再读配置，效果等价。
+> `disable-update` / `default-config` / `docker-build` 三个上游自带补丁跟随上游版本维护，
+> 本 fork 只额外维护 `math-renderer-registry.patch`。
 
 ### deploy-siyuan
 
