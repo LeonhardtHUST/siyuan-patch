@@ -85,8 +85,16 @@ jobs:
           git clone --depth=1 --branch "$TAG" https://github.com/siyuan-note/siyuan.git upstream
           failed=0
           : > /tmp/report.md
+          # 注意：git -C upstream 会把工作目录切到 upstream/，补丁必须用绝对路径，
+          # 否则相对路径会被解析成 upstream/patches/... 导致每个补丁都"打不上"
           for p in disable-update default-config mock-vip-user docker-build math-renderer-registry; do
-            if out=$(git -C upstream apply --check "patches/siyuan/${p}.patch" 2>&1); then
+            patch_file="${GITHUB_WORKSPACE}/patches/siyuan/${p}.patch"
+            if [ ! -f "$patch_file" ]; then
+              failed=1
+              printf '❌ `%s.patch` —— 仓库里找不到该文件\n\n' "$p" >> /tmp/report.md
+              continue
+            fi
+            if out=$(git -C upstream apply --check "$patch_file" 2>&1); then
               printf '✅ `%s.patch`\n\n' "$p" >> /tmp/report.md
             else
               failed=1
@@ -94,19 +102,28 @@ jobs:
               echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $TAG"
             fi
           done
+          cat /tmp/report.md
           echo "failed=$failed" >> "$GITHUB_OUTPUT"
           exit "$failed"
 
       - name: 补丁失配 → 开 issue
         if: steps.patches.outputs.failed == '1'
         id: notify
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.target.outputs.tag }}
           OWNER: ${{ github.repository_owner }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          # 无论 issue 创建成功与否，报告都要落到本次 run 的 Summary 里
+          {
+            echo "## 补丁无法应用到 ${TAG}"
+            echo
+            cat /tmp/report.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
           title="patch-drift: ${TAG}"
           if gh issue list --state open --search "in:title ${TAG}" --json title --jq '.[].title' | grep -qx "$title"; then
             echo "已有同名 open issue，跳过创建"
@@ -119,14 +136,16 @@ jobs:
               echo "### 处理步骤"
               echo '```bash'
               echo "git clone --branch ${TAG} --depth=1 https://github.com/siyuan-note/siyuan.git"
-              echo "cd siyuan && git apply --check ../patches/siyuan/<patch>   # 逐个定位"
+              echo "cd siyuan && git apply --check /path/to/siyuan-patch/patches/siyuan/<patch>"
               echo '```'
               echo "1. 用 \`git apply --3way\` 或 \`patch -p1 --fuzz=3\` 重打，**核对语义**（不要只看能打上）"
               echo "2. 更新 \`patches/siyuan/*.patch\` 并推送"
               echo "3. 重跑 \`watch-upstream\`"
             } > /tmp/issue.md
-            gh issue create --title "$title" --body-file /tmp/issue.md --assignee "$OWNER"
+            gh issue create --title "$title" --body-file /tmp/issue.md --assignee "$OWNER" \
+              || echo "::warning::issue 创建失败（仓库可能关闭了 Issues），请查看本次 run 的 Summary"
           fi
+
           # 只有配置了 SMTP secrets 才会真的发信；否则靠 issue 的 GitHub 通知邮件
           if [ -n "${SMTP_HOST:-}" ]; then
             echo "smtp=true" >> "$GITHUB_OUTPUT"
