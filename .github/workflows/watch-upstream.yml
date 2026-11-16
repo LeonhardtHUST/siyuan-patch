@@ -73,7 +73,8 @@ jobs:
             echo "镜像缺失，开始预演打补丁"
           fi
 
-      # 预演：与 release-docker 完全相同的顺序，但只用 --check 不落地
+      # 预演：与 release-docker 完全相同的顺序逐项校验：先 --check，通过后立即真实应用，
+      # 让后一项在前一项的结果之上校验，避免只对 pristine 源逐个 --check 而漏掉组合冲突
       - name: 预演打补丁
         id: patches
         if: steps.image.outputs.exists == 'false'
@@ -84,23 +85,38 @@ jobs:
           set -uo pipefail
           git clone --depth=1 --branch "$TAG" https://github.com/siyuan-note/siyuan.git upstream
           failed=0
+          unchecked=0
           : > /tmp/report.md
+          # 补丁顺序必须与 release-docker.yml 的 Clone origin and apply patches 步骤保持一致
           # 注意：git -C upstream 会把工作目录切到 upstream/，补丁必须用绝对路径，
           # 否则相对路径会被解析成 upstream/patches/... 导致每个补丁都"打不上"
-          for p in disable-update default-config mock-vip-user docker-build math-renderer-registry; do
+          for p in disable-update default-config mock-vip-user docker-build math-renderer-registry content-prefetch; do
             patch_file="${GITHUB_WORKSPACE}/patches/siyuan/${p}.patch"
+            if [ "$unchecked" = 1 ]; then
+              printf '⏭️ `%s.patch` —— 前序补丁未通过，本项未检查\n\n' "$p" >> /tmp/report.md
+              continue
+            fi
             if [ ! -f "$patch_file" ]; then
               failed=1
+              unchecked=1
               printf '❌ `%s.patch` —— 仓库里找不到该文件\n\n' "$p" >> /tmp/report.md
               continue
             fi
-            if out=$(git -C upstream apply --check "$patch_file" 2>&1); then
-              printf '✅ `%s.patch`\n\n' "$p" >> /tmp/report.md
-            else
+            if ! out=$(git -C upstream apply --check "$patch_file" 2>&1); then
               failed=1
+              unchecked=1
               printf '❌ `%s.patch`\n\n```\n%s\n```\n\n' "$p" "$out" >> /tmp/report.md
               echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $TAG"
+              continue
             fi
+            if ! out=$(git -C upstream apply "$patch_file" 2>&1); then
+              failed=1
+              unchecked=1
+              printf '❌ `%s.patch` —— 校验通过但应用失败\n\n```\n%s\n```\n\n' "$p" "$out" >> /tmp/report.md
+              echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $TAG"
+              continue
+            fi
+            printf '✅ `%s.patch`\n\n' "$p" >> /tmp/report.md
           done
           cat /tmp/report.md
           echo "failed=$failed" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,2334 @@
+diff --git a/app/appearance/langs/ar.json b/app/appearance/langs/ar.json
+index 6c4b614..6c2604e 100644
+--- a/app/appearance/langs/ar.json
++++ b/app/appearance/langs/ar.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "الجلب المسبق للمحتوى",
++	"contentPrefetchTip": "عند التفعيل، يتم الجلب المسبق للمحتوى المجاور في المستند الحالي وصوره المحلية أثناء القراءة لتقليل انتظار التمرير؛ معطّل افتراضيًا",
+ 	"markdownAppearanceSettings": "إعدادات المظهر",
+ 	"markdownFontSizeSettings": "إعدادات حجم الخط",
+ 	"markdownFontSettings": "إعدادات الخط",
+diff --git a/app/appearance/langs/de.json b/app/appearance/langs/de.json
+index e004e4a..b49a7c7 100644
+--- a/app/appearance/langs/de.json
++++ b/app/appearance/langs/de.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Inhalte vorab laden",
++	"contentPrefetchTip": "Wenn aktiviert, werden beim Lesen benachbarte Inhalte des aktuellen Dokuments und deren lokale Bilder vorab geladen, um die Wartezeit beim Scrollen zu verkürzen; standardmäßig deaktiviert",
+ 	"markdownAppearanceSettings": "Darstellungseinstellungen",
+ 	"markdownFontSizeSettings": "Schriftgrößeneinstellungen",
+ 	"markdownFontSettings": "Schrifteinstellungen",
+diff --git a/app/appearance/langs/en.json b/app/appearance/langs/en.json
+index 1c12c24..2879520 100644
+--- a/app/appearance/langs/en.json
++++ b/app/appearance/langs/en.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Content prefetch",
++	"contentPrefetchTip": "Prefetch nearby content of the current document and its local images while reading to reduce scroll loading time; off by default",
+ 	"markdownAppearanceSettings": "Appearance settings",
+ 	"markdownFontSizeSettings": "Font size settings",
+ 	"markdownFontSettings": "Font settings",
+diff --git a/app/appearance/langs/es.json b/app/appearance/langs/es.json
+index 33f993e..07fa0f4 100644
+--- a/app/appearance/langs/es.json
++++ b/app/appearance/langs/es.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Precarga de contenido",
++	"contentPrefetchTip": "Al activarse, precarga el contenido cercano del documento actual y sus imágenes locales durante la lectura para reducir la espera al desplazarse; desactivado de forma predeterminada",
+ 	"markdownAppearanceSettings": "Ajustes de apariencia",
+ 	"markdownFontSizeSettings": "Ajustes de tamaño de fuente",
+ 	"markdownFontSettings": "Ajustes de fuente",
+diff --git a/app/appearance/langs/fr.json b/app/appearance/langs/fr.json
+index 2825a90..dea7a94 100644
+--- a/app/appearance/langs/fr.json
++++ b/app/appearance/langs/fr.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Préchargement du contenu",
++	"contentPrefetchTip": "Une fois activé, précharge le contenu voisin du document actuel et ses images locales pendant la lecture afin de réduire l’attente lors du défilement ; désactivé par défaut",
+ 	"markdownAppearanceSettings": "Paramètres d’apparence",
+ 	"markdownFontSizeSettings": "Paramètres de taille de police",
+ 	"markdownFontSettings": "Paramètres de police",
+diff --git a/app/appearance/langs/he.json b/app/appearance/langs/he.json
+index e11c32b..8c9a130 100644
+--- a/app/appearance/langs/he.json
++++ b/app/appearance/langs/he.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "טעינה מוקדמת של תוכן",
++	"contentPrefetchTip": "כאשר מופעל, נטענים מראש תוכן סמוך במסמך הנוכחי והתמונות המקומיות שבו בזמן הקריאה כדי לקצר את ההמתנה בגלילה; מושבת כברירת מחדל",
+ 	"markdownAppearanceSettings": "הגדרות מראה",
+ 	"markdownFontSizeSettings": "הגדרות גודל גופן",
+ 	"markdownFontSettings": "הגדרות גופן",
+diff --git a/app/appearance/langs/hi.json b/app/appearance/langs/hi.json
+index bf31655..29f86cd 100644
+--- a/app/appearance/langs/hi.json
++++ b/app/appearance/langs/hi.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "सामग्री प्रीफ़ेच",
++	"contentPrefetchTip": "सक्षम होने पर पढ़ते समय वर्तमान दस्तावेज़ की निकटवर्ती सामग्री और उसकी स्थानीय छवियाँ पहले से लोड की जाती हैं ताकि स्क्रॉल करते समय प्रतीक्षा कम हो; डिफ़ॉल्ट रूप से बंद",
+ 	"markdownAppearanceSettings": "दिखावट सेटिंग्स",
+ 	"markdownFontSizeSettings": "फ़ॉन्ट आकार सेटिंग्स",
+ 	"markdownFontSettings": "फ़ॉन्ट सेटिंग्स",
+diff --git a/app/appearance/langs/id.json b/app/appearance/langs/id.json
+index e9341ad..1cf6594 100644
+--- a/app/appearance/langs/id.json
++++ b/app/appearance/langs/id.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Pramuat konten",
++	"contentPrefetchTip": "Saat diaktifkan, konten di sekitar dokumen saat ini dan gambar lokalnya dimuat terlebih dahulu selama membaca untuk mengurangi waktu tunggu saat menggulir; nonaktif secara default",
+ 	"markdownAppearanceSettings": "Pengaturan tampilan",
+ 	"markdownFontSizeSettings": "Pengaturan ukuran font",
+ 	"markdownFontSettings": "Pengaturan font",
+diff --git a/app/appearance/langs/it.json b/app/appearance/langs/it.json
+index f7c59bd..8058e97 100644
+--- a/app/appearance/langs/it.json
++++ b/app/appearance/langs/it.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Precaricamento dei contenuti",
++	"contentPrefetchTip": "Se attivato, precarica i contenuti vicini del documento corrente e le relative immagini locali durante la lettura per ridurre l’attesa dello scorrimento; disattivato per impostazione predefinita",
+ 	"markdownAppearanceSettings": "Impostazioni dell’aspetto",
+ 	"markdownFontSizeSettings": "Impostazioni della dimensione del carattere",
+ 	"markdownFontSettings": "Impostazioni dei caratteri",
+diff --git a/app/appearance/langs/ja.json b/app/appearance/langs/ja.json
+index 1f795dc..e829e45 100644
+--- a/app/appearance/langs/ja.json
++++ b/app/appearance/langs/ja.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "コンテンツの先読み",
++	"contentPrefetchTip": "有効にすると、閲覧中に現在のドキュメントの近接する内容とそのローカル画像を先読みし、スクロール時の待ち時間を短縮します。既定では無効",
+ 	"markdownAppearanceSettings": "外観設定",
+ 	"markdownFontSizeSettings": "文字サイズ設定",
+ 	"markdownFontSettings": "フォント設定",
+diff --git a/app/appearance/langs/ko.json b/app/appearance/langs/ko.json
+index c3499f4..6756f10 100644
+--- a/app/appearance/langs/ko.json
++++ b/app/appearance/langs/ko.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "콘텐츠 미리 가져오기",
++	"contentPrefetchTip": "활성화하면 읽는 동안 현재 문서 주변 콘텐츠와 로컬 이미지를 미리 가져와 스크롤 대기 시간을 줄입니다. 기본값은 꺼짐",
+ 	"markdownAppearanceSettings": "외관 설정",
+ 	"markdownFontSizeSettings": "글꼴 크기 설정",
+ 	"markdownFontSettings": "글꼴 설정",
+diff --git a/app/appearance/langs/nl.json b/app/appearance/langs/nl.json
+index 93b4b73..7f9ba16 100644
+--- a/app/appearance/langs/nl.json
++++ b/app/appearance/langs/nl.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Inhoud vooraf laden",
++	"contentPrefetchTip": "Indien ingeschakeld worden tijdens het lezen nabije inhoud van het huidige document en de bijbehorende lokale afbeeldingen vooraf geladen om de wachttijd bij scrollen te verkorten; standaard uitgeschakeld",
+ 	"markdownAppearanceSettings": "Weergave-instellingen",
+ 	"markdownFontSizeSettings": "Instellingen voor lettergrootte",
+ 	"markdownFontSettings": "Lettertype-instellingen",
+diff --git a/app/appearance/langs/pl.json b/app/appearance/langs/pl.json
+index 42397df..86062bc 100644
+--- a/app/appearance/langs/pl.json
++++ b/app/appearance/langs/pl.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Wstępne wczytywanie treści",
++	"contentPrefetchTip": "Po włączeniu podczas czytania wstępnie wczytywana jest sąsiednia treść bieżącego dokumentu i jej lokalne obrazy, aby skrócić oczekiwanie na przewijanie; domyślnie wyłączone",
+ 	"markdownAppearanceSettings": "Ustawienia wyglądu",
+ 	"markdownFontSizeSettings": "Ustawienia rozmiaru czcionki",
+ 	"markdownFontSettings": "Ustawienia czcionek",
+diff --git a/app/appearance/langs/pt-BR.json b/app/appearance/langs/pt-BR.json
+index 2479e77..fe96daf 100644
+--- a/app/appearance/langs/pt-BR.json
++++ b/app/appearance/langs/pt-BR.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Pré-carregamento de conteúdo",
++	"contentPrefetchTip": "Quando ativado, pré-carrega o conteúdo próximo do documento atual e suas imagens locais durante a leitura para reduzir a espera ao rolar; desativado por padrão",
+ 	"markdownAppearanceSettings": "Configurações de aparência",
+ 	"markdownFontSizeSettings": "Configurações de tamanho da fonte",
+ 	"markdownFontSettings": "Configurações de fonte",
+diff --git a/app/appearance/langs/ru.json b/app/appearance/langs/ru.json
+index e94b744..4e03b5b 100644
+--- a/app/appearance/langs/ru.json
++++ b/app/appearance/langs/ru.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Предзагрузка содержимого",
++	"contentPrefetchTip": "Если включено, при чтении предварительно загружается соседнее содержимое текущего документа и его локальные изображения, чтобы сократить ожидание при прокрутке; по умолчанию выключено",
+ 	"markdownAppearanceSettings": "Настройки внешнего вида",
+ 	"markdownFontSizeSettings": "Настройки размера шрифта",
+ 	"markdownFontSettings": "Настройки шрифтов",
+diff --git a/app/appearance/langs/sk.json b/app/appearance/langs/sk.json
+index b55a023..08376a9 100644
+--- a/app/appearance/langs/sk.json
++++ b/app/appearance/langs/sk.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Predbežné načítanie obsahu",
++	"contentPrefetchTip": "Po zapnutí sa pri čítaní predbežne načítava susedný obsah aktuálneho dokumentu a jeho lokálne obrázky, aby sa skrátilo čakanie pri posúvaní; predvolene vypnuté",
+ 	"markdownAppearanceSettings": "Nastavenia vzhľadu",
+ 	"markdownFontSizeSettings": "Nastavenia veľkosti písma",
+ 	"markdownFontSettings": "Nastavenia písma",
+diff --git a/app/appearance/langs/sr.json b/app/appearance/langs/sr.json
+index e0c71fa..71a61fe 100644
+--- a/app/appearance/langs/sr.json
++++ b/app/appearance/langs/sr.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Учитавање садржаја унапред",
++	"contentPrefetchTip": "Када је укључено, током читања се унапред учитава оближњи садржај тренутног документа и његове локалне слике ради краћег чекања при померању; подразумевано искључено",
+ 	"markdownAppearanceSettings": "Подешавања изгледа",
+ 	"markdownFontSizeSettings": "Подешавања величине фонта",
+ 	"markdownFontSettings": "Подешавања фонта",
+diff --git a/app/appearance/langs/th.json b/app/appearance/langs/th.json
+index 7dc72ed..b40d269 100644
+--- a/app/appearance/langs/th.json
++++ b/app/appearance/langs/th.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "โหลดเนื้อหาล่วงหน้า",
++	"contentPrefetchTip": "เมื่อเปิดใช้งาน ระบบจะโหลดเนื้อหาใกล้เคียงของเอกสารปัจจุบันและรูปภาพในเครื่องล่วงหน้าระหว่างการอ่าน เพื่อลดระยะเวลารอเมื่อเลื่อนหน้า ปิดเป็นค่าเริ่มต้น",
+ 	"markdownAppearanceSettings": "การตั้งค่ารูปลักษณ์",
+ 	"markdownFontSizeSettings": "การตั้งค่าขนาดแบบอักษร",
+ 	"markdownFontSettings": "การตั้งค่าแบบอักษร",
+diff --git a/app/appearance/langs/tr.json b/app/appearance/langs/tr.json
+index 6d741c9..a7b76cf 100644
+--- a/app/appearance/langs/tr.json
++++ b/app/appearance/langs/tr.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "İçerik ön yükleme",
++	"contentPrefetchTip": "Etkinleştirildiğinde, kaydırma beklemesini azaltmak için okuma sırasında geçerli belgenin yakınındaki içeriği ve yerel görsellerini önceden yükler; varsayılan olarak kapalı",
+ 	"markdownAppearanceSettings": "Görünüm ayarları",
+ 	"markdownFontSizeSettings": "Yazı tipi boyutu ayarları",
+ 	"markdownFontSettings": "Yazı tipi ayarları",
+diff --git a/app/appearance/langs/uk.json b/app/appearance/langs/uk.json
+index 6519c31..ce235df 100644
+--- a/app/appearance/langs/uk.json
++++ b/app/appearance/langs/uk.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "Попереднє завантаження вмісту",
++	"contentPrefetchTip": "Якщо ввімкнено, під час читання попередньо завантажується сусідній вміст поточного документа та його локальні зображення, щоб скоротити очікування під час прокручування; типово вимкнено",
+ 	"markdownAppearanceSettings": "Налаштування зовнішнього вигляду",
+ 	"markdownFontSizeSettings": "Налаштування розміру шрифту",
+ 	"markdownFontSettings": "Налаштування шрифтів",
+diff --git a/app/appearance/langs/zh-CN.json b/app/appearance/langs/zh-CN.json
+index 3a83922..2499c7f 100644
+--- a/app/appearance/langs/zh-CN.json
++++ b/app/appearance/langs/zh-CN.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "内容预取",
++	"contentPrefetchTip": "开启后阅读时预取当前文档邻近内容及其中本地图片，减少滚动加载等待；默认关闭",
+ 	"markdownAppearanceSettings": "外观设置",
+ 	"markdownFontSizeSettings": "字号设置",
+ 	"markdownFontSettings": "字体设置",
+diff --git a/app/appearance/langs/zh-TW.json b/app/appearance/langs/zh-TW.json
+index db01937..ee0cbbf 100644
+--- a/app/appearance/langs/zh-TW.json
++++ b/app/appearance/langs/zh-TW.json
+@@ -1,4 +1,6 @@
+ {
++	"contentPrefetch": "內容預取",
++	"contentPrefetchTip": "開啟後閱讀時預取目前文件鄰近內容及其中本機圖片，減少捲動載入等待；預設關閉",
+ 	"markdownAppearanceSettings": "外觀設定",
+ 	"markdownFontSizeSettings": "字型大小設定",
+ 	"markdownFontSettings": "字型設定",
+diff --git a/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy b/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
+index afdb9f6..e875672 100644
+--- a/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
++++ b/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
+@@ -511,6 +511,20 @@
+ 				}
+ 			]
+ 		},
++		{
++			"ID": "20261116103000-dypqp90",
++			"Type": "NodeParagraph",
++			"Properties": {
++				"id": "20261116103000-dypqp90",
++				"updated": "20261116103000"
++			},
++			"Children": [
++				{
++					"Type": "NodeText",
++					"Data": "Content prefetch is off by default. When enabled, the editor prefetches nearby content and local images of the current document while reading, which reduces waits when scrolling but adds extra network traffic and some memory use. Documents in encrypted notebooks are not prefetched."
++				}
++			]
++		},
+ 		{
+ 			"ID": "20230405172238-hw2kzh6",
+ 			"Type": "NodeParagraph",
+diff --git a/app/guide/20210808180117-czj9bvb/20230405155631-leo4vc6.sy b/app/guide/20210808180117-czj9bvb/20230405155631-leo4vc6.sy
+index 9c4a6a1..7b077a8 100644
+--- a/app/guide/20210808180117-czj9bvb/20230405155631-leo4vc6.sy
++++ b/app/guide/20210808180117-czj9bvb/20230405155631-leo4vc6.sy
+@@ -508,6 +508,20 @@
+ 				}
+ 			]
+ 		},
++		{
++			"ID": "20261116103000-adnphro",
++			"Type": "NodeParagraph",
++			"Properties": {
++				"id": "20261116103000-adnphro",
++				"updated": "20261116103000"
++			},
++			"Children": [
++				{
++					"Type": "NodeText",
++					"Data": "内容预取默认关闭。开启后，阅读时会预取当前文档邻近内容及其本地图片，减少滚动加载等待，但会增加额外的网络流量和少量内存占用。加密笔记本中的文档不会预取。"
++				}
++			]
++		},
+ 		{
+ 			"ID": "20230405161457-3yp9do2",
+ 			"Type": "NodeParagraph",
+diff --git a/app/guide/20211226090932-5lcq56f/20230405172131-yb16aax.sy b/app/guide/20211226090932-5lcq56f/20230405172131-yb16aax.sy
+index 67fe972..bd19876 100644
+--- a/app/guide/20211226090932-5lcq56f/20230405172131-yb16aax.sy
++++ b/app/guide/20211226090932-5lcq56f/20230405172131-yb16aax.sy
+@@ -511,6 +511,20 @@
+ 				}
+ 			]
+ 		},
++		{
++			"ID": "20261116103000-7j1zvdg",
++			"Type": "NodeParagraph",
++			"Properties": {
++				"id": "20261116103000-7j1zvdg",
++				"updated": "20261116103000"
++			},
++			"Children": [
++				{
++					"Type": "NodeText",
++					"Data": "內容預取預設關閉。開啟後，閱讀時會預取目前文件鄰近內容及其中本機圖片，減少捲動載入等待，但會增加額外的網路流量和少量記憶體佔用。加密筆記本中的文件不會預取。"
++				}
++			]
++		},
+ 		{
+ 			"ID": "20230405172204-mtqmu5i",
+ 			"Type": "NodeParagraph",
+diff --git a/app/guide/20240530133126-axarxgx/20240530101000-flot1gj.sy b/app/guide/20240530133126-axarxgx/20240530101000-flot1gj.sy
+index 162e789..1f2a574 100644
+--- a/app/guide/20240530133126-axarxgx/20240530101000-flot1gj.sy
++++ b/app/guide/20240530133126-axarxgx/20240530101000-flot1gj.sy
+@@ -572,6 +572,20 @@
+ 				}
+ 			]
+ 		},
++		{
++			"ID": "20261116103000-g9irjdj",
++			"Type": "NodeParagraph",
++			"Properties": {
++				"id": "20261116103000-g9irjdj",
++				"updated": "20261116103000"
++			},
++			"Children": [
++				{
++					"Type": "NodeText",
++					"Data": "コンテンツの先読みは既定で無効です。有効にすると、閲覧中に現在のドキュメントの近接する内容とそのローカル画像を先読みし、スクロール時の待ち時間を減らしますが、追加の通信量と多少のメモリを使用します。暗号化されたノートブックのドキュメントは先読みされません。"
++				}
++			]
++		},
+ 		{
+ 			"ID": "20240530101000-ode6qmq",
+ 			"Type": "NodeParagraph",
+diff --git a/app/src/config/tabs/editorRuntime.ts b/app/src/config/tabs/editorRuntime.ts
+index 4542cd8..d3bca04 100644
+--- a/app/src/config/tabs/editorRuntime.ts
++++ b/app/src/config/tabs/editorRuntime.ts
+@@ -9,6 +9,7 @@ import {shouldResetBottomBacklinkPanel} from "./editorRuntimeState";
+ import {objEquals} from "../../util/functions";
+ import {lineNumberRender} from "../../protyle/render/highlightRender";
+ import {updatePageScrollButtons} from "../../protyle/scroll/pageButtons";
++import {invalidateContentPrefetch} from "../../protyle/scroll/contentPrefetchStore";
+ /// #if MOBILE
+ import {setTitleAutoDirection} from "../../protyle/render/autoDirection";
+ import {updateMobileBottomBacklinkPanel} from "../../mobile/util/bottomBacklink";
+@@ -85,6 +86,11 @@ const runtime = createSectionRuntime<Config.IEditor>({
+                 });
+             }
+         },
++    }, {
++        name: "content-prefetch",
++        changed: (old, next) => old.contentPrefetch !== next.contentPrefetch ||
++            old.dynamicLoadBlocks !== next.dynamicLoadBlocks,
++        apply: () => invalidateContentPrefetch(),
+     }],
+ });
+ 
+diff --git a/app/src/config/tabs/editorTab.ts b/app/src/config/tabs/editorTab.ts
+index a831938..f569d23 100644
+--- a/app/src/config/tabs/editorTab.ts
++++ b/app/src/config/tabs/editorTab.ts
+@@ -88,6 +88,10 @@ const registerEditorBehaviorGroup = (tab: SettingTabBuilder) => {
+         desc: window.siyuan.languages.dynamicLoadBlocksTip,
+         min: 48,
+     });
++    group.switch("editor.contentPrefetch", {
++        title: window.siyuan.languages.contentPrefetch,
++        desc: window.siyuan.languages.contentPrefetchTip,
++    });
+     /// #if !MOBILE && !BROWSER
+     const assetOpenOptions = [
+         {value: "follow-tab", label: window.siyuan.languages.assetOpenFollowTab},
+diff --git a/app/src/layout/Model.ts b/app/src/layout/Model.ts
+index fc562ef..a655027 100644
+--- a/app/src/layout/Model.ts
++++ b/app/src/layout/Model.ts
+@@ -81,6 +81,11 @@ export class Model {
+         const ws = new WebSocket(`${websocketURL}?app=${Constants.SIYUAN_APPID}&id=${options.id}${options.type === "main" ? "&ready=false" : ""}${options.type ? "&type=" + options.type : ""}`);
+         ws.onopen = () => {
+             if (this.socketDisposed || this.ws !== ws) return;
++            if (window.siyuan.config?.editor?.contentPrefetch) {
++                const {invalidateContentPrefetch}: typeof import("../protyle/scroll/contentPrefetchStore") =
++                    require("../protyle/scroll/contentPrefetchStore");
++                invalidateContentPrefetch();
++            }
+             if (options.type === "main") {
+                 const {markKernelConnectionAlive}: typeof import("../util/kernelConnection") = require("../util/kernelConnection");
+                 markKernelConnectionAlive();
+@@ -130,6 +135,11 @@ export class Model {
+         };
+         ws.onclose = (ev) => {
+             if (this.socketDisposed || this.ws !== ws) return;
++            if (window.siyuan.config?.editor?.contentPrefetch) {
++                const {invalidateContentPrefetch}: typeof import("../protyle/scroll/contentPrefetchStore") =
++                    require("../protyle/scroll/contentPrefetchStore");
++                invalidateContentPrefetch();
++            }
+             if (options.type === "main") {
+                 const {cancelTemplateHTTPExecutions}: typeof import("../template/http") = require("../template/http");
+                 cancelTemplateHTTPExecutions();
+diff --git a/app/src/protyle/index.ts b/app/src/protyle/index.ts
+index 725beba..379ec5f 100644
+--- a/app/src/protyle/index.ts
++++ b/app/src/protyle/index.ts
+@@ -11,6 +11,7 @@ import {Options} from "./util/Options";
+ import {destroy} from "./util/destroy";
+ import {registerSyncEditorSave} from "./util/editorSave";
+ import {Scroll} from "./scroll";
++import {invalidateContentPrefetchFor} from "./scroll/contentPrefetchStore";
+ import {Model} from "../layout/Model";
+ import {genUUID} from "../util/genID";
+ import {WYSIWYG} from "./wysiwyg";
+@@ -490,6 +491,7 @@ export class Protyle {
+     }
+ 
+     private onTransaction(data: IWebSocketData) {
++        invalidateContentPrefetchFor(this.protyle);
+         // 多窗口/多端：用广播附带的撤销状态同步本地镜像
+         if (data.context?.undoState) {
+             syncMirrorFromBroadcast(data.context.undoState);
+diff --git a/app/src/protyle/scroll/contentPrefetch.test.ts b/app/src/protyle/scroll/contentPrefetch.test.ts
+new file mode 100644
+index 0000000..27a09ae
+--- /dev/null
++++ b/app/src/protyle/scroll/contentPrefetch.test.ts
+@@ -0,0 +1,590 @@
++import * as assert from "node:assert/strict";
++import {readFileSync} from "node:fs";
++import {test} from "node:test";
++import {runInNewContext} from "node:vm";
++import {ModuleKind, ScriptTarget, transpileModule} from "typescript";
++import {DynamicLoadState} from "./dynamicLoadState";
++import {
++    buildContentPrefetchKey,
++    CONTENT_PREFETCH_MAX_SIZE,
++    CONTENT_PREFETCH_TTL,
++    getContentPrefetchBoundaries,
++    getContentPrefetchDirection,
++    isContentPrefetchConnectionHealthy,
++    normalizeContentPrefetchAssetURL,
++    type IContentPrefetchKey,
++} from "./contentPrefetchPolicy";
++import {
++    ContentPrefetchStore,
++    invalidateContentPrefetch,
++    invalidateContentPrefetchFor,
++    registerContentPrefetchCancelHook,
++} from "./contentPrefetchStore";
++
++const editor = () => Object.create(null) as IProtyle;
++
++const socketData = (data: unknown = null): IWebSocketData => ({code: 0, msg: "", data} as IWebSocketData);
++
++const key = (mode: 1 | 2, anchorID = "block", size = 128): IContentPrefetchKey => ({
++    rootID: "document",
++    anchorID,
++    mode,
++    size,
++});
++
++test("content prefetch stays ahead of the real load thresholds", () => {
++    const boundaries = {before: false, after: false};
++    assert.equal(getContentPrefetchDirection({scrollTop: 2500, scrollHeight: 6000, clientHeight: 1000}, boundaries), 2);
++    assert.equal(getContentPrefetchDirection({scrollTop: 4200, scrollHeight: 6000, clientHeight: 1000}, boundaries),
++        undefined);
++    assert.equal(getContentPrefetchDirection({scrollTop: 4190, scrollHeight: 6000, clientHeight: 1000}, boundaries),
++        2);
++    assert.equal(getContentPrefetchDirection({scrollTop: 5000, scrollHeight: 6000, clientHeight: 1000}, boundaries),
++        undefined);
++    assert.equal(getContentPrefetchDirection({scrollTop: 1200, scrollHeight: 8000, clientHeight: 1000}, boundaries), 1);
++    assert.equal(getContentPrefetchDirection({scrollTop: 800, scrollHeight: 8000, clientHeight: 1000}, boundaries),
++        undefined);
++    assert.equal(getContentPrefetchDirection({scrollTop: 2500, scrollHeight: 6000, clientHeight: 1000},
++        {before: false, after: true}), undefined);
++    assert.equal(getContentPrefetchDirection({scrollTop: 1200, scrollHeight: 8000, clientHeight: 1000},
++        {before: true, after: false}), undefined);
++    assert.equal(getContentPrefetchDirection({scrollTop: 0, scrollHeight: 1000, clientHeight: 1000}, boundaries),
++        undefined);
++});
++
++test("content prefetch reads document boundaries from rendered elements", () => {
++    const loaded = getContentPrefetchBoundaries({
++        firstElementChild: {getAttribute: (name: string): string | null => name === "data-eof" ? "1" : null} as unknown as Element,
++        lastElementChild: {getAttribute: (name: string): string | null => name === "data-eof" ? "2" : null} as unknown as Element,
++        hasAttribute: (): boolean => false,
++    });
++    assert.deepEqual(loaded, {before: true, after: true});
++    const unloaded = getContentPrefetchBoundaries({
++        firstElementChild: {getAttribute: (name: string): string | null => name === "data-node-index" ? "12" : null} as unknown as Element,
++        lastElementChild: {getAttribute: (): null => null} as unknown as Element,
++        hasAttribute: (name: string): boolean => name === "data-bottom-eof",
++    });
++    assert.deepEqual(unloaded, {before: false, after: true});
++});
++
++test("content prefetch keys include size, mode and notebook", () => {
++    assert.deepEqual(buildContentPrefetchKey({id: "anchor", mode: 2, size: 128}, "document"), {
++        rootID: "document", anchorID: "anchor", mode: 2, size: 128, notebook: undefined,
++    });
++    assert.equal(buildContentPrefetchKey({id: "anchor", mode: 2, size: 128, notebook: "box"}, "document")
++        .notebook, "box");
++    assert.equal(buildContentPrefetchKey({id: "anchor", mode: 2}, "document"), undefined);
++    assert.equal(buildContentPrefetchKey({id: "anchor", mode: 0, size: 128}, "document"), undefined);
++    assert.equal(buildContentPrefetchKey({id: "anchor", mode: 2, size: 128}, undefined), undefined);
++    assert.ok(CONTENT_PREFETCH_MAX_SIZE > 0);
++});
++
++test("content prefetch only accepts same origin asset images with the exact query", () => {
++    const origin = "http://127.0.0.1:6806";
++    const base = origin + "/stage/build/app/";
++    assert.equal(normalizeContentPrefetchAssetURL("assets/photo.png", base, origin), origin + "/assets/photo.png");
++    assert.equal(normalizeContentPrefetchAssetURL("/assets/photo.png?v=2", base, origin),
++        origin + "/assets/photo.png?v=2");
++    assert.equal(normalizeContentPrefetchAssetURL("assets/photo.png?box=encrypted", base, origin), undefined);
++    assert.equal(normalizeContentPrefetchAssetURL("https://example.com/assets/photo.png", base, origin), undefined);
++    assert.equal(normalizeContentPrefetchAssetURL("/stage/protyle/js/lute/lute.min.js", base, origin), undefined);
++    assert.equal(normalizeContentPrefetchAssetURL("assets/clip.mp4", base, origin), undefined);
++    assert.equal(normalizeContentPrefetchAssetURL("data:image/png;base64,AAAA", base, origin), undefined);
++    assert.equal(normalizeContentPrefetchAssetURL("javascript:alert(1)", base, origin), undefined);
++});
++
++test("content prefetch requires an open editor websocket", () => {
++    assert.equal(isContentPrefetchConnectionHealthy({ws: {ws: {readyState: 1}}} as unknown as IProtyle), true);
++    assert.equal(isContentPrefetchConnectionHealthy({ws: {ws: {readyState: 0}}} as unknown as IProtyle), false);
++    assert.equal(isContentPrefetchConnectionHealthy({} as unknown as IProtyle), false);
++});
++
++test("content prefetch store keeps one segment per direction and consumes hits", () => {
++    const store = new ContentPrefetchStore();
++    const protyle = editor();
++    const now = Date.now();
++    assert.equal(store.store(protyle, key(1), socketData(), now, store.getGeneration()), true);
++    assert.equal(store.store(protyle, key(2), socketData(), now, store.getGeneration()), true);
++    assert.equal(store.store(protyle, key(2, "other"), socketData(), now, store.getGeneration()), true);
++    assert.equal(store.has(protyle, key(1), now), true);
++    assert.equal(store.has(protyle, key(2, "other"), now), true);
++    assert.equal(store.has(protyle, key(2), now), false);
++    assert.equal(store.has(protyle, key(2, "other"), now), true);
++    assert.equal(store.take(protyle, key(1), now).code, 0);
++    assert.equal(store.has(protyle, key(1), now), false);
++    assert.equal(store.take(protyle, key(1), now), undefined);
++});
++
++test("content prefetch store expires entries and rejects stale generations", () => {
++    const store = new ContentPrefetchStore();
++    const protyle = editor();
++    const now = Date.now();
++    store.store(protyle, key(1), socketData(), now, store.getGeneration());
++    assert.equal(store.has(protyle, key(1), now + CONTENT_PREFETCH_TTL + 1), false);
++    store.store(protyle, key(2), socketData(), now, store.getGeneration());
++    const generation = store.getGeneration();
++    store.clear(protyle);
++    assert.equal(store.store(protyle, key(2), socketData(), now, generation), false);
++    assert.equal(store.take(protyle, key(2), now), undefined);
++});
++
++test("content prefetch store runs one attempt per editor and aborts it on invalidation", () => {
++    const store = new ContentPrefetchStore();
++    const first = editor();
++    const second = editor();
++    const now = Date.now();
++    const controller = new AbortController();
++    const token = store.beginAttempt(first, controller, now);
++    assert.ok(token);
++    assert.equal(store.beginAttempt(first, new AbortController(), now + 5000), undefined);
++    assert.equal(store.beginAttempt(second, new AbortController(), now + 5000), undefined);
++    store.clear(first);
++    assert.equal(controller.signal.aborted, true);
++    const next = new AbortController();
++    assert.ok(store.beginAttempt(second, next, now + 6000));
++    assert.equal(store.beginAttempt(second, new AbortController(), now + 6000), undefined);
++    store.finishAttempt(second, 0);
++    assert.equal(next.signal.aborted, false);
++});
++
++test("content prefetch store evicts the least recently used editor", () => {
++    const store = new ContentPrefetchStore();
++    const editors: IProtyle[] = [];
++    for (let index = 0; index < 9; index++) {
++        const protyle = editor();
++        editors.push(protyle);
++        store.store(protyle, key(2), socketData(), Date.now() + index, store.getGeneration());
++    }
++    assert.equal(store.has(editors[0], key(2), Date.now() + 100), false);
++    assert.equal(store.has(editors[8], key(2), Date.now() + 100), true);
++});
++
++test("content prefetch foreground ownership blocks speculation until every owner releases", () => {
++    const store = new ContentPrefetchStore();
++    const first = editor();
++    const second = editor();
++    const now = Date.now();
++    const speculative = new AbortController();
++    assert.ok(store.beginAttempt(first, speculative, now));
++    const releaseFirst = store.beginContentForeground();
++    assert.equal(speculative.signal.aborted, true);
++    assert.equal(store.hasActiveAttempt(), false);
++    assert.equal(store.hasContentForeground(), true);
++    assert.equal(store.beginAttempt(second, new AbortController(), now + 5000), undefined);
++    const releaseSecond = store.beginContentForeground();
++    releaseFirst();
++    assert.equal(store.hasContentForeground(), true);
++    assert.equal(store.canAttempt(second, now + 5000), false);
++    store.clearAll();
++    store.clear(second);
++    assert.equal(store.hasContentForeground(), true);
++    releaseSecond();
++    assert.equal(store.hasContentForeground(), false);
++    const next = new AbortController();
++    assert.ok(store.beginAttempt(second, next, now + 5000));
++    store.abortAttempt(second);
++    assert.equal(next.signal.aborted, true);
++});
++
++test("content prefetch foreground cancels registered image work", () => {
++    const store = new ContentPrefetchStore();
++    let cancelled = 0;
++    registerContentPrefetchCancelHook(() => cancelled++);
++    const release = store.beginContentForeground();
++    assert.equal(cancelled, 1);
++    assert.equal(store.hasContentForeground(), true);
++    release();
++    assert.equal(store.hasContentForeground(), false);
++});
++
++test("global content prefetch invalidation fires registered cancel hooks", () => {
++    let cancelled = 0;
++    registerContentPrefetchCancelHook(() => cancelled++);
++    invalidateContentPrefetch();
++    assert.equal(cancelled, 1);
++    invalidateContentPrefetchFor(editor(), false);
++    assert.equal(cancelled, 1);
++    invalidateContentPrefetchFor(editor(), true);
++    assert.equal(cancelled, 2);
++});
++
++const compiledSource = (file: string) => transpileModule(readFileSync(file, "utf8"), {
++    compilerOptions: {module: ModuleKind.CommonJS, target: ScriptTarget.ES2021},
++}).outputText;
++
++const createStoreModule = () => {
++    const policyExports: any = {};
++    runInNewContext(compiledSource("src/protyle/scroll/contentPrefetchPolicy.ts"), {exports: policyExports});
++    const storeExports: any = {};
++    runInNewContext(compiledSource("src/protyle/scroll/contentPrefetchStore.ts"), {
++        exports: storeExports,
++        require: (name: string) => {
++            if (name === "./contentPrefetchPolicy") {
++                return policyExports;
++            }
++            throw new Error("unexpected store require: " + name);
++        },
++    });
++    return storeExports;
++};
++
++type TFetchCall = {data: any, callback: (response: any) => void, finish: () => void};
++
++const createScrollHarness = (options: {
++    contentPrefetch: boolean;
++    cachedResponse?: IWebSocketData;
++    consumeCached?: boolean;
++    onGetThrows?: boolean;
++}) => {
++    const rendered: any[] = [];
++    const fetchCalls: TFetchCall[] = [];
++    const invalidated: IProtyle[] = [];
++    const finishes: boolean[] = [];
++    const scrollExports: any = {};
++    const windowObject: any = {
++        siyuan: {config: {editor: {dynamicLoadBlocks: 128, contentPrefetch: options.contentPrefetch}}},
++    };
++    const storeModule = createStoreModule();
++    const store = {
++        ...storeModule,
++        invalidateContentPrefetchFor: (protyle: IProtyle, cancelImages = false) => {
++            invalidated.push(protyle);
++            storeModule.invalidateContentPrefetchFor(protyle, cancelImages);
++        },
++    };
++    const contentPrefetchModule = {
++        hasPrefetchedDynamicResponse: (): boolean => !!options.cachedResponse,
++        consumePrefetchedDynamicResponse: (): IWebSocketData | undefined =>
++            options.consumeCached === false ? undefined : options.cachedResponse,
++        scheduleContentPrefetch: (): void => undefined,
++    };
++    const dependencies = {
++        DynamicLoadState,
++        Constants: {CB_GET_BEFORE: "before", CB_GET_APPEND: "append", CB_GET_UNCHANGEID: "keep-id"},
++        isEncryptedBox: (): boolean => false,
++        onGet: (values: any): void => {
++            if (options.onGetThrows) {
++                throw new Error("prefetch render failed");
++            }
++            rendered.push(values);
++        },
++        refreshSyntheticDragTarget: (): void => undefined,
++        waitForPendingTransactions: (): Promise<void> => Promise.resolve(),
++        fetchPost: (_url: string, data: any, callback: (response: any) => void): Promise<void> => new Promise<void>(finish => {
++            fetchCalls.push({data, callback, finish});
++        }),
++    };
++    runInNewContext(compiledSource("src/protyle/scroll/index.ts"), {
++        exports: scrollExports,
++        AbortController,
++        Promise,
++        window: windowObject,
++        require: (name: string) => {
++            if (name === "./contentPrefetch") {
++                return contentPrefetchModule;
++            }
++            if (name === "./contentPrefetchStore") {
++                return store;
++            }
++            return dependencies;
++        },
++    });
++    const createEditor = (rootID = "document") => {
++        const attributes = new Map<string, string>();
++        const scroll = Object.create(scrollExports.Scroll.prototype);
++        scroll.dynamicLoadState = new DynamicLoadState();
++        const protyle: any = {
++            notebookId: "box",
++            block: {rootID},
++            element: {isConnected: true, getAttribute: (): null => null},
++            contentElement: {scrollTop: 42},
++            wysiwyg: {element: {
++                firstElementChild: {
++                    getAttribute: (name: string): string | null => name === "data-node-id" ? "first" : null,
++                },
++                lastElementChild: {
++                    getAttribute: (name: string): string | null => name === "data-node-id" ? "last" : null,
++                },
++                hasAttribute: (name: string): boolean => attributes.has(name),
++                setAttribute: (name: string, value: string): void => { attributes.set(name, value); },
++                removeAttribute: (name: string): void => { attributes.delete(name); },
++            }},
++        };
++        return {scroll, protyle, attributes};
++    };
++    const current = createEditor();
++    return {
++        ...current,
++        createEditor,
++        rendered,
++        fetchCalls,
++        invalidated,
++        finishes,
++        store: storeModule.contentPrefetchStore as ContentPrefetchStore,
++        windowObject,
++    };
++};
++
++test("dynamic load applies a prefetched response without a second request", async () => {
++    const cached = {code: 0, data: {content: "cached"}} as IWebSocketData;
++    const harness = createScrollHarness({contentPrefetch: true, cachedResponse: cached});
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 2, {
++        onFinish: (success: boolean) => harness.finishes.push(success),
++    }), true);
++    assert.equal(harness.fetchCalls.length, 0);
++    assert.equal(harness.rendered.length, 0);
++    assert.equal(harness.store.hasContentForeground(), true);
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.fetchCalls.length, 0);
++    assert.equal(harness.store.hasContentForeground(), false);
++    assert.equal(harness.rendered.length, 1);
++    assert.equal(harness.rendered[0].data, cached);
++    assert.equal(harness.rendered[0].action.length, 2);
++    assert.equal(harness.rendered[0].action[0], "append");
++    assert.equal(harness.rendered[0].action[1], "keep-id");
++    assert.equal(harness.attributes.has("data-top"), false);
++    assert.equal(harness.finishes.length, 1);
++    assert.equal(harness.finishes[0], true);
++});
++
++test("dynamic load falls back to the original request when the cached response is stale", async () => {
++    const cached = {code: 0, data: {content: "stale"}} as IWebSocketData;
++    const harness = createScrollHarness({contentPrefetch: true, cachedResponse: cached, consumeCached: false});
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 2, {
++        onFinish: (success: boolean) => harness.finishes.push(success),
++    }), true);
++    assert.equal(harness.store.hasContentForeground(), true);
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.rendered.length, 0);
++    assert.equal(harness.fetchCalls.length, 1);
++    harness.fetchCalls[0].callback({code: 0, data: {content: "fresh"}});
++    assert.equal(harness.rendered.length, 1);
++    assert.equal(harness.rendered[0].data.data.content, "fresh");
++    harness.fetchCalls[0].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.rendered.length, 1);
++    assert.equal(harness.store.hasContentForeground(), false);
++    assert.equal(harness.finishes.length, 1);
++    assert.equal(harness.finishes[0], true);
++});
++
++test("dynamic load keeps the original request when content prefetch is disabled", async () => {
++    const harness = createScrollHarness({contentPrefetch: false, cachedResponse: {code: 0} as IWebSocketData});
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 1), true);
++    assert.equal(harness.fetchCalls.length, 1);
++    assert.equal(harness.fetchCalls[0].data.mode, 1);
++    assert.equal(harness.store.hasContentForeground(), false);
++    harness.fetchCalls[0].callback({code: 0});
++    assert.equal(harness.rendered.length, 1);
++    harness.fetchCalls[0].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.rendered.length, 1);
++    assert.equal(harness.store.hasContentForeground(), false);
++});
++
++test("a throwing prefetched render releases the dynamic load state", async () => {
++    const cached = {code: 0, data: {content: "cached"}} as IWebSocketData;
++    const harness = createScrollHarness({contentPrefetch: true, cachedResponse: cached, onGetThrows: true});
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 2, {
++        onFinish: (success: boolean) => harness.finishes.push(success),
++    }), true);
++    assert.equal(harness.store.hasContentForeground(), true);
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.finishes.length, 1);
++    assert.equal(harness.finishes[0], false);
++    assert.equal(harness.store.hasContentForeground(), false);
++    const next = harness.scroll.dynamicLoadState.begin("document", "last", 2);
++    assert.ok(next);
++    harness.scroll.dynamicLoadState.finish(next);
++});
++
++test("a real dynamic load keeps other editors' speculative prefetch blocked until the last one finishes", async () => {
++    const harness = createScrollHarness({contentPrefetch: true});
++    const first = harness.createEditor();
++    const second = harness.createEditor();
++    assert.equal(first.scroll.loadDynamic(first.protyle, 2), true);
++    assert.equal(harness.store.hasContentForeground(), true);
++    assert.equal(harness.store.beginAttempt(second.protyle, new AbortController(), Date.now()), undefined);
++    assert.equal(second.scroll.loadDynamic(second.protyle, 2), true);
++    assert.equal(harness.fetchCalls.length, 2);
++    harness.fetchCalls[0].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.store.hasContentForeground(), true);
++    assert.equal(harness.store.canAttempt(second.protyle, Date.now()), false);
++    harness.fetchCalls[1].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.store.hasContentForeground(), false);
++    const allowed = new AbortController();
++    assert.ok(harness.store.beginAttempt(second.protyle, allowed, Date.now()));
++    harness.store.abortAttempt(second.protyle);
++    assert.equal(allowed.signal.aborted, true);
++});
++
++test("invalidating a real load releases its lease and a late finish keeps the next lease", async () => {
++    const harness = createScrollHarness({contentPrefetch: true});
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 2), true);
++    assert.equal(harness.store.hasContentForeground(), true);
++    harness.scroll.invalidateDynamicLoad(harness.protyle);
++    assert.equal(harness.store.hasContentForeground(), false);
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 2), true);
++    assert.equal(harness.store.hasContentForeground(), true);
++    harness.fetchCalls[0].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.store.hasContentForeground(), true);
++    harness.fetchCalls[1].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.store.hasContentForeground(), false);
++});
++
++test("turning content prefetch off during a real load still releases its lease", async () => {
++    const harness = createScrollHarness({contentPrefetch: true});
++    assert.equal(harness.scroll.loadDynamic(harness.protyle, 2), true);
++    assert.equal(harness.store.hasContentForeground(), true);
++    harness.windowObject.siyuan.config.editor.contentPrefetch = false;
++    harness.fetchCalls[0].finish();
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.store.hasContentForeground(), false);
++});
++
++test("invalidating a dynamic load clears prefetched content even without an active request", () => {
++    const harness = createScrollHarness({contentPrefetch: true});
++    const key = {rootID: "document", anchorID: "last", mode: 2 as const, size: 128};
++    assert.equal(harness.store.store(harness.protyle, key, {code: 0} as IWebSocketData, Date.now(),
++        harness.store.getGeneration()), true);
++    harness.scroll.invalidateDynamicLoad(harness.protyle);
++    assert.equal(harness.invalidated.length, 1);
++    assert.equal(harness.store.has(harness.protyle, key), false);
++    assert.equal(harness.attributes.has("data-top"), false);
++});
++
++const createContentPrefetchHarness = () => {
++    const fetchCalls: Array<{input: any, init: any}> = [];
++    const images = [{getAttribute: (name: string): string | null => name === "src" ? "assets/photo.png" : null}];
++    const template = {content: {querySelectorAll: () => images}};
++    const windowObject: any = {
++        siyuan: {config: {editor: {contentPrefetch: true, dynamicLoadBlocks: 128}}},
++        requestIdleCallback: (callback: () => void) => callback(),
++        addEventListener: (): void => undefined,
++    };
++    const documentObject: any = {
++        hidden: false,
++        baseURI: "http://127.0.0.1:6806/stage/build/app/",
++        createElement: () => template,
++        addEventListener: (): void => undefined,
++    };
++    const fetchWithAppId = (input: any, init?: RequestInit) => {
++        fetchCalls.push({input, init});
++        if (input === "/api/filetree/getDoc") {
++            const body = JSON.parse(String(init?.body || "{}"));
++            return Promise.resolve({
++                ok: true,
++                headers: {get: () => "0"},
++                body: null,
++                text: () => Promise.resolve(JSON.stringify({code: 0, msg: "", data: {
++                    id: body.id, mode: body.mode, rootID: "document", content: "",
++                }})),
++            });
++        }
++        return new Promise((_resolve, reject) => {
++            init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));
++        });
++    };
++    const globals: Record<string, any> = {
++        AbortController, TextDecoder, URL, console, setTimeout, clearTimeout,
++        window: windowObject,
++        document: documentObject,
++        location: {origin: "http://127.0.0.1:6806"},
++        navigator: {onLine: true},
++    };
++    const modules = new Map<string, any>();
++    const evaluate = (id: string, file: string, resolve: (name: string) => any) => {
++        const existing = modules.get(id);
++        if (existing) {
++            return existing;
++        }
++        const exportsObject: any = {};
++        modules.set(id, exportsObject);
++        runInNewContext(compiledSource(file), {
++            ...globals,
++            exports: exportsObject,
++            require: resolve,
++        });
++        return exportsObject;
++    };
++    const policy = evaluate("policy", "src/protyle/scroll/contentPrefetchPolicy.ts", (name: string) => {
++        throw new Error("unexpected policy require: " + name);
++    });
++    const store = evaluate("store", "src/protyle/scroll/contentPrefetchStore.ts", (name: string) => {
++        if (name === "./contentPrefetchPolicy") {
++            return policy;
++        }
++        throw new Error("unexpected store require: " + name);
++    });
++    const resources = evaluate("resources", "src/protyle/scroll/contentPrefetchResources.ts", (name: string) => {
++        if (name === "../../util/fetchWithAppId") {
++            return {fetchWithAppId};
++        }
++        if (name === "./contentPrefetchPolicy") {
++            return policy;
++        }
++        if (name === "./contentPrefetchStore") {
++            return store;
++        }
++        throw new Error("unexpected resources require: " + name);
++    });
++    const prefetch = evaluate("prefetch", "src/protyle/scroll/contentPrefetch.ts", (name: string) => {
++        if (name === "../../util/fetchWithAppId") {
++            return {fetchWithAppId};
++        }
++        if (name === "../util/transactionQueue") {
++            return {waitForPendingTransactions: () => Promise.resolve()};
++        }
++        if (name === "./contentPrefetchPolicy") {
++            return policy;
++        }
++        if (name === "./contentPrefetchResources") {
++            return resources;
++        }
++        if (name === "./contentPrefetchStore") {
++            return store;
++        }
++        throw new Error("unexpected prefetch require: " + name);
++    });
++    const editor = (rootID = "document") => ({
++        ws: {ws: {readyState: 1}},
++        element: {isConnected: true, getAttribute: (): null => null},
++        contentElement: {scrollTop: 1200, scrollHeight: 8000, clientHeight: 1000},
++        wysiwyg: {element: {
++            firstElementChild: {getAttribute: (name: string): string | null => name === "data-node-id" ? "first" : null},
++            lastElementChild: {getAttribute: (name: string): string | null => name === "data-node-id" ? "last" : null},
++            hasAttribute: (): boolean => false,
++        }},
++        block: {rootID, showAll: false},
++        notebookId: "box",
++    });
++    return {prefetch, resources, store: store.contentPrefetchStore, fetchCalls, editor};
++};
++
++test("foreground protection cancels in-flight image prefetch and suspends new speculation", async () => {
++    const harness = createContentPrefetchHarness();
++    const editorB = harness.editor();
++    harness.resources.prefetchContentImages("<img src=\"assets/photo.png\">");
++    assert.equal(harness.fetchCalls.length, 1);
++    const imageSignal = harness.fetchCalls[0].init.signal as AbortSignal;
++    const release = harness.store.beginContentForeground();
++    assert.equal(harness.store.hasContentForeground(), true);
++    assert.equal(imageSignal.aborted, true);
++    harness.resources.prefetchContentImages("<img src=\"assets/photo.png\">");
++    assert.equal(harness.fetchCalls.length, 1);
++    harness.prefetch.scheduleContentPrefetch(editorB, {});
++    assert.equal(harness.fetchCalls.length, 1);
++    release();
++    assert.equal(harness.store.hasContentForeground(), false);
++    harness.prefetch.scheduleContentPrefetch(editorB, {size: 128});
++    await new Promise(resolve => setImmediate(resolve));
++    assert.equal(harness.fetchCalls.length, 2);
++    assert.equal(harness.fetchCalls[1].input, "/api/filetree/getDoc");
++    assert.equal(JSON.parse(String(harness.fetchCalls[1].init.body)).mode, 1);
++    assert.ok(harness.prefetch.consumePrefetchedDynamicResponse(editorB, {id: "first", mode: 1, size: 128},
++        "document"));
++});
+diff --git a/app/src/protyle/scroll/contentPrefetch.ts b/app/src/protyle/scroll/contentPrefetch.ts
+new file mode 100644
+index 0000000..5495e85
+--- /dev/null
++++ b/app/src/protyle/scroll/contentPrefetch.ts
+@@ -0,0 +1,252 @@
++import type {FileTreeGetDocRequestInput} from "../../types/api";
++import {fetchWithAppId} from "../../util/fetchWithAppId";
++import {waitForPendingTransactions} from "../util/transactionQueue";
++import {
++    buildContentPrefetchKey,
++    CONTENT_PREFETCH_MAX_BODY_BYTES,
++    CONTENT_PREFETCH_MAX_SIZE,
++    CONTENT_PREFETCH_REQUEST_TIMEOUT,
++    getContentPrefetchBoundaries,
++    getContentPrefetchDirection,
++    isContentPrefetchConnectionHealthy,
++    isContentPrefetchNetworkRestricted,
++    isContentPrefetchSettingEnabled,
++    withContentPrefetchPriority,
++    type IContentPrefetchKey,
++    type TContentPrefetchMode,
++} from "./contentPrefetchPolicy";
++import {cancelContentImagePrefetch, prefetchContentImages} from "./contentPrefetchResources";
++import {
++    contentPrefetchStore,
++    invalidateContentPrefetch,
++    registerContentPrefetchCancelHook,
++} from "./contentPrefetchStore";
++
++export interface IContentPrefetchOptions {
++    encrypted?: boolean;
++    notebook?: string;
++    size?: number;
++}
++
++registerContentPrefetchCancelHook(cancelContentImagePrefetch);
++
++let lifecycleBound = false;
++
++const bindContentPrefetchLifecycle = () => {
++    if (lifecycleBound) {
++        return;
++    }
++    lifecycleBound = true;
++    if (typeof document !== "undefined") {
++        document.addEventListener("visibilitychange", () => {
++            if (document.hidden) {
++                invalidateContentPrefetch();
++            }
++        });
++    }
++    if (typeof window !== "undefined") {
++        window.addEventListener("offline", () => invalidateContentPrefetch());
++    }
++};
++
++const cancelResponseBody = async (response: Response, controller: AbortController) => {
++    if (response.body) {
++        await response.body.cancel().catch((): undefined => undefined);
++        return;
++    }
++    controller.abort();
++};
++
++const readBoundedText = async (response: Response, maxBytes: number, controller: AbortController) => {
++    const contentLength = Number(response.headers.get("content-length") || "0");
++    if (contentLength > maxBytes) {
++        await cancelResponseBody(response, controller);
++        return undefined;
++    }
++    const body = response.body;
++    if (!body) {
++        const text = await response.text();
++        if (text.length > maxBytes) {
++            controller.abort();
++            return undefined;
++        }
++        return text;
++    }
++    const reader = body.getReader();
++    const decoder = new TextDecoder();
++    let received = 0;
++    let text = "";
++    try {
++        for (; ;) {
++            const chunk = await reader.read();
++            if (chunk.done) {
++                break;
++            }
++            received += chunk.value?.byteLength || 0;
++            if (received > maxBytes) {
++                await reader.cancel();
++                return undefined;
++            }
++            text += decoder.decode(chunk.value, {stream: true});
++        }
++        text += decoder.decode();
++        return text;
++    } finally {
++        reader.releaseLock();
++    }
++};
++
++const getAnchorID = (protyle: IProtyle, mode: TContentPrefetchMode) => {
++    const element = mode === 1 ? protyle.wysiwyg?.element.firstElementChild :
++        protyle.wysiwyg?.element.lastElementChild;
++    return element?.getAttribute("data-node-id") || undefined;
++};
++
++const canPrefetch = (protyle: IProtyle) => {
++    if (typeof document !== "undefined" && document.hidden) {
++        return false;
++    }
++    if (!isContentPrefetchConnectionHealthy(protyle)) {
++        return false;
++    }
++    if (!protyle.element?.isConnected || !protyle.contentElement || !protyle.wysiwyg?.element) {
++        return false;
++    }
++    if (!protyle.block?.rootID || protyle.block.showAll) {
++        return false;
++    }
++    if (protyle.element.getAttribute("disabled-forever") === "true") {
++        return false;
++    }
++    return !protyle.wysiwyg.element.hasAttribute("data-top");
++};
++
++const isContentPrefetchConsumable = (protyle: IProtyle) => {
++    if (!isContentPrefetchSettingEnabled()) {
++        return false;
++    }
++    if (!isContentPrefetchConnectionHealthy(protyle)) {
++        contentPrefetchStore.clear(protyle);
++        return false;
++    }
++    return true;
++};
++
++const requestDynamicResponse = async (protyle: IProtyle, key: IContentPrefetchKey,
++                                      controller: AbortController, generation: number, token: number,
++                                      notebookID: string) => {
++    const timeout = setTimeout(() => controller.abort(), CONTENT_PREFETCH_REQUEST_TIMEOUT);
++    try {
++        await waitForPendingTransactions(protyle);
++        if (controller.signal.aborted || contentPrefetchStore.getGeneration() !== generation ||
++            !isContentPrefetchSettingEnabled() || isContentPrefetchNetworkRestricted() ||
++            !canPrefetch(protyle) ||
++            protyle.block.rootID !== key.rootID || protyle.notebookId !== notebookID ||
++            getAnchorID(protyle, key.mode) !== key.anchorID) {
++            return;
++        }
++        const param: FileTreeGetDocRequestInput = {id: key.anchorID, mode: key.mode, size: key.size};
++        if (key.notebook) {
++            param.notebook = key.notebook;
++        }
++        const response = await fetchWithAppId("/api/filetree/getDoc", withContentPrefetchPriority({
++            method: "POST",
++            body: JSON.stringify(param),
++            credentials: "same-origin",
++            redirect: "error",
++            signal: controller.signal,
++        }));
++        if (!response.ok || controller.signal.aborted) {
++            return;
++        }
++        const text = await readBoundedText(response, CONTENT_PREFETCH_MAX_BODY_BYTES, controller);
++        if (!text || controller.signal.aborted) {
++            return;
++        }
++        const data = JSON.parse(text) as IWebSocketData;
++        if (controller.signal.aborted || !data || data.code !== 0 || !data.data ||
++            data.data.isSyncing || data.data.publishAccessRequired ||
++            data.data.rootID !== key.rootID || data.data.id !== key.anchorID || data.data.mode !== key.mode ||
++            typeof data.data.content !== "string" ||
++            contentPrefetchStore.getGeneration() !== generation ||
++            !isContentPrefetchSettingEnabled() || !protyle.element?.isConnected ||
++            protyle.block.rootID !== key.rootID || protyle.notebookId !== notebookID ||
++            getAnchorID(protyle, key.mode) !== key.anchorID) {
++            return;
++        }
++        if (!contentPrefetchStore.store(protyle, key, data, Date.now(), generation)) {
++            return;
++        }
++        prefetchContentImages(data.data.content);
++    } catch {
++        return;
++    } finally {
++        clearTimeout(timeout);
++        contentPrefetchStore.finishAttempt(protyle, token);
++    }
++};
++
++export const scheduleContentPrefetch = (protyle: IProtyle, options: IContentPrefetchOptions = {}) => {
++    bindContentPrefetchLifecycle();
++    if (options.encrypted || !isContentPrefetchSettingEnabled() || isContentPrefetchNetworkRestricted() ||
++        !canPrefetch(protyle) || contentPrefetchStore.hasContentForeground()) {
++        return;
++    }
++    const element = protyle.contentElement;
++    const metrics = {
++        scrollTop: element.scrollTop,
++        scrollHeight: element.scrollHeight,
++        clientHeight: element.clientHeight,
++    };
++    const mode = getContentPrefetchDirection(metrics, getContentPrefetchBoundaries(protyle.wysiwyg.element));
++    if (!mode) {
++        return;
++    }
++    const anchorID = getAnchorID(protyle, mode);
++    const size = options.size || window.siyuan.config.editor.dynamicLoadBlocks;
++    if (size > CONTENT_PREFETCH_MAX_SIZE) {
++        return;
++    }
++    const key = buildContentPrefetchKey({
++        id: anchorID,
++        mode,
++        size,
++        notebook: options.notebook,
++    }, protyle.block.rootID);
++    if (!key) {
++        return;
++    }
++    const now = Date.now();
++    if (contentPrefetchStore.has(protyle, key, now)) {
++        return;
++    }
++    const controller = new AbortController();
++    const generation = contentPrefetchStore.getGeneration();
++    const token = contentPrefetchStore.beginAttempt(protyle, controller, now);
++    if (!token) {
++        return;
++    }
++    const notebookID = protyle.notebookId;
++    void requestDynamicResponse(protyle, key, controller, generation, token, notebookID);
++};
++
++export const hasPrefetchedDynamicResponse = (protyle: IProtyle, param: FileTreeGetDocRequestInput,
++                                             rootID?: string) => {
++    if (!isContentPrefetchConsumable(protyle)) {
++        return false;
++    }
++    const key = buildContentPrefetchKey(param, rootID);
++    return !!key && contentPrefetchStore.has(protyle, key, Date.now());
++};
++
++export const consumePrefetchedDynamicResponse = (protyle: IProtyle, param: FileTreeGetDocRequestInput,
++                                                 rootID?: string) => {
++    if (!isContentPrefetchConsumable(protyle)) {
++        return undefined;
++    }
++    const key = buildContentPrefetchKey(param, rootID);
++    if (!key) {
++        return undefined;
++    }
++    return contentPrefetchStore.take(protyle, key, Date.now());
++};
+diff --git a/app/src/protyle/scroll/contentPrefetchPolicy.ts b/app/src/protyle/scroll/contentPrefetchPolicy.ts
+new file mode 100644
+index 0000000..7c654b3
+--- /dev/null
++++ b/app/src/protyle/scroll/contentPrefetchPolicy.ts
+@@ -0,0 +1,153 @@
++import type {FileTreeGetDocRequestInput} from "../../types/api";
++
++export type TContentPrefetchMode = 1 | 2;
++
++export interface IContentPrefetchKey {
++    rootID: string;
++    anchorID: string;
++    mode: TContentPrefetchMode;
++    size: number;
++    notebook?: string;
++}
++
++export interface IContentPrefetchScrollMetrics {
++    scrollTop: number;
++    scrollHeight: number;
++    clientHeight: number;
++}
++
++export interface IContentPrefetchBoundaries {
++    before: boolean;
++    after: boolean;
++}
++
++export interface IContentPrefetchBoundaryElement {
++    firstElementChild: Element | null;
++    lastElementChild: Element | null;
++    hasAttribute: (name: string) => boolean;
++}
++
++export const CONTENT_PREFETCH_TTL = 30000;
++export const CONTENT_PREFETCH_MIN_INTERVAL = 800;
++export const CONTENT_PREFETCH_MAX_EDITORS = 8;
++export const CONTENT_PREFETCH_MAX_SIZE = 512;
++export const CONTENT_PREFETCH_MAX_BODY_BYTES = 2 * 1024 * 1024;
++export const CONTENT_PREFETCH_REQUEST_TIMEOUT = 8000;
++export const CONTENT_PREFETCH_TOP_FACTOR = 1.8;
++export const CONTENT_PREFETCH_BOTTOM_FACTOR = 3;
++export const CONTENT_PREFETCH_TRIGGER_TOP_FACTOR = 1;
++export const CONTENT_PREFETCH_TRIGGER_BOTTOM_FACTOR = 0.8;
++
++const ASSET_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".bmp", ".svg"];
++
++export const isContentPrefetchSettingEnabled = () => {
++    if (typeof window === "undefined" || !window.siyuan?.config?.editor) {
++        return false;
++    }
++    const editor = window.siyuan.config.editor as Config.IEditor & { contentPrefetch?: boolean };
++    return editor.contentPrefetch === true;
++};
++
++export const isContentPrefetchNetworkRestricted = () => {
++    if (typeof navigator === "undefined") {
++        return false;
++    }
++    if (navigator.onLine === false) {
++        return true;
++    }
++    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
++    return connection?.saveData === true;
++};
++
++export const isContentPrefetchConnectionHealthy = (protyle: IProtyle) => {
++    const readyState = protyle.ws?.ws?.readyState;
++    if (readyState === undefined) {
++        return false;
++    }
++    const openState = (globalThis as { WebSocket?: { OPEN?: number } }).WebSocket?.OPEN ?? 1;
++    return readyState === openState;
++};
++
++export const withContentPrefetchPriority = (init: RequestInit) => {
++    const requestInit: RequestInit & { priority?: string } = {...init};
++    requestInit.priority = "low";
++    return requestInit;
++};
++
++export const getContentPrefetchBoundaries = (element: IContentPrefetchBoundaryElement): IContentPrefetchBoundaries => {
++    const firstElement = element.firstElementChild;
++    const lastElement = element.lastElementChild;
++    return {
++        before: firstElement?.getAttribute("data-eof") === "1" ||
++            firstElement?.getAttribute("data-node-index") === "0",
++        after: element.hasAttribute("data-bottom-eof") || lastElement?.getAttribute("data-eof") === "2",
++    };
++};
++
++export const getContentPrefetchDirection = (metrics: IContentPrefetchScrollMetrics,
++                                            boundaries: IContentPrefetchBoundaries): TContentPrefetchMode | undefined => {
++    const {scrollTop, scrollHeight, clientHeight} = metrics;
++    if (!(clientHeight > 0) || !(scrollHeight > clientHeight)) {
++        return undefined;
++    }
++    const remaining = scrollHeight - clientHeight - scrollTop;
++    const candidates: Array<{ mode: TContentPrefetchMode, distance: number }> = [];
++    if (!boundaries.before &&
++        scrollTop >= clientHeight * CONTENT_PREFETCH_TRIGGER_TOP_FACTOR &&
++        scrollTop <= clientHeight * CONTENT_PREFETCH_TOP_FACTOR) {
++        candidates.push({mode: 1, distance: scrollTop});
++    }
++    if (!boundaries.after &&
++        remaining > clientHeight * CONTENT_PREFETCH_TRIGGER_BOTTOM_FACTOR &&
++        remaining <= clientHeight * CONTENT_PREFETCH_BOTTOM_FACTOR) {
++        candidates.push({mode: 2, distance: remaining});
++    }
++    candidates.sort((first, second) => first.distance - second.distance);
++    return candidates[0]?.mode;
++};
++
++export const getContentPrefetchKeySignature = (key: IContentPrefetchKey) => [
++    key.rootID,
++    key.notebook || "",
++    key.anchorID,
++    key.mode.toString(),
++    key.size.toString(),
++].join("\u0000");
++
++export const buildContentPrefetchKey = (
++    param: Pick<FileTreeGetDocRequestInput, "id" | "mode" | "size" | "notebook">,
++    rootID?: string,
++): IContentPrefetchKey | undefined => {
++    if (!rootID || !param.id || (param.mode !== 1 && param.mode !== 2) || !param.size) {
++        return undefined;
++    }
++    return {
++        rootID,
++        anchorID: param.id,
++        mode: param.mode,
++        size: param.size,
++        notebook: param.notebook || undefined,
++    };
++};
++
++export const normalizeContentPrefetchAssetURL = (source: string, baseURI: string, origin: string) => {
++    const value = source.trim();
++    if (!value || /^(?:data|blob|javascript):/i.test(value)) {
++        return undefined;
++    }
++    try {
++        const normalizedSource = value.startsWith("assets/") ? origin + "/" + value : value;
++        const url = new URL(normalizedSource, baseURI);
++        if ((url.protocol !== "http:" && url.protocol !== "https:") || url.origin !== origin ||
++            !url.pathname.startsWith("/assets/") || url.searchParams.has("box")) {
++            return undefined;
++        }
++        const dotIndex = url.pathname.lastIndexOf(".");
++        if (dotIndex < 0 || !ASSET_IMAGE_EXTENSIONS.includes(url.pathname.slice(dotIndex).toLowerCase())) {
++            return undefined;
++        }
++        return url.href;
++    } catch {
++        return undefined;
++    }
++};
+diff --git a/app/src/protyle/scroll/contentPrefetchResources.ts b/app/src/protyle/scroll/contentPrefetchResources.ts
+new file mode 100644
+index 0000000..5c11ed0
+--- /dev/null
++++ b/app/src/protyle/scroll/contentPrefetchResources.ts
+@@ -0,0 +1,163 @@
++import {fetchWithAppId} from "../../util/fetchWithAppId";
++import {
++    CONTENT_PREFETCH_REQUEST_TIMEOUT,
++    isContentPrefetchNetworkRestricted,
++    isContentPrefetchSettingEnabled,
++    normalizeContentPrefetchAssetURL,
++    withContentPrefetchPriority,
++} from "./contentPrefetchPolicy";
++import {contentPrefetchStore} from "./contentPrefetchStore";
++
++const MAX_IMAGES_PER_SEGMENT = 8;
++const MAX_IMAGE_QUEUE = 16;
++const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
++const MAX_IMAGE_HISTORY = 128;
++const IMAGE_IDLE_TIMEOUT = 2000;
++const IMAGE_DEFER_DELAY = 1200;
++
++const imageQueue: string[] = [];
++const prefetchedImages = new Set<string>();
++let imageFetching = false;
++let imageGeneration = 0;
++let imageAbortController: AbortController | undefined;
++let lifecycleBound = false;
++
++const readImageBody = async (response: Response) => {
++    const contentLength = Number(response.headers.get("content-length") || "0");
++    if (contentLength > MAX_IMAGE_BYTES) {
++        await response.body?.cancel().catch((): undefined => undefined);
++        return;
++    }
++    const body = response.body;
++    if (!body) {
++        return;
++    }
++    const reader = body.getReader();
++    let received = 0;
++    try {
++        for (; ;) {
++            const chunk = await reader.read();
++            if (chunk.done) {
++                return;
++            }
++            received += chunk.value?.byteLength || 0;
++            if (received > MAX_IMAGE_BYTES) {
++                await reader.cancel();
++                return;
++            }
++        }
++    } finally {
++        reader.releaseLock();
++    }
++};
++
++const scheduleImagePump = (delay = 0) => {
++    if (delay > 0) {
++        setTimeout(() => void pumpImages(), delay);
++        return;
++    }
++    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
++        window.requestIdleCallback(() => void pumpImages(), {timeout: IMAGE_IDLE_TIMEOUT});
++        return;
++    }
++    setTimeout(() => void pumpImages(), 200);
++};
++
++const pumpImages = async () => {
++    if (imageFetching || contentPrefetchStore.hasContentForeground()) {
++        return;
++    }
++    imageFetching = true;
++    const currentGeneration = imageGeneration;
++    try {
++        while (imageQueue.length && currentGeneration === imageGeneration &&
++        !contentPrefetchStore.hasContentForeground() && isContentPrefetchSettingEnabled()) {
++            if (document.hidden || isContentPrefetchNetworkRestricted()) {
++                imageQueue.length = 0;
++                return;
++            }
++            if (contentPrefetchStore.hasActiveAttempt()) {
++                scheduleImagePump(IMAGE_DEFER_DELAY);
++                return;
++            }
++            const url = imageQueue.shift();
++            imageAbortController = new AbortController();
++            const timeout = setTimeout(() => imageAbortController?.abort(), CONTENT_PREFETCH_REQUEST_TIMEOUT);
++            try {
++                const response = await fetchWithAppId(url, withContentPrefetchPriority({
++                    cache: "default",
++                    credentials: "same-origin",
++                    redirect: "error",
++                    signal: imageAbortController.signal,
++                }));
++                if (response.ok) {
++                    await readImageBody(response);
++                }
++            } catch {
++                continue;
++            } finally {
++                clearTimeout(timeout);
++                imageAbortController = undefined;
++            }
++        }
++    } finally {
++        imageFetching = false;
++    }
++};
++
++const bindContentImageLifecycle = () => {
++    if (lifecycleBound || typeof document === "undefined") {
++        return;
++    }
++    lifecycleBound = true;
++    document.addEventListener("visibilitychange", () => {
++        if (document.hidden) {
++            cancelContentImagePrefetch();
++        }
++    });
++    window.addEventListener("offline", () => cancelContentImagePrefetch());
++    window.addEventListener("pagehide", () => cancelContentImagePrefetch());
++};
++
++export const cancelContentImagePrefetch = () => {
++    imageGeneration++;
++    imageQueue.length = 0;
++    imageAbortController?.abort();
++    imageAbortController = undefined;
++};
++
++export const prefetchContentImages = (content: string) => {
++    if (!content || typeof document === "undefined" || !isContentPrefetchSettingEnabled() ||
++        isContentPrefetchNetworkRestricted() || document.hidden || contentPrefetchStore.hasContentForeground()) {
++        return;
++    }
++    bindContentImageLifecycle();
++    const template = document.createElement("template");
++    template.innerHTML = content;
++    const urls: string[] = [];
++    template.content.querySelectorAll("img").forEach(image => {
++        const source = image.getAttribute("data-src") || image.getAttribute("src");
++        if (!source) {
++            return;
++        }
++        const url = normalizeContentPrefetchAssetURL(source, document.baseURI, location.origin);
++        if (!url || prefetchedImages.has(url) || urls.includes(url)) {
++            return;
++        }
++        urls.push(url);
++    });
++    if (!urls.length) {
++        return;
++    }
++    if (prefetchedImages.size > MAX_IMAGE_HISTORY) {
++        prefetchedImages.clear();
++    }
++    urls.slice(0, MAX_IMAGES_PER_SEGMENT).forEach(url => {
++        if (imageQueue.length >= MAX_IMAGE_QUEUE) {
++            return;
++        }
++        prefetchedImages.add(url);
++        imageQueue.push(url);
++    });
++    scheduleImagePump();
++};
+diff --git a/app/src/protyle/scroll/contentPrefetchStore.ts b/app/src/protyle/scroll/contentPrefetchStore.ts
+new file mode 100644
+index 0000000..ea1b3ac
+--- /dev/null
++++ b/app/src/protyle/scroll/contentPrefetchStore.ts
+@@ -0,0 +1,264 @@
++import {
++    CONTENT_PREFETCH_MAX_EDITORS,
++    CONTENT_PREFETCH_MIN_INTERVAL,
++    CONTENT_PREFETCH_TTL,
++    getContentPrefetchKeySignature,
++    type IContentPrefetchKey,
++    type TContentPrefetchMode,
++} from "./contentPrefetchPolicy";
++
++interface IContentPrefetchEntry {
++    key: IContentPrefetchKey;
++    signature: string;
++    response: IWebSocketData;
++    generation: number;
++    time: number;
++}
++
++interface IContentPrefetchAttempt {
++    token: number;
++    controller: AbortController;
++}
++
++interface IContentPrefetchEditorState {
++    before?: IContentPrefetchEntry;
++    after?: IContentPrefetchEntry;
++    attempt?: IContentPrefetchAttempt;
++    lastAttempt: number;
++    usedAt: number;
++}
++
++const isExpired = (entry: IContentPrefetchEntry, now: number) => now - entry.time > CONTENT_PREFETCH_TTL;
++
++export class ContentPrefetchStore {
++    private editors = new Map<IProtyle, IContentPrefetchEditorState>();
++    private foregroundTokens = new Set<object>();
++    private generation = 0;
++    private token = 0;
++
++    public getGeneration() {
++        return this.generation;
++    }
++
++    public has(protyle: IProtyle, key: IContentPrefetchKey, now = Date.now()) {
++        const state = this.editors.get(protyle);
++        return !!state && !!this.takeEntry(state, key, now);
++    }
++
++    public take(protyle: IProtyle, key: IContentPrefetchKey, now = Date.now()) {
++        const state = this.editors.get(protyle);
++        if (!state) {
++            return undefined;
++        }
++        const entry = this.takeEntry(state, key, now);
++        if (!entry) {
++            return undefined;
++        }
++        this.clearEntry(state, key.mode);
++        return entry.response;
++    }
++
++    public store(protyle: IProtyle, key: IContentPrefetchKey, response: IWebSocketData,
++                 now: number, generation: number) {
++        if (generation !== this.generation) {
++            return false;
++        }
++        const state = this.getState(protyle, now);
++        const entry: IContentPrefetchEntry = {
++            key,
++            signature: getContentPrefetchKeySignature(key),
++            response,
++            generation,
++            time: now,
++        };
++        if (key.mode === 1) {
++            state.before = entry;
++        } else {
++            state.after = entry;
++        }
++        state.usedAt = now;
++        this.prune(now);
++        return true;
++    }
++
++    public canAttempt(protyle: IProtyle, now = Date.now()) {
++        if (this.hasContentForeground() || this.activeAttemptCount() >= 1) {
++            return false;
++        }
++        const state = this.editors.get(protyle);
++        if (state?.attempt) {
++            return false;
++        }
++        return !state || now - state.lastAttempt >= CONTENT_PREFETCH_MIN_INTERVAL;
++    }
++
++    public beginAttempt(protyle: IProtyle, controller: AbortController, now = Date.now()) {
++        if (!this.canAttempt(protyle, now)) {
++            return undefined;
++        }
++        const state = this.getState(protyle, now);
++        const token = ++this.token;
++        state.attempt = {token, controller};
++        state.lastAttempt = now;
++        state.usedAt = now;
++        return token;
++    }
++
++    public finishAttempt(protyle: IProtyle, token: number) {
++        const state = this.editors.get(protyle);
++        if (!state?.attempt || state.attempt.token !== token) {
++            return;
++        }
++        state.attempt = undefined;
++    }
++
++    public abortAttempt(protyle: IProtyle) {
++        const state = this.editors.get(protyle);
++        const attempt = state?.attempt;
++        if (!state || !attempt) {
++            return;
++        }
++        state.attempt = undefined;
++        attempt.controller.abort();
++    }
++
++    public abortAllAttempts() {
++        this.editors.forEach(state => {
++            const attempt = state.attempt;
++            if (!attempt) {
++                return;
++            }
++            state.attempt = undefined;
++            attempt.controller.abort();
++        });
++    }
++
++    public beginContentForeground() {
++        const token = {};
++        this.foregroundTokens.add(token);
++        this.abortAllAttempts();
++        contentPrefetchCancelHooks.forEach(hook => {
++            hook();
++        });
++        return () => {
++            this.foregroundTokens.delete(token);
++        };
++    }
++
++    public hasContentForeground() {
++        return this.foregroundTokens.size > 0;
++    }
++
++    public hasActiveAttempt() {
++        return this.activeAttemptCount() > 0;
++    }
++
++    public clear(protyle: IProtyle) {
++        this.abortAttempt(protyle);
++        this.editors.delete(protyle);
++        this.generation++;
++    }
++
++    public clearAll() {
++        this.editors.forEach(state => state.attempt?.controller.abort());
++        this.editors.clear();
++        this.generation++;
++    }
++
++    private activeAttemptCount() {
++        let count = 0;
++        this.editors.forEach(state => {
++            if (state.attempt) {
++                count++;
++            }
++        });
++        return count;
++    }
++
++    private getState(protyle: IProtyle, now: number) {
++        const current = this.editors.get(protyle);
++        if (current) {
++            current.usedAt = now;
++            return current;
++        }
++        if (this.editors.size >= CONTENT_PREFETCH_MAX_EDITORS) {
++            let oldest: IProtyle | undefined;
++            let oldestUsedAt = Number.MAX_SAFE_INTEGER;
++            this.editors.forEach((state, editor) => {
++                if (state.attempt || state.usedAt >= oldestUsedAt) {
++                    return;
++                }
++                oldest = editor;
++                oldestUsedAt = state.usedAt;
++            });
++            if (oldest) {
++                this.editors.delete(oldest);
++            }
++        }
++        const state: IContentPrefetchEditorState = {lastAttempt: 0, usedAt: now};
++        this.editors.set(protyle, state);
++        return state;
++    }
++
++    private takeEntry(state: IContentPrefetchEditorState, key: IContentPrefetchKey, now: number) {
++        const entry = key.mode === 1 ? state.before : state.after;
++        if (!entry) {
++            return undefined;
++        }
++        if (entry.signature !== getContentPrefetchKeySignature(key)) {
++            return undefined;
++        }
++        if (entry.generation !== this.generation || isExpired(entry, now)) {
++            this.clearEntry(state, key.mode);
++            return undefined;
++        }
++        state.usedAt = now;
++        return entry;
++    }
++
++    private clearEntry(state: IContentPrefetchEditorState, mode: TContentPrefetchMode) {
++        if (mode === 1) {
++            state.before = undefined;
++        } else {
++            state.after = undefined;
++        }
++    }
++
++    private prune(now: number) {
++        this.editors.forEach((state, protyle) => {
++            if (state.before && (state.before.generation !== this.generation || isExpired(state.before, now))) {
++                state.before = undefined;
++            }
++            if (state.after && (state.after.generation !== this.generation || isExpired(state.after, now))) {
++                state.after = undefined;
++            }
++            if (!state.before && !state.after && !state.attempt && now - state.usedAt > CONTENT_PREFETCH_TTL) {
++                this.editors.delete(protyle);
++            }
++        });
++    }
++}
++
++const contentPrefetchCancelHooks = new Set<() => void>();
++
++export const registerContentPrefetchCancelHook = (hook: () => void) => {
++    contentPrefetchCancelHooks.add(hook);
++};
++
++export const contentPrefetchStore = new ContentPrefetchStore();
++
++export const invalidateContentPrefetchFor = (protyle: IProtyle, cancelImages = false) => {
++    contentPrefetchStore.clear(protyle);
++    if (cancelImages) {
++        contentPrefetchCancelHooks.forEach(hook => {
++            hook();
++        });
++    }
++};
++
++export const invalidateContentPrefetch = () => {
++    contentPrefetchStore.clearAll();
++    contentPrefetchCancelHooks.forEach(hook => {
++        hook();
++    });
++};
+diff --git a/app/src/protyle/scroll/event.ts b/app/src/protyle/scroll/event.ts
+index 7154e3c..53fc252 100644
+--- a/app/src/protyle/scroll/event.ts
++++ b/app/src/protyle/scroll/event.ts
+@@ -78,6 +78,8 @@ export const scrollEvent = (protyle: IProtyle, element: HTMLElement) => {
+             }, Constants.TIMEOUT_LOAD);
+         }
+ 
++        protyle.scroll?.prefetchDynamic(protyle);
++
+         if (protyle.wysiwyg.element.getAttribute("data-top") || protyle.block.showAll ||
+             (protyle.scroll && protyle.scroll.element.classList.contains("fn__none")) || !protyle.scroll ||
+             protyle.scroll.lastScrollTop === element.scrollTop || protyle.scroll.lastScrollTop === -1 ||
+diff --git a/app/src/protyle/scroll/index.ts b/app/src/protyle/scroll/index.ts
+index 20ec8b0..79fd8b2 100644
+--- a/app/src/protyle/scroll/index.ts
++++ b/app/src/protyle/scroll/index.ts
+@@ -23,6 +23,14 @@ import {waitForPendingTransactions} from "../util/transactionQueue";
+ import {getKeymapBindings} from "../../util/keymapBindings";
+ import {scrollPageWithLoading} from "./page";
+ import {isPageScrollButtonsEnabled, PAGE_SCROLL_BUTTONS_CHANGED_EVENT} from "./pageButtons";
++import {contentPrefetchStore, invalidateContentPrefetchFor} from "./contentPrefetchStore";
++
++type TDynamicLoadOptions = {
++    beforeApply?: () => void,
++    onFinish?: (success: boolean) => void,
++    size?: number,
++    suppressFocus?: boolean,
++};
+ 
+ export class Scroll {
+     public element: HTMLElement;
+@@ -34,6 +42,7 @@ export class Scroll {
+     private indexAbortController?: AbortController;
+     private indexRequestID = 0;
+     private loadingAll = false;
++    private releaseContentForeground?: () => void;
+     public lastScrollTop: number;
+     public keepLoadedContent: boolean;   // 保持加载内容
+ 
+@@ -171,12 +180,7 @@ export class Scroll {
+         }, {passive: true});
+     }
+ 
+-    public loadDynamic(protyle: IProtyle, mode: TDynamicLoadMode, options?: {
+-        beforeApply?: () => void,
+-        onFinish?: (success: boolean) => void,
+-        size?: number,
+-        suppressFocus?: boolean,
+-    }) {
++    public loadDynamic(protyle: IProtyle, mode: TDynamicLoadMode, options?: TDynamicLoadOptions) {
+         const anchorElement = mode === 1 ?
+             protyle.wysiwyg.element.firstElementChild : protyle.wysiwyg.element.lastElementChild;
+         const anchorID = anchorElement?.getAttribute("data-node-id");
+@@ -204,9 +208,84 @@ export class Scroll {
+         if (isEncryptedBox(protyle.notebookId)) {
+             getDocParam.notebook = protyle.notebookId;
+         }
++        const contentPrefetch = window.siyuan.config?.editor?.contentPrefetch ?
++            require("./contentPrefetch") as typeof import("./contentPrefetch") : undefined;
++        if (contentPrefetch) {
++            this.releaseContentForeground = contentPrefetchStore.beginContentForeground();
++        }
++        if (contentPrefetch?.hasPrefetchedDynamicResponse(protyle, getDocParam, rootID)) {
++            void this.applyPrefetchedDynamicLoad(protyle, request, getDocParam, abortController, options)
++                .catch(() => this.finishDynamicLoad(request, protyle, false));
++            return true;
++        }
++        this.fetchDynamic(protyle, request, getDocParam, abortController, options);
++        return true;
++    }
++
++    public prefetchDynamic(protyle: IProtyle) {
++        if (!window.siyuan.config?.editor?.contentPrefetch) {
++            return;
++        }
++        const {scheduleContentPrefetch} = require("./contentPrefetch") as typeof import("./contentPrefetch");
++        const encrypted = isEncryptedBox(protyle.notebookId);
++        scheduleContentPrefetch(protyle, {
++            encrypted,
++            notebook: encrypted ? protyle.notebookId : undefined,
++            size: window.siyuan.config.editor.dynamicLoadBlocks,
++        });
++    }
++
++    private async applyPrefetchedDynamicLoad(protyle: IProtyle, request: IDynamicLoadRequest,
++                                             getDocParam: FileTreeGetDocRequestInput,
++                                             abortController: AbortController, options?: TDynamicLoadOptions) {
++        await waitForPendingTransactions(protyle);
++        const contentPrefetch = window.siyuan.config?.editor?.contentPrefetch ?
++            require("./contentPrefetch") as typeof import("./contentPrefetch") : undefined;
++        const prefetched = contentPrefetch?.consumePrefetchedDynamicResponse(protyle, getDocParam,
++            protyle.block.rootID);
++        if (prefetched) {
++            const currentAnchor = request.mode === 1 ?
++                protyle.wysiwyg.element.firstElementChild : protyle.wysiwyg.element.lastElementChild;
++            if (protyle.element.isConnected && this.dynamicLoadState.isCurrent(request, protyle.block.rootID,
++                currentAnchor?.getAttribute("data-node-id"))) {
++                let success = false;
++                try {
++                    options?.beforeApply?.();
++                    onGet({
++                        data: prefetched,
++                        protyle,
++                        suppressFocus: options?.suppressFocus,
++                        action: [
++                            request.mode === 1 ? Constants.CB_GET_BEFORE : Constants.CB_GET_APPEND,
++                            Constants.CB_GET_UNCHANGEID
++                        ],
++                    });
++                    success = prefetched.code === 0;
++                } catch {
++                    return;
++                } finally {
++                    this.finishDynamicLoad(request, protyle, success);
++                }
++                return;
++            }
++        }
++        const currentAnchor = request.mode === 1 ?
++            protyle.wysiwyg.element.firstElementChild : protyle.wysiwyg.element.lastElementChild;
++        if (!protyle.element.isConnected || abortController.signal.aborted ||
++            !this.dynamicLoadState.isCurrent(request, protyle.block.rootID,
++                currentAnchor?.getAttribute("data-node-id"))) {
++            this.finishDynamicLoad(request, protyle, false);
++            return;
++        }
++        this.fetchDynamic(protyle, request, getDocParam, abortController, options);
++    }
++
++    private fetchDynamic(protyle: IProtyle, request: IDynamicLoadRequest,
++                         getDocParam: FileTreeGetDocRequestInput, abortController: AbortController,
++                         options?: TDynamicLoadOptions) {
+         let success = false;
+         void fetchPost("/api/filetree/getDoc", getDocParam, getResponse => {
+-            const currentAnchor = mode === 1 ?
++            const currentAnchor = request.mode === 1 ?
+                 protyle.wysiwyg.element.firstElementChild : protyle.wysiwyg.element.lastElementChild;
+             const currentAnchorID = currentAnchor?.getAttribute("data-node-id");
+             if (!protyle.element.isConnected ||
+@@ -219,7 +298,7 @@ export class Scroll {
+                 protyle,
+                 suppressFocus: options?.suppressFocus,
+                 action: [
+-                    mode === 1 ? Constants.CB_GET_BEFORE : Constants.CB_GET_APPEND,
++                    request.mode === 1 ? Constants.CB_GET_BEFORE : Constants.CB_GET_APPEND,
+                     Constants.CB_GET_UNCHANGEID
+                 ],
+             });
+@@ -227,7 +306,6 @@ export class Scroll {
+         }, undefined, undefined, abortController.signal).finally(() => {
+             this.finishDynamicLoad(request, protyle, success);
+         });
+-        return true;
+     }
+ 
+     // 传入 messageId 时复用调用方的通知，由调用方负责关闭或恢复，避免覆盖后续提示。
+@@ -266,7 +344,12 @@ export class Scroll {
+     }
+ 
+     public invalidateDynamicLoad(protyle: IProtyle) {
+-        if (!this.dynamicLoadState.invalidate()) {
++        invalidateContentPrefetchFor(protyle, true);
++        const releaseContentForeground = this.releaseContentForeground;
++        this.releaseContentForeground = undefined;
++        releaseContentForeground?.();
++        const invalidatedRequest = this.dynamicLoadState.invalidate();
++        if (!invalidatedRequest) {
+             return;
+         }
+         const abortController = this.dynamicLoadAbortController;
+@@ -282,6 +365,9 @@ export class Scroll {
+         if (!this.dynamicLoadState.finish(request)) {
+             return;
+         }
++        const releaseContentForeground = this.releaseContentForeground;
++        this.releaseContentForeground = undefined;
++        releaseContentForeground?.();
+         const onFinish = this.dynamicLoadFinish;
+         this.dynamicLoadAbortController = undefined;
+         this.dynamicLoadFinish = undefined;
+diff --git a/app/src/protyle/scroll/indexRequest.test.ts b/app/src/protyle/scroll/indexRequest.test.ts
+index 0545b1e..d592a25 100644
+--- a/app/src/protyle/scroll/indexRequest.test.ts
++++ b/app/src/protyle/scroll/indexRequest.test.ts
+@@ -20,6 +20,8 @@ test("scroll index waits for writes and drops superseded requests and responses"
+         AbortController,
+         require: () => ({
+             waitForPendingTransactions: () => pending,
++            invalidateContentPrefetchFor: (): void => undefined,
++            contentPrefetchStore: {beginContentForeground: (): (() => void) => () => undefined},
+             fetchPost: (_url: string, data: any, callback: (response: any) => void) => {
+                 requests.push({id: data.id, callback});
+                 return Promise.resolve();
+@@ -58,6 +60,8 @@ test("page boundary loads preserve notebook scoping and focus suppression and re
+             isEncryptedBox: (notebook: string) => notebook === "encrypted",
+             onGet: (options: any) => rendered.push(options),
+             refreshSyntheticDragTarget() {},
++            invalidateContentPrefetchFor: (): void => undefined,
++            contentPrefetchStore: {beginContentForeground: (): (() => void) => () => undefined},
+             fetchPost: (_url: string, data: any, callback: (data: any) => void) => new Promise<void>(finish => {
+                 requests.push({data, callback, finish});
+             }),
+diff --git a/app/src/protyle/util/destroy.ts b/app/src/protyle/util/destroy.ts
+index 29bcb7e..8027ae8 100644
+--- a/app/src/protyle/util/destroy.ts
++++ b/app/src/protyle/util/destroy.ts
+@@ -16,11 +16,17 @@ import {unregisterViewFoldContext} from "./viewFold";
+ import {destroyAutoDirection} from "../render/autoDirection";
+ import {disposeSyncEditorSave} from "./editorSave";
+ import {destroyRelatedAVViews} from "../render/av/relatedView";
++import {invalidateContentPrefetchFor} from "../scroll/contentPrefetchStore";
+ 
+ export const destroy = (protyle: IProtyle) => {
+     if (!protyle) {
+         return;
+     }
++    if (protyle.scroll) {
++        protyle.scroll.invalidateDynamicLoad(protyle);
++    } else {
++        invalidateContentPrefetchFor(protyle, true);
++    }
+     protyle.title?.cancelPendingInput();
+     destroyRelatedAVViews(protyle.id);
+     protyle.title?.destroy?.();
+diff --git a/app/src/protyle/wysiwyg/transaction.ts b/app/src/protyle/wysiwyg/transaction.ts
+index e3ea1fc..e0707ca 100644
+--- a/app/src/protyle/wysiwyg/transaction.ts
++++ b/app/src/protyle/wysiwyg/transaction.ts
+@@ -2,6 +2,7 @@ import {suspendTabTitleEditingExit} from "../render/tabsRender";
+ import {escapeHtmlTextAndAttr} from "../../util/escape";
+ import {refreshBreadcrumbForIconChanges} from "../breadcrumb/iconRefresh";
+ import {fetchPost, fetchSyncPost} from "../../util/fetch";
++import {invalidateContentPrefetchFor} from "../scroll/contentPrefetchStore";
+ import dayjs from "dayjs";
+ import {restoreInlineElementBoundaryHTML} from "../util/inlineElementBoundary";
+ import {getEditorTransaction} from "../util/transactionContract";
+@@ -924,6 +925,7 @@ const updateBlock = (updateElements: Element[], protyle: IProtyle, operation: Ex
+ // 用于推送和撤销；普通模式在内核事务完成后回放，lite 模式仅更新本地 DOM。
+ export const onTransaction = (protyle: IProtyle, operations: IOperation[], isUndo: boolean,
+                               preserveTrackedRanges = isUndo) => {
++    invalidateContentPrefetchFor(protyle);
+     if (protyle.wysiwyg.element.firstElementChild?.classList.contains("protyle-password")) {
+         return;
+     }
+@@ -2603,6 +2605,9 @@ export const transaction = (protyle: IProtyle, doOperations: IOperation[], undoO
+         options?.callback?.();
+         return;
+     }
++    if (protyle) {
++        invalidateContentPrefetchFor(protyle);
++    }
+     cleanBlockSelectionModeOperations(doOperations);
+     cleanBlockSelectionModeOperations(undoOperations);
+     [doOperations, undoOperations].forEach(operations => operations?.forEach(operation => {
+diff --git a/app/src/protyle/wysiwyg/transactionAV.test.ts b/app/src/protyle/wysiwyg/transactionAV.test.ts
+index 72fff1b..e805f7c 100644
+--- a/app/src/protyle/wysiwyg/transactionAV.test.ts
++++ b/app/src/protyle/wysiwyg/transactionAV.test.ts
+@@ -16,6 +16,7 @@ const fixture = () => {
+     const undo: IOperation[][] = [];
+     const requests: {transactions: {collectionRemovalSourceVersions?: Record<string, string>}[]}[] = [];
+     const dependencies = {
++        invalidateContentPrefetchFor: (): void => undefined,
+         prepareAVHostTransaction: (_protyle: unknown, operations?: IOperation[]) => operations,
+         getTagRemovalChanges: (): [] => [],
+         hasReferenceRemoval: () => false,
+diff --git a/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts b/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts
+index 2730a96..27a4a5b 100644
+--- a/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts
++++ b/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts
+@@ -56,6 +56,7 @@ const fixture = (kind: "tags" | "references" | "mixed", mode = "") => {
+     const cleanup: IOperation = {action: "cleanupAttrViewBlocks", avID: "database", data: {ruleVersion: "version", items: []}};
+     const changes = kind === "references" ? [] : [{id: "block", tags: ["todo"]}];
+     const dependencies = {
++        invalidateContentPrefetchFor: (): void => undefined,
+         prepareAVHostTransaction: (_protyle: unknown, operations?: IOperation[]) => operations,
+         getProtyleTransactionOwner,
+         syncTrackedRanges: (editor: IProtyle) => synced.push(editor),
+@@ -311,6 +312,7 @@ for (const mode of ["success", "cancel", "previewError", "saveError"]) {
+                 focus: () => { containerFocusCalls++; document.activeElement = f.protyle.element; },
+             });
+             const dependencies = {
++        invalidateContentPrefetchFor: (): void => undefined,
+                 protyle: f.protyle,
+                 document,
+                 window: {siyuan: {mobile: {}, menus: {menu: {remove() {}}}}},
+diff --git a/app/src/protyle/wysiwyg/transactionImageDisplay.test.ts b/app/src/protyle/wysiwyg/transactionImageDisplay.test.ts
+index 7d0d5eb..382c09a 100644
+--- a/app/src/protyle/wysiwyg/transactionImageDisplay.test.ts
++++ b/app/src/protyle/wysiwyg/transactionImageDisplay.test.ts
+@@ -26,6 +26,7 @@ const browserCases = (transactionSource: string, displaySource: string, luteSour
+     let queued = 0;
+     const identity = (html: string) => html;
+     const dependencies = {
++        invalidateContentPrefetchFor: (): void => undefined,
+         getTagRemovalChanges: (): [] => [],
+         hasReferenceRemoval: () => false,
+         renderImageDisplay,
+diff --git a/app/src/protyle/wysiwyg/transactionInsertRendering.test.ts b/app/src/protyle/wysiwyg/transactionInsertRendering.test.ts
+index deebaaf..291bd43 100644
+--- a/app/src/protyle/wysiwyg/transactionInsertRendering.test.ts
++++ b/app/src/protyle/wysiwyg/transactionInsertRendering.test.ts
+@@ -169,6 +169,7 @@ const fixture = (containerType: ContainerType = "editor") => {
+     const identity = (value: string) => value;
+     const record = (kind: keyof typeof rendered, element: TestElement) => rendered[kind].push(element.getAttribute("data-node-id"));
+     const dependencies = {
++        invalidateContentPrefetchFor: (): void => undefined,
+         prepareAVHostTransaction: (_protyle: unknown, operations?: IOperation[]) => operations,
+         getTagRemovalChanges: (): [] => [],
+         hasReferenceRemoval: () => false,
+diff --git a/app/src/types/api/index.d.ts b/app/src/types/api/index.d.ts
+index fc6028d..9cbed81 100644
+--- a/app/src/types/api/index.d.ts
++++ b/app/src/types/api/index.d.ts
+@@ -2128,7 +2128,7 @@ export type SetCriterionRequestInput = { "criterion": CriterionInput | null; };
+ 
+ export type SetDatabaseBlockViewRequestInput = { "avID": string; "id": string; "viewID": string; };
+ 
+-export type SetEditorRequestInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
++export type SetEditorRequestInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "contentPrefetch"?: boolean | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
+ 
+ export type SetEntryVisibilityRequestInput = { "active"?: string | null; "profiles"?: Array<SettingEntryVisibilityProfileInput | null> | null; "version"?: number | null; };
+ 
+@@ -2272,13 +2272,13 @@ export type SettingEditing = { "maxCompletionTokens": number; "maxHistoryMessage
+ 
+ export type SettingEditingInput = { "maxCompletionTokens"?: number | null; "maxHistoryMessages"?: number | null; "modelId"?: string | null; "temperature"?: number | null; };
+ 
+-export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
++export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "contentPrefetch": boolean; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
+ 
+ export type SettingEditorFont = { "displayName": string; "family": string; "weight": number; };
+ 
+ export type SettingEditorFontInput = { "displayName"?: string | null; "family"?: string | null; "weight"?: number | null; };
+ 
+-export type SettingEditorInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
++export type SettingEditorInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "contentPrefetch"?: boolean | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
+ 
+ export type SettingEmbedding = { "apiKey": string; "baseURL": string; "batchSize": number; "concurrency": number; "dimensions": number; "enabled": boolean; "id": string; "name": string; "timeout": number; };
+ 
+diff --git a/app/src/types/config.d.ts b/app/src/types/config.d.ts
+index bd3f224..300e075 100644
+--- a/app/src/types/config.d.ts
++++ b/app/src/types/config.d.ts
+@@ -723,6 +723,8 @@ declare namespace Config {
+          * The number of blocks loaded each time they are dynamically loaded
+          */
+         dynamicLoadBlocks: number;
++        /** 是否预取当前文档邻近内容及其本地图片，默认关闭 */
++        contentPrefetch: boolean;
+         /**
+          * Whether the embedded block displays breadcrumbs
+          */
+diff --git a/kernel/api/setting_contract.go b/kernel/api/setting_contract.go
+index 98f1d3c..e3d1902 100644
+--- a/kernel/api/setting_contract.go
++++ b/kernel/api/setting_contract.go
+@@ -424,6 +424,7 @@ func settingEditorPayload(value *conf.Editor) *apicontract.SettingEditor {
+ 	result.KeepLoadedContent = value.KeepLoadedContent
+ 	result.PageScrollButtons = value.PageScrollButtons
+ 	result.DynamicLoadBlocks = value.DynamicLoadBlocks
++	result.ContentPrefetch = value.ContentPrefetch
+ 	result.Justify = value.Justify
+ 	result.RTL = value.RTL
+ 	result.AutoDirection = value.AutoDirection
+diff --git a/kernel/apicontract/schema.json b/kernel/apicontract/schema.json
+index 764529f..9f07f49 100644
+--- a/kernel/apicontract/schema.json
++++ b/kernel/apicontract/schema.json
+@@ -44857,6 +44857,16 @@
+             }
+           ]
+         },
++        "contentPrefetch": {
++          "anyOf": [
++            {
++              "type": "boolean"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
+         "cursorSurroundingLines": {
+           "anyOf": [
+             {
+@@ -49403,6 +49413,9 @@
+         "codeTabSpaces": {
+           "type": "integer"
+         },
++        "contentPrefetch": {
++          "type": "boolean"
++        },
+         "cursorSurroundingLines": {
+           "type": "integer"
+         },
+@@ -49671,6 +49684,7 @@
+         "codeLineWrap",
+         "codeSyntaxHighlightLineNum",
+         "codeTabSpaces",
++        "contentPrefetch",
+         "cursorSurroundingLines",
+         "databaseAttrClickMode",
+         "databaseAttrHideEmpty",
+@@ -50023,6 +50037,16 @@
+             }
+           ]
+         },
++        "contentPrefetch": {
++          "anyOf": [
++            {
++              "type": "boolean"
++            },
++            {
++              "type": "null"
++            }
++          ]
++        },
+         "cursorSurroundingLines": {
+           "anyOf": [
+             {
+diff --git a/kernel/apicontract/setting.go b/kernel/apicontract/setting.go
+index c768a48..ca773b1 100644
+--- a/kernel/apicontract/setting.go
++++ b/kernel/apicontract/setting.go
+@@ -290,6 +290,7 @@ type SettingEditor struct {
+ 	// PageScrollButtons 控制翻屏按钮，默认关闭，不迁移旧的本地偏好。
+ 	PageScrollButtons bool `json:"pageScrollButtons" api:"optional,nullable"`
+ 	DynamicLoadBlocks int  `json:"dynamicLoadBlocks" api:"optional,nullable"`
++	ContentPrefetch   bool `json:"contentPrefetch" api:"optional,nullable"`
+ 	Justify           bool `json:"justify" api:"optional,nullable"`
+ 	RTL               bool `json:"rtl" api:"optional,nullable"`
+ 	// AutoDirection 默认关闭；段落和标题按首个强方向字符排版，列表项独立调整标记和缩进。
+diff --git a/kernel/conf/editor.go b/kernel/conf/editor.go
+index 72c434e..3f866c5 100644
+--- a/kernel/conf/editor.go
++++ b/kernel/conf/editor.go
+@@ -105,6 +105,7 @@ type Editor struct {
+ 	MathDelimiterCompatibility      *bool          `json:"mathDelimiterCompatibility"`      // 粘贴和导入时兼容 LaTeX 公式分隔符，默认开启
+ 	DragHTMLFileToIframe            bool           `json:"dragHTMLFileToIframe"`            // 是否将拖拽的 HTML 文件嵌入为 IFrame 块
+ 	Markdown                        *util.Markdown `json:"markdown"`                        // Markdown 配置
++	ContentPrefetch                 bool           `json:"contentPrefetch"`
+ }
+ 
+ // NormalizeFontFamilies 清理字体列表并同步兼容旧版本的首选字体字段。
+@@ -228,6 +229,7 @@ func NewEditor() *Editor {
+ 		FloatWindowMode:                 0,
+ 		FloatWindowDelay:                new(620),
+ 		KeepLoadedContent:               false,
++		ContentPrefetch:                 false,
+ 		DynamicLoadBlocks:               192,
+ 		Justify:                         false,
+ 		RTL:                             false,

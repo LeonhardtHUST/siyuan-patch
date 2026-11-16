@@ -68,6 +68,7 @@ Several changes have been made to improve privacy and user experience:
 - Error reporting and diagnostic data collection are disabled
 - VIP badge and custom title bar displays are removed
 - System tray minimization is enabled by default when clicking the close button
+- Optional content prefetching follows document block boundaries to prepare nearby note sections and same-origin images; enable it in Settings - Editor - Behavior (disabled by default)
 
 ## Installation Guide
 

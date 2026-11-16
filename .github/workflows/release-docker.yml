@@ -53,6 +53,7 @@ jobs:
           git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/mock-vip-user.patch
           git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/docker-build.patch
           git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/math-renderer-registry.patch
+          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/content-prefetch.patch
 
           git status
 
