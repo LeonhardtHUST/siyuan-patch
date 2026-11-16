@@ -42,11 +42,25 @@ Choose the package format for your distribution and architecture:
 
 ### Docker
 
-The multi-architecture image is available on [Docker Hub](https://hub.docker.com/r/melashri/siyuan):
+Multi-architecture images are published to GHCR as `ghcr.io/leonhardthust/siyuan`:
 
 ```bash
-docker pull melashri/siyuan:latest
+docker pull ghcr.io/leonhardthust/siyuan:latest
 ```
+
+> `v3.8.10-p1` below is a **tag-format example**; it becomes pullable only after the first build with the new workflow. Until then, pull a previously published tag or `latest`.
+
+Image tags follow this discipline (see [PATCHES.md](PATCHES.md) for details):
+
+| Tag | Meaning |
+| --- | --- |
+| `vX.Y.Z` | Upstream source tag. The legacy bare image tag is `p0`: historical only, never published or overwritten. |
+| `vX.Y.Z-pN` | Canonical, immutable image tag for this repository. `N` is the repository-wide `PATCH_REVISION`. |
+| `latest` | Moving convenience alias. Not a version identity; do not use it for deployment or rollback. |
+
+`PATCH_REVISION` is a single repository-wide positive integer and is monotonic across upstream versions (it does not reset when a new upstream `vX.Y.Z` arrives). Changes to patches or build inputs must increment it; `.github/workflows/check-image-version.yml` enforces this on every PR and main push, and `release-docker` refuses to publish unless the exact commit passed that check on `main`.
+
+> **Deployment compatibility:** the server-side `deploy-siyuan` workflow lives in a private config repository. Support for `-pN`, numeric ordering, and exact image-reference health checks was merged there first (`8f441e4`). Keep that order when migrating: config first, then the image-tag producer. Push checks validate the code; scheduled or manual runs build and deploy images separately. PC / iOS / Android release builds continue to follow upstream `vX.Y.Z`; only Docker uses the patch revision.
 
 > Use `SHA256SUMS.txt` from the [latest release](https://github.com/MohamedElashri/siyuan-patch/releases/latest) to verify downloaded assets.
 
@@ -79,18 +93,18 @@ Several changes have been made to improve privacy and user experience:
 Linux releases include tar.gz, DEB, AppImage, RPM, and Arch Linux packages for x86-64 and ARM64.
 
 ### Docker Deployment
-Container images are available on Docker Hub:
+Container images are published to GHCR. Pin the full canonical tag or a digest (the `v3.8.10-p1` below is a format example, valid after the first new-workflow build):
+```bash
+docker pull ghcr.io/leonhardthust/siyuan:v3.8.10-p1
 ```
-docker pull melashri/siyuan:latest
-```
-Browse available tags at [Docker Hub](https://hub.docker.com/r/melashri/siyuan/tags)
+`latest` exists only as a moving alias. `deploy-siyuan` uses the full `vX.Y.Z-pN` tag and compares the running image reference as well as `/api/system/version` (which reports upstream `X.Y.Z`). See the [deployment compatibility and integration order](PATCHES.md#部署端兼容与合入顺序).
 
 ## Building from Source
 
 ### Automated Builds
-The repository automatically builds new versions every Tuesday and Friday at 20:00. For the most recent version, you can either:
-- Download from the latest release
-- Build from source following the instructions below
+- `release-cron` creates the upstream-semantics GitHub Release (`vX.Y.Z`).
+- `watch-upstream` checks every 6 hours, rehearses the patch series, and triggers `release-docker` for the full image tag `vX.Y.Z-pN`.
+- PC / iOS / Android builds are still triggered by `release-cron` with the upstream tag.
 
 ### Manual Build Instructions
 
@@ -101,15 +115,14 @@ The repository automatically builds new versions every Tuesday and Friday at 20:
    - Proceed with the build workflow
 
 3. Docker Image Builds
-   - Generate a Docker Hub access token at https://hub.docker.com/settings/security
-   - In your forked repository, navigate to Settings → Secrets and Variables → Actions
-   - Add the following repository secrets:
-     - `DOCKER_HUB_USER`: Your Docker Hub username
-     - `DOCKER_HUB_PWD`: Your Docker Hub access token
-   - Trigger the build workflow
-   - Build process takes approximately 10 minutes
+   - No Docker Hub secrets are needed: images are pushed to GHCR with the built-in `GITHUB_TOKEN`.
+   - Ensure the workflow has `packages: write` permission (already configured).
+   - Dispatch `release-docker` with the upstream tag or full image tag; the workflow derives `vX.Y.Z-pN` from `PATCH_REVISION`.
+   - Build time depends on cache and runner; the most recent runs took about 30.6 min (amd64) and 37.7 min (arm64).
 
-Note: If you need to rebuild an existing version, first delete it from the Releases page before triggering a new build.
+Note: To rebuild Docker content for the same upstream version, increment `PATCH_REVISION`
+instead of deleting a release; a new immutable `vX.Y.Z-pN` tag is produced. Deleting a
+GitHub Release is only relevant to the upstream `vX.Y.Z` PC/mobile release flow.
 
 
 ## Troubleshooting

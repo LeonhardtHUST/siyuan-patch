@@ -1,18 +1,119 @@
 name: release-docker
+
+# 镜像版本纪律（详细规则见 PATCHES.md）：
+# - 上游源码 tag：vX.Y.Z（不变）；canonical 镜像 tag：vX.Y.Z-pN（不可覆写）
+# - N 唯一来源：仓库根 PATCH_REVISION；完整 tag / patch_revision 输入必须与之相等
+# - 临时架构 tag：vX.Y.Z-pN-<arch>-<run_id>，与 canonical 分离，publish 失败可只重试 publish
+# - prepare 与 publish 均对 canonical tag 做 fail-closed 存在性检查
+# - 所有 release-docker 运行串行，避免同 upstream 并发发布竞争
+#
+# 本 workflow 不创建 GitHub Release；Release 仍由 release-cron 按上游 vX.Y.Z 语义维护。
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "release version/tag"
+        description: "上游 tag vX.Y.Z，或完整自构建 tag vX.Y.Z-pN（N 必须等于仓库 PATCH_REVISION）"
         required: true
+      patch_revision:
+        description: "兼容输入：留空即使用仓库 PATCH_REVISION；填写则必须与之一致"
+        required: false
+        default: ""
 
 concurrency:
-  group: release-docker-${{ inputs.version }}
+  group: release-docker
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    name: Prepare immutable image tag
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+    outputs:
+      upstream_tag: ${{ steps.resolve.outputs.upstream_tag }}
+      patch_revision: ${{ steps.resolve.outputs.patch_revision }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      revision_source: ${{ steps.resolve.outputs.revision_source }}
+      action: ${{ steps.decide.outputs.action }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Require main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::release-docker 只允许在 main 上运行（当前 ${{ github.ref }}）；不可变 tag 只能从 main 上已验证的 commit 发布"
+          exit 1
+
+      - name: Enforce version-discipline gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          node scripts/check-image-version.mjs gate \
+            --repo "${{ github.repository }}" \
+            --sha "${{ github.sha }}" \
+            --token-env GH_TOKEN
+
+      - name: Resolve image identity
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PATCH_REVISION: ${{ inputs.patch_revision }}
+        run: |
+          set -euo pipefail
+          node scripts/image-version.mjs resolve \
+            --version "$INPUT_VERSION" \
+            --patch-revision "$INPUT_PATCH_REVISION" \
+            --file PATCH_REVISION \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Query canonical tag in GHCR (fail closed)
+        id: registry
+        env:
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ steps.resolve.outputs.image_tag }}
+          ACTOR: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${OWNER,,}/siyuan"
+          node scripts/registry-tag-state.mjs \
+            --image "$image" \
+            --actor "$ACTOR" \
+            --token-env GHCR_TOKEN \
+            --check "canonical=${IMAGE_TAG}" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Decide build or safe skip
+        id: decide
+        env:
+          CANONICAL_STATE: ${{ steps.registry.outputs.canonical_state }}
+        run: |
+          set -euo pipefail
+          node scripts/image-version.mjs prepare \
+            --canonical-state "$CANONICAL_STATE" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Summarize prepare result
+        run: |
+          {
+            echo "### release-docker prepare"
+            echo "- upstream: \`${{ steps.resolve.outputs.upstream_tag }}\`"
+            echo "- canonical tag: \`${{ steps.resolve.outputs.image_tag }}\`"
+            echo "- patch revision: ${{ steps.resolve.outputs.patch_revision }}（${{ steps.resolve.outputs.revision_source }}）"
+            echo "- action: \`${{ steps.decide.outputs.action }}\`"
+            if [ "${{ steps.decide.outputs.action }}" = "skip" ]; then
+              echo "- canonical tag 已存在：安全跳过，不覆写。需要新构建请递增 PATCH_REVISION。"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   build:
     name: Build ${{ matrix.arch }}
+    needs: prepare
+    if: needs.prepare.outputs.action == 'build'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -23,8 +124,8 @@ jobs:
           - os: ubuntu-24.04-arm
             arch: arm64
     permissions:
-      packages: write
       contents: read
+      packages: write
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@v2.0.0
@@ -41,71 +142,194 @@ jobs:
         with:
           path: siyuan-note
 
-      - name: Clone origin and apply patches
+      - name: Clone upstream and apply patches
+        env:
+          UPSTREAM_TAG: ${{ needs.prepare.outputs.upstream_tag }}
         run: |
+          set -euo pipefail
           git config --global core.autocrlf false
-          cd ${{ github.workspace }}/siyuan-note/
-          git clone --branch ${{ github.event.inputs.version }} --depth=1 https://github.com/siyuan-note/siyuan.git
+          cd "${{ github.workspace }}/siyuan-note/"
+          git clone --branch "$UPSTREAM_TAG" --depth=1 https://github.com/siyuan-note/siyuan.git siyuan
           cd siyuan
 
-          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/disable-update.patch
-          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/default-config.patch
-          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/mock-vip-user.patch
-          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/docker-build.patch
-          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/math-renderer-registry.patch
-          git apply ${{ github.workspace }}/siyuan-note/patches/siyuan/content-prefetch.patch
+          git apply "${{ github.workspace }}/siyuan-note/patches/siyuan/disable-update.patch"
+          git apply "${{ github.workspace }}/siyuan-note/patches/siyuan/default-config.patch"
+          git apply "${{ github.workspace }}/siyuan-note/patches/siyuan/mock-vip-user.patch"
+          git apply "${{ github.workspace }}/siyuan-note/patches/siyuan/docker-build.patch"
+          git apply "${{ github.workspace }}/siyuan-note/patches/siyuan/math-renderer-registry.patch"
+          git apply "${{ github.workspace }}/siyuan-note/patches/siyuan/content-prefetch.patch"
 
           git status
 
+      - name: Check staging tag state (reuse on re-run)
+        id: staging
+        env:
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+          RUN_ID: ${{ github.run_id }}
+          ARCH: ${{ matrix.arch }}
+          ACTOR: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${OWNER,,}/siyuan"
+          staging="${IMAGE_TAG}-${ARCH}-${RUN_ID}"
+          echo "staging_tag=${staging}" >> "$GITHUB_OUTPUT"
+          node "${{ github.workspace }}/siyuan-note/scripts/registry-tag-state.mjs" \
+            --image "$image" \
+            --actor "$ACTOR" \
+            --token-env GHCR_TOKEN \
+            --check "staging=${staging}" \
+            --github-output "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
+        if: steps.staging.outputs.staging_state == 'absent'
         uses: docker/setup-buildx-action@v4.4.1
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
+        if: steps.staging.outputs.staging_state == 'absent'
         uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push staging arch image
+        if: steps.staging.outputs.staging_state == 'absent'
         working-directory: ${{ github.workspace }}/siyuan-note/siyuan
+        env:
+          OWNER: ${{ github.repository_owner }}
+          ARCH: ${{ matrix.arch }}
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+          UPSTREAM_TAG: ${{ needs.prepare.outputs.upstream_tag }}
+          PATCH_REVISION: ${{ needs.prepare.outputs.patch_revision }}
+          STAGING_TAG: ${{ steps.staging.outputs.staging_tag }}
         run: |
+          set -euo pipefail
+          image="ghcr.io/${OWNER,,}/siyuan"
           docker buildx build \
             --push \
             --platform "linux/${ARCH}" \
-            -t "ghcr.io/${OWNER,,}/siyuan:${VERSION}-${ARCH}" \
+            --label "org.opencontainers.image.version=${UPSTREAM_TAG}" \
+            --label "org.opencontainers.image.ref.name=${IMAGE_TAG}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "io.siyuan-patch.upstream-version=${UPSTREAM_TAG}" \
+            --label "io.siyuan-patch.patch-revision=${PATCH_REVISION}" \
+            -t "${image}:${STAGING_TAG}" \
             .
+
+      - name: Reuse existing staging image
+        if: steps.staging.outputs.staging_state == 'exists'
         env:
-          OWNER: ${{ github.repository_owner }}
-          VERSION: ${{ inputs.version }}
-          ARCH: ${{ matrix.arch }}
+          STAGING_TAG: ${{ steps.staging.outputs.staging_tag }}
+        run: echo "::notice::staging tag ${STAGING_TAG} 已存在（同一 run 重跑），复用，不重复构建"
 
   publish:
-    name: Publish multi-architecture image
-    needs: build
+    name: Publish immutable multi-arch tag
+    needs: [prepare, build]
+    if: needs.prepare.outputs.action == 'build'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Verify canonical absence and staging tags (fail closed)
+        id: verify
+        env:
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+          RUN_ID: ${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${OWNER,,}/siyuan"
+          node scripts/registry-tag-state.mjs \
+            --image "$image" \
+            --actor "$ACTOR" \
+            --token-env GHCR_TOKEN \
+            --check "canonical=${IMAGE_TAG}" \
+            --check "staging_amd64=${IMAGE_TAG}-amd64-${RUN_ID}" \
+            --check "staging_arm64=${IMAGE_TAG}-arm64-${RUN_ID}" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Decide publish
+        id: decide
+        env:
+          CANONICAL_STATE: ${{ steps.verify.outputs.canonical_state }}
+          STAGING_AMD64_STATE: ${{ steps.verify.outputs.staging_amd64_state }}
+          STAGING_ARM64_STATE: ${{ steps.verify.outputs.staging_arm64_state }}
+        run: |
+          set -euo pipefail
+          node scripts/image-version.mjs publish-check \
+            --canonical-state "$CANONICAL_STATE" \
+            --staging "amd64=${STAGING_AMD64_STATE}" \
+            --staging "arm64=${STAGING_ARM64_STATE}" \
+            --github-output "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.4.1
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish version and latest tags
+      - name: Publish canonical tag (immutable)
         env:
           OWNER: ${{ github.repository_owner }}
-          VERSION: ${{ inputs.version }}
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+          RUN_ID: ${{ github.run_id }}
         run: |
+          set -euo pipefail
           image="ghcr.io/${OWNER,,}/siyuan"
           docker buildx imagetools create \
-            -t "${image}:${VERSION}" \
+            -t "${image}:${IMAGE_TAG}" \
+            "${image}:${IMAGE_TAG}-amd64-${RUN_ID}" \
+            "${image}:${IMAGE_TAG}-arm64-${RUN_ID}"
+
+      - name: Verify canonical tag resolves
+        env:
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${OWNER,,}/siyuan"
+          docker buildx imagetools inspect "${image}:${IMAGE_TAG}" >/dev/null
+          echo "canonical tag 已发布：${image}:${IMAGE_TAG}"
+
+      - name: Update latest alias (non-canonical, best effort)
+        id: latest
+        continue-on-error: true
+        env:
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${OWNER,,}/siyuan"
+          docker buildx imagetools create \
             -t "${image}:latest" \
-            "${image}:${VERSION}-amd64" \
-            "${image}:${VERSION}-arm64"
+            "${image}:${IMAGE_TAG}-amd64-${RUN_ID}" \
+            "${image}:${IMAGE_TAG}-arm64-${RUN_ID}"
+
+      - name: Report latest alias outcome
+        if: steps.latest.outcome == 'failure'
+        env:
+          IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+        run: echo "::warning::canonical ${IMAGE_TAG} 已发布；latest 别名更新失败。latest 不是版本身份，部署请使用完整 tag。"
+
+      - name: Summarize publish result
+        run: |
+          {
+            echo "### release-docker publish"
+            echo "- canonical tag: \`${{ needs.prepare.outputs.image_tag }}\`（不可覆写）"
+            echo "- upstream: \`${{ needs.prepare.outputs.upstream_tag }}\`"
+            echo "- patch revision: ${{ needs.prepare.outputs.patch_revision }}"
+            echo "- latest: 移动别名（非版本身份）"
+          } >> "$GITHUB_STEP_SUMMARY"

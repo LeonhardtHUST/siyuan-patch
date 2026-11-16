@@ -1,0 +1,95 @@
+name: check-image-version
+
+# 版本纪律硬约束（不构建、不发布）。规则见 PATCHES.md。
+# 每个 main push / PR 都产生结论，供 release-docker prepare 按 commit SHA 查询。
+# 基线复核入口固定在 workflow bash 中：先取 base commit 的旧 checker 独立执行，
+# 再跑 head checker 做诊断；修改 head checker 不能跳过基线规则。
+# 分支保护 / 强制 review 不在本文件控制范围。
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Run helper unit tests
+        run: node --test scripts/image-version.test.mjs scripts/registry-tag-state.test.mjs scripts/check-image-version.test.mjs
+
+      - name: Validate PATCH_REVISION against base revision
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          base_sha="${PR_BASE_SHA:-${PUSH_BEFORE:-}}"
+          base_file="$(mktemp)"
+          diff_file="$(mktemp)"
+          changed=()
+          start=""
+          rm -f "$base_file"
+
+          if [ -n "$base_sha" ] && [ "$base_sha" != "0000000000000000000000000000000000000000" ]; then
+            if ! start="$(git merge-base "$base_sha" HEAD 2>/dev/null)"; then
+              start="$base_sha"
+            fi
+            if ! git cat-file -e "${start}^{commit}" 2>/dev/null; then
+              echo "::error::base commit ${start} 不可读，拒绝按首次引入放行"
+              exit 1
+            fi
+
+            if git show "${start}:PATCH_REVISION" > "$base_file" 2>/dev/null; then
+              echo "基线 PATCH_REVISION 取自 ${start}"
+            elif git cat-file -e "${start}:PATCH_REVISION" 2>/dev/null; then
+              echo "::error::读取 ${start}:PATCH_REVISION 失败，拒绝按首次引入放行"
+              exit 1
+            else
+              rm -f "$base_file"
+              echo "基线 ${start} 无 PATCH_REVISION（首次引入，N 必须为 1）"
+            fi
+
+            if ! git diff --name-only -z "$start" HEAD > "$diff_file"; then
+              echo "::error::git diff ${start} HEAD 失败，无法判定镜像相关变更"
+              exit 1
+            fi
+            while IFS= read -r -d '' path; do
+              changed+=(--changed-path "$path")
+            done < "$diff_file"
+          else
+            echo "无 base commit（全新分支）：按首次引入校验，N 必须为 1"
+          fi
+
+          base_args=()
+          [ -f "$base_file" ] && base_args+=(--base-file "$base_file")
+
+          if [ -n "$start" ] \
+            && git cat-file -e "${start}:scripts/image-version.mjs" 2>/dev/null \
+            && git cat-file -e "${start}:scripts/check-image-version.mjs" 2>/dev/null; then
+            tmp="$(mktemp -d)"
+            mkdir -p "$tmp/scripts"
+            if ! git show "${start}:scripts/image-version.mjs" > "$tmp/scripts/image-version.mjs"; then
+              echo "::error::读取基线 image-version.mjs 失败"
+              exit 1
+            fi
+            if ! git show "${start}:scripts/check-image-version.mjs" > "$tmp/scripts/check-image-version.mjs"; then
+              echo "::error::读取基线 check-image-version.mjs 失败"
+              exit 1
+            fi
+            echo "用基线 checker（${start}）独立复核版本纪律"
+            node "$tmp/scripts/check-image-version.mjs" ci \
+              --base-sha "$start" \
+              "${base_args[@]}" \
+              "${changed[@]}"
+          fi
+
+          echo "用 head checker 复核版本纪律（诊断）"
+          node scripts/check-image-version.mjs ci --base-sha "$base_sha"

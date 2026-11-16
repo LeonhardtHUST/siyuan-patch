@@ -1,11 +1,12 @@
 name: watch-upstream
 
-# 上游 SiYuan 发新版本后自动"预演"打补丁：
-#   全部通过 → 触发 release-docker 构建镜像
-#   任一失败 → 开 issue（GitHub 会把通知邮件发到 assignee），不构建
+# 上游 SiYuan 发新版本后自动预演打补丁：
+#   全部通过 → 触发 release-docker 构建完整镜像 tag vX.Y.Z-pN
+#   任一失败 → 开 issue（assignee 会收到 GitHub 通知邮件），不构建
 #
-# 幂等：目标版本的镜像已存在于 GHCR 时直接跳过，不重复构建、不重复开 issue。
-# 因此这个工作流可以放心每小时跑一次。
+# 幂等判断只看 canonical 完整 tag（vX.Y.Z-pN），其中 N 来自仓库根 PATCH_REVISION。
+# 旧的无后缀 vX.Y.Z 镜像视为 p0（仅历史/回滚），不参与判断，因此不会被误认为“已构建”。
+# 补丁更新并递增 PATCH_REVISION 后，同一上游会自动构建新的 pN；canonical tag 不可覆写。
 
 on:
   schedule:
@@ -13,7 +14,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "指定上游 tag（留空 = 自动取上游最新 release）"
+        description: "指定上游 tag vX.Y.Z 或完整 tag vX.Y.Z-pN（留空 = 自动取上游最新 release）"
+        required: false
+        default: ""
+      patch_revision:
+        description: "兼容输入：留空即使用仓库 PATCH_REVISION；填写则必须与之一致"
         required: false
         default: ""
       dry_run:
@@ -37,40 +42,54 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: 取目标版本
+      - name: 取目标版本并解析完整镜像 tag
         id: target
         env:
           GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PATCH_REVISION: ${{ inputs.patch_revision }}
         run: |
           set -euo pipefail
-          tag="${INPUT_VERSION:-}"
-          if [ -z "$tag" ]; then
-            tag=$(gh api repos/siyuan-note/siyuan/releases/latest --jq .tag_name)
+          version="${INPUT_VERSION:-}"
+          if [ -z "$version" ]; then
+            version=$(gh api repos/siyuan-note/siyuan/releases/latest --jq .tag_name)
           fi
-          if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+          if [ -z "$version" ] || [ "$version" = "null" ]; then
             echo "::error::拿不到上游版本"
             exit 1
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "目标版本：$tag"
+          node scripts/image-version.mjs resolve \
+            --version "$version" \
+            --patch-revision "$INPUT_PATCH_REVISION" \
+            --file PATCH_REVISION \
+            --github-output "$GITHUB_OUTPUT"
+          echo "上游 tag: $(grep '^upstream_tag=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)"
+          echo "canonical tag: $(grep '^image_tag=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)"
 
-      - name: 该版本镜像是否已构建
+      - name: 该完整镜像 tag 是否已构建
         id: image
         env:
-          TAG: ${{ steps.target.outputs.tag }}
           OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ steps.target.outputs.image_tag }}
+          UPSTREAM_TAG: ${{ steps.target.outputs.upstream_tag }}
+          ACTOR: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          slug="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')/siyuan"
-          tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${slug}:pull" | jq -r .token)
-          list=$(curl -fsS -H "Authorization: Bearer $tok" "https://ghcr.io/v2/${slug}/tags/list")
-          if echo "$list" | jq -e --arg t "$TAG" '(.tags // []) | index($t)' >/dev/null; then
+          image="ghcr.io/${OWNER,,}/siyuan"
+          node scripts/registry-tag-state.mjs \
+            --image "$image" \
+            --actor "$ACTOR" \
+            --token-env GHCR_TOKEN \
+            --check "canonical=${IMAGE_TAG}" \
+            --github-output "$GITHUB_OUTPUT"
+          state=$(grep '^canonical_state=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)
+          if [ "$state" = "exists" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "镜像已存在，无需构建"
+            echo "::notice::${IMAGE_TAG} 已存在，跳过构建（旧无后缀 ${UPSTREAM_TAG} 视为 p0，不参与幂等判断）"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "镜像缺失，开始预演打补丁"
+            echo "canonical tag 缺失，开始预演打补丁"
           fi
 
       # 预演：与 release-docker 完全相同的顺序逐项校验：先 --check，通过后立即真实应用，
@@ -80,16 +99,16 @@ jobs:
         if: steps.image.outputs.exists == 'false'
         continue-on-error: true
         env:
-          TAG: ${{ steps.target.outputs.tag }}
+          UPSTREAM_TAG: ${{ steps.target.outputs.upstream_tag }}
         run: |
           set -uo pipefail
-          git clone --depth=1 --branch "$TAG" https://github.com/siyuan-note/siyuan.git upstream
+          git clone --depth=1 --branch "$UPSTREAM_TAG" https://github.com/siyuan-note/siyuan.git upstream
           failed=0
           unchecked=0
           : > /tmp/report.md
-          # 补丁顺序必须与 release-docker.yml 的 Clone origin and apply patches 步骤保持一致
+          # 补丁顺序必须与 release-docker.yml 的 Clone upstream and apply patches 步骤保持一致
           # 注意：git -C upstream 会把工作目录切到 upstream/，补丁必须用绝对路径，
-          # 否则相对路径会被解析成 upstream/patches/... 导致每个补丁都"打不上"
+          # 否则相对路径会被解析成 upstream/patches/... 导致每个补丁都“打不上”
           for p in disable-update default-config mock-vip-user docker-build math-renderer-registry content-prefetch; do
             patch_file="${GITHUB_WORKSPACE}/patches/siyuan/${p}.patch"
             if [ "$unchecked" = 1 ]; then
@@ -106,14 +125,14 @@ jobs:
               failed=1
               unchecked=1
               printf '❌ `%s.patch`\n\n```\n%s\n```\n\n' "$p" "$out" >> /tmp/report.md
-              echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $TAG"
+              echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $UPSTREAM_TAG"
               continue
             fi
             if ! out=$(git -C upstream apply "$patch_file" 2>&1); then
               failed=1
               unchecked=1
               printf '❌ `%s.patch` —— 校验通过但应用失败\n\n```\n%s\n```\n\n' "$p" "$out" >> /tmp/report.md
-              echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $TAG"
+              echo "::error file=patches/siyuan/${p}.patch::补丁无法应用到 $UPSTREAM_TAG"
               continue
             fi
             printf '✅ `%s.patch`\n\n' "$p" >> /tmp/report.md
@@ -128,41 +147,41 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.target.outputs.tag }}
+          IMAGE_TAG: ${{ steps.target.outputs.image_tag }}
+          UPSTREAM_TAG: ${{ steps.target.outputs.upstream_tag }}
+          PATCH_REVISION: ${{ steps.target.outputs.patch_revision }}
           OWNER: ${{ github.repository_owner }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
         run: |
           set -uo pipefail
-          # 无论 issue 创建成功与否，报告都要落到本次 run 的 Summary 里
           {
-            echo "## 补丁无法应用到 ${TAG}"
+            echo "## 补丁无法应用到 ${UPSTREAM_TAG}（目标镜像 ${IMAGE_TAG}）"
             echo
             cat /tmp/report.md
           } >> "$GITHUB_STEP_SUMMARY"
 
-          title="patch-drift: ${TAG}"
-          if gh issue list --state open --search "in:title ${TAG}" --json title --jq '.[].title' | grep -qx "$title"; then
+          title="patch-drift: ${IMAGE_TAG}"
+          if gh issue list --state open --search "in:title ${IMAGE_TAG}" --json title --jq '.[].title' | grep -qx "$title"; then
             echo "已有同名 open issue，跳过创建"
           else
             {
-              echo "上游已发布 \`${TAG}\`，但补丁无法干净应用，**未触发构建**。"
+              echo "上游已发布 \`${UPSTREAM_TAG}\`，目标镜像 \`${IMAGE_TAG}\`（PATCH_REVISION=${PATCH_REVISION}），但补丁无法干净应用，**未触发构建**。"
               echo
               cat /tmp/report.md
               echo "---"
               echo "### 处理步骤"
               echo '```bash'
-              echo "git clone --branch ${TAG} --depth=1 https://github.com/siyuan-note/siyuan.git"
+              echo "git clone --branch ${UPSTREAM_TAG} --depth=1 https://github.com/siyuan-note/siyuan.git"
               echo "cd siyuan && git apply --check /path/to/siyuan-patch/patches/siyuan/<patch>"
               echo '```'
               echo "1. 用 \`git apply --3way\` 或 \`patch -p1 --fuzz=3\` 重打，**核对语义**（不要只看能打上）"
-              echo "2. 更新 \`patches/siyuan/*.patch\` 并推送"
+              echo "2. 更新 \`patches/siyuan/*.patch\`，并递增 \`PATCH_REVISION\`（同一 upstream 的镜像内容变更必须换新 pN）"
               echo "3. 重跑 \`watch-upstream\`"
             } > /tmp/issue.md
             gh issue create --title "$title" --body-file /tmp/issue.md --assignee "$OWNER" \
               || echo "::warning::issue 创建失败（仓库可能关闭了 Issues），请查看本次 run 的 Summary"
           fi
 
-          # 只有配置了 SMTP secrets 才会真的发信；否则靠 issue 的 GitHub 通知邮件
           if [ -n "${SMTP_HOST:-}" ]; then
             echo "smtp=true" >> "$GITHUB_OUTPUT"
           else
@@ -178,24 +197,27 @@ jobs:
           secure: true
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASS }}
-          subject: "[siyuan-patch] 补丁失配：${{ steps.target.outputs.tag }}"
+          subject: "[siyuan-patch] 补丁失配：${{ steps.target.outputs.image_tag }}（上游 ${{ steps.target.outputs.upstream_tag }}）"
           to: ${{ secrets.MAIL_TO }}
           from: siyuan-patch CI <${{ secrets.SMTP_USER }}>
           body: |
-            上游 ${{ steps.target.outputs.tag }} 的补丁预演失败，未触发构建。
-            详情见 issue：patch-drift: ${{ steps.target.outputs.tag }}
+            上游 ${{ steps.target.outputs.upstream_tag }} 的补丁预演失败，目标镜像 ${{ steps.target.outputs.image_tag }}，未触发构建。
+            详情见 issue：patch-drift: ${{ steps.target.outputs.image_tag }}
 
       - name: 触发镜像构建
         if: steps.image.outputs.exists == 'false' && steps.patches.outputs.failed == '0' && inputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.target.outputs.tag }}
+          IMAGE_TAG: ${{ steps.target.outputs.image_tag }}
+          PATCH_REVISION: ${{ steps.target.outputs.patch_revision }}
         run: |
-          gh workflow run release-docker.yml -f version="$TAG"
-          echo "已触发 release-docker：$TAG"
+          gh workflow run release-docker.yml --ref main -f version="$IMAGE_TAG" -f patch_revision="$PATCH_REVISION"
+          echo "已触发 release-docker：$IMAGE_TAG"
 
       - name: 补丁失配时让 job 失败
         if: steps.patches.outputs.failed == '1'
+        env:
+          IMAGE_TAG: ${{ steps.target.outputs.image_tag }}
         run: |
-          echo "::error::补丁无法应用到 ${{ steps.target.outputs.tag }}，已开 issue"
+          echo "::error::补丁无法应用到 $IMAGE_TAG，已开 issue"
           exit 1
