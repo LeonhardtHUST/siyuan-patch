@@ -1,0 +1,230 @@
+diff --git a/app/src/boot/startupError.test.ts b/app/src/boot/startupError.test.ts
+index b559d89..1ec8c90 100644
+--- a/app/src/boot/startupError.test.ts
++++ b/app/src/boot/startupError.test.ts
+@@ -25,7 +25,7 @@ class ElementStub extends EventTarget {
+     set innerHTML(_value: string) { assert.fail("diagnostics must be inserted as text"); }
+ }
+ 
+-const createPage = () => {
++const createPage = (timeout = 30000) => {
+     const document = Object.assign(new EventTarget(), {
+         body: new ElementStub(), documentElement: new ElementStub("HTML"), hidden: false,
+         createElement: (name: string) => new ElementStub(name.toUpperCase()),
+@@ -47,20 +47,40 @@ const createPage = () => {
+     };
+     let selected = "";
+     let reloads = 0;
++    let now = 0;
+     const timers = new Map<number, () => void>();
++    const scheduled = new Map<number, {callback: () => void; delay: number; due: number}>();
+     let timerID = 0;
+     const target = Object.assign(new EventTarget(), {
+         document,
+         navigator: {languages: ["en"], userAgent: "test browser", clipboard: {writeText: async () => {}}},
+         location: {href: "http://127.0.0.1:6806/stage/build/mobile/", reload: () => reloads++},
+         getSelection: () => ({removeAllRanges() {}, addRange() {}}),
+-        setTimeout: (callback: () => void) => { timers.set(++timerID, callback); return timerID; },
+-        clearTimeout: (id: number) => timers.delete(id),
++        setTimeout: (callback: () => void, delay = 0) => {
++            const id = ++timerID;
++            timers.set(id, callback);
++            scheduled.set(id, {callback, delay, due: now + delay});
++            return id;
++        },
++        clearTimeout: (id: number) => { timers.delete(id); scheduled.delete(id); },
+     });
++    const advance = (elapsed: number) => {
++        const until = now + elapsed;
++        for (;;) {
++            const next = [...scheduled.entries()].filter(([, timer]) => timer.due <= until)
++                .sort((left, right) => left[1].due - right[1].due)[0];
++            if (!next) break;
++            now = next[1].due;
++            scheduled.delete(next[0]);
++            timers.delete(next[0]);
++            next[1].callback();
++        }
++        now = until;
++    };
+     const previous = globalThis.window;
+     globalThis.window = target as unknown as Window & typeof globalThis;
+-    const startup = installStartupError(globalThis.window, "test-version");
+-    return {target, document, startup, find, timers, selected: () => selected, reloads: () => reloads,
++    const startup = installStartupError(globalThis.window, "test-version", timeout);
++    return {target, document, startup, find, timers, advance, selected: () => selected, reloads: () => reloads,
+         dispose: () => { startup.dispose(); globalThis.window = previous; }};
+ };
+ 
+@@ -149,6 +169,100 @@ test("background time does not consume a startup deadline", () => {
+     } finally { page.dispose(); }
+ });
+ 
++test("a slow main script download stays within the page resource budget without a false timeout", () => {
++    const page = createPage();
++    try {
++        page.advance(67000);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        assert.equal(page.document.querySelector(".startup-error"), undefined);
++        page.advance(52999);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        assert.equal(page.document.querySelector(".startup-error"), undefined);
++    } finally { page.dispose(); }
++});
++
++test("a page load that never finishes still fails at the bounded page budget", () => {
++    const page = createPage();
++    try {
++        page.advance(119999);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        page.advance(1);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "failed");
++        const details = page.find(element => element.tagName === "PRE").textContent;
++        assert.match(details, /stage=page/);
++        assert.match(details, /Startup timed out/);
++        page.target.dispatchEvent(new CustomEvent("siyuan-startup-stage", {detail: "plugins"}));
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "failed");
++        assert.equal(page.timers.size, 0);
++    } finally { page.dispose(); }
++});
++
++test("DOM readiness narrows an unadvanced page stage to the business timeout after main execution errors", () => {
++    const page = createPage();
++    try {
++        page.advance(67000);
++        page.target.dispatchEvent(Object.assign(new Event("error"), {error: new SyntaxError("main script crash")}));
++        page.document.dispatchEvent(new Event("DOMContentLoaded"));
++        assert.equal(page.timers.size, 1);
++        page.advance(29999);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        page.advance(1);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "failed");
++        const details = page.find(element => element.tagName === "PRE").textContent;
++        assert.match(details, /stage=page/);
++        assert.match(details, /main script crash/);
++        assert.match(details, /Startup timed out/);
++    } finally { page.dispose(); }
++});
++
++test("business stages keep the 30-second deadline after a slow page load", () => {
++    const page = createPage();
++    try {
++        page.advance(67000);
++        setStartupStage("plugins");
++        assert.equal(page.timers.size, 1);
++        page.advance(29999);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        page.advance(1);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "failed");
++        assert.match(page.find(element => element.tagName === "PRE").textContent, /stage=plugins/);
++    } finally { page.dispose(); }
++});
++
++test("a custom business timeout keeps the page resource floor and the requested deadline", () => {
++    const page = createPage(5000);
++    try {
++        page.advance(5000);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        setStartupStage("plugins");
++        page.advance(4999);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "loading");
++        page.advance(1);
++        assert.equal(page.document.documentElement.attributes.get("data-startup-state"), "failed");
++        assert.match(page.find(element => element.tagName === "PRE").textContent, /stage=plugins/);
++    } finally { page.dispose(); }
++});
++
++test("startup completion and disposal clear both page and business deadlines", () => {
++    const ready = createPage();
++    try {
++        ready.advance(1000);
++        completeStartup();
++        assert.equal(ready.timers.size, 0);
++        ready.advance(200000);
++        assert.equal(ready.document.documentElement.attributes.get("data-startup-state"), "ready");
++        assert.equal(ready.document.querySelector(".startup-error"), undefined);
++    } finally { ready.dispose(); }
++    const disposed = createPage();
++    try {
++        disposed.startup.dispose();
++        assert.equal(disposed.timers.size, 0);
++        disposed.advance(200000);
++        assert.equal(disposed.document.documentElement.attributes.get("data-startup-state"), "loading");
++        assert.equal(disposed.document.querySelector(".startup-error"), undefined);
++    } finally { disposed.dispose(); }
++});
++
+ test("desktop and mobile main script failures are diagnosed without treating extension resources as startup failures", () => {
+     for (const frontend of ["app", "desktop", "mobile"]) {
+         const page = createPage();
+diff --git a/app/src/boot/startupError.ts b/app/src/boot/startupError.ts
+index dd9e71c..e7ecab3 100644
+--- a/app/src/boot/startupError.ts
++++ b/app/src/boot/startupError.ts
+@@ -61,6 +61,8 @@ export const guardStartup = <T>(callback: (value: T) => unknown) => (value: T) =
+ };
+ 
+ export const installStartupError = (target: Window, version: string, timeout = 30000) => {
++    // 主程序脚本下载可能超过一分钟，页面资源阶段使用更宽的预算；业务阶段仍按 timeout 诊断。
++    const pageTimeout = Math.max(timeout, 120000);
+     const document = target.document;
+     let language = resolveStartupLanguage(target.navigator.languages || [target.navigator.language]);
+     let stage: TStartupStage = "page";
+@@ -68,6 +70,7 @@ export const installStartupError = (target: Window, version: string, timeout = 3
+     let runtimeError = "";
+     let ready = false;
+     let timer: number;
++    let budget = pageTimeout;
+ 
+     const render = () => {
+         if (!failure || ready || !document.body) return;
+@@ -158,7 +161,7 @@ export const installStartupError = (target: Window, version: string, timeout = 3
+     const armTimeout = () => {
+         target.clearTimeout(timer);
+         if (!ready && !failure && !document.hidden) {
+-            timer = target.setTimeout(() => fail(`${languages[language].startupTimeout}\n${runtimeError}\n${getStartupReadDiagnostic()}`), timeout);
++            timer = target.setTimeout(() => fail(`${languages[language].startupTimeout}\n${runtimeError}\n${getStartupReadDiagnostic()}`), budget);
+         }
+     };
+     const recordRuntimeError = (error: unknown) => {
+@@ -170,6 +173,7 @@ export const installStartupError = (target: Window, version: string, timeout = 3
+     const setStage = (event: CustomEvent<TStartupStage>) => {
+         if (!(event.detail in stageKeys)) return;
+         stage = event.detail;
++        budget = timeout;
+         document.documentElement.setAttribute("data-startup-stage", stage);
+         armTimeout();
+     };
+@@ -177,6 +181,14 @@ export const installStartupError = (target: Window, version: string, timeout = 3
+         language = resolveStartupLanguage([event.detail]);
+         render();
+     };
++    const onLoaded = () => {
++        render();
++        // 主程序已执行但未报告业务阶段时，后续诊断回到业务阶段预算。
++        if (stage === "page") {
++            budget = timeout;
++            armTimeout();
++        }
++    };
+     const onError = (event: ErrorEvent) => {
+         if (event.target !== target) {
+             const element = event.target as HTMLScriptElement;
+@@ -210,7 +222,7 @@ export const installStartupError = (target: Window, version: string, timeout = 3
+         target.removeEventListener("siyuan-startup-language", setLanguage);
+         target.removeEventListener("siyuan-startup-error", onFailure);
+         target.removeEventListener("siyuan-startup-ready", complete);
+-        document.removeEventListener("DOMContentLoaded", render);
++        document.removeEventListener("DOMContentLoaded", onLoaded);
+         document.removeEventListener("visibilitychange", armTimeout);
+     };
+     document.documentElement.setAttribute("data-startup-state", "loading");
+@@ -221,7 +233,7 @@ export const installStartupError = (target: Window, version: string, timeout = 3
+     target.addEventListener("siyuan-startup-language", setLanguage);
+     target.addEventListener("siyuan-startup-error", onFailure);
+     target.addEventListener("siyuan-startup-ready", complete);
+-    document.addEventListener("DOMContentLoaded", render);
++    document.addEventListener("DOMContentLoaded", onLoaded);
+     document.addEventListener("visibilitychange", armTimeout);
+     armTimeout();
+     return {fail, complete, dispose};

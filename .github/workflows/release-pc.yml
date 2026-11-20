@@ -146,6 +146,7 @@ jobs:
           git apply "${workspace}/siyuan-note/patches/siyuan/default-config.patch"
           git apply "${workspace}/siyuan-note/patches/siyuan/mock-vip-user.patch"
           git apply "${workspace}/siyuan-note/patches/siyuan/content-prefetch.patch"
+          git apply "${workspace}/siyuan-note/patches/siyuan/startup-slow-loading.patch"
 
           git status
 

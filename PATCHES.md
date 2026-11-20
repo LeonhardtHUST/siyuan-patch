@@ -21,7 +21,7 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 单一来源：`PATCH_REVISION`
 
-仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `1`），**全局单调、跨上游不重置**。
+仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `2`），**全局单调、跨上游不重置**。
 例如上游到 v3.8.11 时 N 若为 7，镜像 tag 是 `v3.8.11-p7`，不会回到 p1。
 
 - `release-docker` / `watch-upstream` 的 `patch_revision` 输入仅为向后兼容：留空即使用文件，填写则必须与文件相等，否则拒绝。
@@ -68,6 +68,7 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 | `patches/siyuan/docker-build.patch` | Docker 构建适配 | docker | 上游自带 |
 | **`patches/siyuan/math-renderer-registry.patch`** | **数学渲染器注册表：允许插件在 KaTeX 之前认领公式节点** | **docker（已接）** | **本 fork 新增，见下** |
 | **`patches/siyuan/content-prefetch.patch`** | **可选的块边界内容预取与同源图片预取** | **PC / Docker / Android / iOS** | **默认关闭，见下** |
+| **`patches/siyuan/startup-slow-loading.patch`** | **慢启动诊断：页面资源阶段独立 120 秒预算，业务阶段仍 30 秒** | **PC / Docker / Android / iOS** | **本 fork 新增，见下** |
 
 ## math-renderer-registry.patch
 
@@ -144,7 +145,13 @@ npx esbuild app/src/protyle/render/mathRender.ts --loader:.ts=ts --outfile=/dev/
 
 ### 构建与验证
 
-本补丁基于 **v3.8.10**，独立于数学渲染器补丁，已接入 PC、Docker、Android、iOS 的源码补丁阶段及 `watch-upstream` 漂移预检。配置字段、UI、多语言和行为回归测试随补丁一起应用。
+本补丁基于 **v3.8.11**，独立于数学渲染器补丁，已接入 PC、Docker、Android、iOS 的源码补丁阶段及 `watch-upstream` 漂移预检。配置字段、UI、多语言和行为回归测试随补丁一起应用。
+
+v3.8.11 刷新时改动过的冲突点（供下次对照）：22 个语言包在文件首行各新增 `contentPrefetch` /
+`contentPrefetchTip`，上游同版本也在文件头部追加了新键，因此两条键放在上游新增键之前，键集合仍与其余语言一致；
+`app/src/types/api/index.d.ts` 的三处 `SetEditor*` 类型按字母序插在 `codeTabSpaces` 之后，并保留上游
+新增的 `databaseShowIcon`、`databaseShowRelationIcon`、`hideBreadcrumbIcons`；事务相关的单测夹具把
+`invalidateContentPrefetchFor` 桩并入上游扩展后的依赖对象。
 
 ```bash
 # 在未打补丁的固定版本源码树中检查，再应用
@@ -161,6 +168,33 @@ pnpm run api:check
 人工验收应使用长文档与网络节流，对比开关前后的分块请求时间、滚动连续性和额外流量；同时核对向上滚动、快速换向、编辑后滚动、多窗口修改、关闭开关、锁定加密笔记本以及移动端。补丁应用与状态机测试通过不等于已验证所有平台的实际弱网体验。
 
 维护设置契约时，可在上游 `kernel/` 目录执行 `go test ./apicontract/...` 以及 `go test ./api -run 'TestSetting|TestAPIContractSetting|TestSetEditorNullRestoresDefault' -count=1`，覆盖字段映射、完整载荷、设置合并与默认值恢复。22 语言键检查使用上游根目录的 `python scripts/check-lang-keys.py`。该补丁本身不改变部署层 HTTP/2/3、静态资源长期缓存、WebSocket 压缩或镜像标签；镜像 tag 纪律由独立的 CI 变更引入（见上文「镜像版本与不可变 tag 纪律」），与本补丁无关。这些增强应独立测量和回归，不能从预取测试的通过推断其收益。
+
+## startup-slow-loading.patch
+
+### 它解决了什么
+
+上游 `app/src/boot/startupError.ts` 用同一个启动超时覆盖页面资源加载与业务初始化两个阶段。主程序脚本下载本身超过该预算时（现场 v3.8.10 的 `main` 约 67 秒），诊断会在业务阶段尚未开始时误报 `stage=page` 超时。
+
+本补丁把两个阶段分开计时：
+
+1. 页面资源阶段使用独立预算 `pageTimeout = Math.max(timeout, 120000)`，默认 120 秒。它是有界定时器，不等待 `load` 事件；主程序一直不返回也会在 120 秒失败。
+2. 任意 `siyuan-startup-stage` 事件把预算切回原来的 30 秒（`timeout` 默认 30000）并重新计时，业务阶段时限没有放宽。自定义 `timeout` 时页面下限仍为 120 秒，业务阶段按传入值。
+3. `DOMContentLoaded` 时若阶段仍为 `page`（主程序已执行或已报错但未上报阶段），预算收窄为 30 秒并从 DOM ready 起重计，避免已崩溃的页面再等满 120 秒；阶段标签仍显示 `page`。
+4. 主脚本资源 `error` 仍立即失败，运行时错误仍进入超时诊断，页面隐藏时暂停计时、`ready` 与 `dispose` 清理计时器的行为不变。
+
+### 适用范围与验证
+
+补丁基于 **v3.8.10**，只修改 `app/src/boot/startupError.ts` 与其单测。PC / Docker / Android / iOS 均在 `content-prefetch.patch` 之后应用；`watch-upstream` 的预演顺序与 `release-docker` 一致，本补丁位于末尾。
+
+```bash
+git apply --check /path/to/siyuan-patch/patches/siyuan/startup-slow-loading.patch
+git apply /path/to/siyuan-patch/patches/siyuan/startup-slow-loading.patch
+
+# 在应用后的 app/ 目录
+pnpm run test:focused src/boot/startupError.test.ts
+```
+
+补丁应用与单测通过只说明启动诊断的计时逻辑正确；现场网络、CDN 与浏览器行为仍需分别观察，不能据此推断所有慢启动都会被覆盖。
 
 ## 构建注意事项
 

@@ -109,7 +109,7 @@ jobs:
           # 补丁顺序必须与 release-docker.yml 的 Clone upstream and apply patches 步骤保持一致
           # 注意：git -C upstream 会把工作目录切到 upstream/，补丁必须用绝对路径，
           # 否则相对路径会被解析成 upstream/patches/... 导致每个补丁都“打不上”
-          for p in disable-update default-config mock-vip-user docker-build math-renderer-registry content-prefetch; do
+          for p in disable-update default-config mock-vip-user docker-build math-renderer-registry content-prefetch startup-slow-loading; do
             patch_file="${GITHUB_WORKSPACE}/patches/siyuan/${p}.patch"
             if [ "$unchecked" = 1 ]; then
               printf '⏭️ `%s.patch` —— 前序补丁未通过，本项未检查\n\n' "$p" >> /tmp/report.md
