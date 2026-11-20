@@ -1,245 +1,245 @@
 diff --git a/app/appearance/langs/ar.json b/app/appearance/langs/ar.json
-index 6c4b614..6c2604e 100644
+index 5b9c1a7..266ecef 100644
 --- a/app/appearance/langs/ar.json
 +++ b/app/appearance/langs/ar.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "الجلب المسبق للمحتوى",
 +	"contentPrefetchTip": "عند التفعيل، يتم الجلب المسبق للمحتوى المجاور في المستند الحالي وصوره المحلية أثناء القراءة لتقليل انتظار التمرير؛ معطّل افتراضيًا",
- 	"markdownAppearanceSettings": "إعدادات المظهر",
- 	"markdownFontSizeSettings": "إعدادات حجم الخط",
- 	"markdownFontSettings": "إعدادات الخط",
+ 	"confirmActionFailed": "فشلت العملية. يرجى المحاولة مرة أخرى",
+ 	"updateInstallNow": "التثبيت الآن",
+ 	"updateInstallLater": "ليس الآن",
 diff --git a/app/appearance/langs/de.json b/app/appearance/langs/de.json
-index e004e4a..b49a7c7 100644
+index 224b266..0970369 100644
 --- a/app/appearance/langs/de.json
 +++ b/app/appearance/langs/de.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Inhalte vorab laden",
 +	"contentPrefetchTip": "Wenn aktiviert, werden beim Lesen benachbarte Inhalte des aktuellen Dokuments und deren lokale Bilder vorab geladen, um die Wartezeit beim Scrollen zu verkürzen; standardmäßig deaktiviert",
- 	"markdownAppearanceSettings": "Darstellungseinstellungen",
- 	"markdownFontSizeSettings": "Schriftgrößeneinstellungen",
- 	"markdownFontSettings": "Schrifteinstellungen",
+ 	"confirmActionFailed": "Vorgang fehlgeschlagen. Bitte erneut versuchen",
+ 	"updateInstallNow": "Jetzt installieren",
+ 	"updateInstallLater": "Später installieren",
 diff --git a/app/appearance/langs/en.json b/app/appearance/langs/en.json
-index 1c12c24..2879520 100644
+index 3c230b8..a5adaeb 100644
 --- a/app/appearance/langs/en.json
 +++ b/app/appearance/langs/en.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Content prefetch",
 +	"contentPrefetchTip": "Prefetch nearby content of the current document and its local images while reading to reduce scroll loading time; off by default",
- 	"markdownAppearanceSettings": "Appearance settings",
- 	"markdownFontSizeSettings": "Font size settings",
- 	"markdownFontSettings": "Font settings",
+ 	"confirmActionFailed": "Operation failed. Please try again",
+ 	"updateInstallNow": "Install now",
+ 	"updateInstallLater": "Not now",
 diff --git a/app/appearance/langs/es.json b/app/appearance/langs/es.json
-index 33f993e..07fa0f4 100644
+index e395675..bb846ff 100644
 --- a/app/appearance/langs/es.json
 +++ b/app/appearance/langs/es.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Precarga de contenido",
 +	"contentPrefetchTip": "Al activarse, precarga el contenido cercano del documento actual y sus imágenes locales durante la lectura para reducir la espera al desplazarse; desactivado de forma predeterminada",
- 	"markdownAppearanceSettings": "Ajustes de apariencia",
- 	"markdownFontSizeSettings": "Ajustes de tamaño de fuente",
- 	"markdownFontSettings": "Ajustes de fuente",
+ 	"confirmActionFailed": "La operación falló. Inténtalo de nuevo",
+ 	"updateInstallNow": "Instalar ahora",
+ 	"updateInstallLater": "Ahora no",
 diff --git a/app/appearance/langs/fr.json b/app/appearance/langs/fr.json
-index 2825a90..dea7a94 100644
+index 3a9375b..f07ddf3 100644
 --- a/app/appearance/langs/fr.json
 +++ b/app/appearance/langs/fr.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Préchargement du contenu",
 +	"contentPrefetchTip": "Une fois activé, précharge le contenu voisin du document actuel et ses images locales pendant la lecture afin de réduire l’attente lors du défilement ; désactivé par défaut",
- 	"markdownAppearanceSettings": "Paramètres d’apparence",
- 	"markdownFontSizeSettings": "Paramètres de taille de police",
- 	"markdownFontSettings": "Paramètres de police",
+ 	"confirmActionFailed": "L'opération a échoué. Veuillez réessayer",
+ 	"updateInstallNow": "Installer maintenant",
+ 	"updateInstallLater": "Plus tard",
 diff --git a/app/appearance/langs/he.json b/app/appearance/langs/he.json
-index e11c32b..8c9a130 100644
+index f9906c7..951582e 100644
 --- a/app/appearance/langs/he.json
 +++ b/app/appearance/langs/he.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "טעינה מוקדמת של תוכן",
 +	"contentPrefetchTip": "כאשר מופעל, נטענים מראש תוכן סמוך במסמך הנוכחי והתמונות המקומיות שבו בזמן הקריאה כדי לקצר את ההמתנה בגלילה; מושבת כברירת מחדל",
- 	"markdownAppearanceSettings": "הגדרות מראה",
- 	"markdownFontSizeSettings": "הגדרות גודל גופן",
- 	"markdownFontSettings": "הגדרות גופן",
+ 	"confirmActionFailed": "הפעולה נכשלה. יש לנסות שוב",
+ 	"updateInstallNow": "התקנה עכשיו",
+ 	"updateInstallLater": "לא עכשיו",
 diff --git a/app/appearance/langs/hi.json b/app/appearance/langs/hi.json
-index bf31655..29f86cd 100644
+index 9e17092..b2f8a57 100644
 --- a/app/appearance/langs/hi.json
 +++ b/app/appearance/langs/hi.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "सामग्री प्रीफ़ेच",
 +	"contentPrefetchTip": "सक्षम होने पर पढ़ते समय वर्तमान दस्तावेज़ की निकटवर्ती सामग्री और उसकी स्थानीय छवियाँ पहले से लोड की जाती हैं ताकि स्क्रॉल करते समय प्रतीक्षा कम हो; डिफ़ॉल्ट रूप से बंद",
- 	"markdownAppearanceSettings": "दिखावट सेटिंग्स",
- 	"markdownFontSizeSettings": "फ़ॉन्ट आकार सेटिंग्स",
- 	"markdownFontSettings": "फ़ॉन्ट सेटिंग्स",
+ 	"confirmActionFailed": "कार्रवाई विफल रही। कृपया दोबारा प्रयास करें",
+ 	"updateInstallNow": "अभी इंस्टॉल करें",
+ 	"updateInstallLater": "अभी नहीं",
 diff --git a/app/appearance/langs/id.json b/app/appearance/langs/id.json
-index e9341ad..1cf6594 100644
+index 4e53f1e..a44a315 100644
 --- a/app/appearance/langs/id.json
 +++ b/app/appearance/langs/id.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Pramuat konten",
 +	"contentPrefetchTip": "Saat diaktifkan, konten di sekitar dokumen saat ini dan gambar lokalnya dimuat terlebih dahulu selama membaca untuk mengurangi waktu tunggu saat menggulir; nonaktif secara default",
- 	"markdownAppearanceSettings": "Pengaturan tampilan",
- 	"markdownFontSizeSettings": "Pengaturan ukuran font",
- 	"markdownFontSettings": "Pengaturan font",
+ 	"confirmActionFailed": "Operasi gagal. Silakan coba lagi",
+ 	"updateInstallNow": "Instal sekarang",
+ 	"updateInstallLater": "Nanti saja",
 diff --git a/app/appearance/langs/it.json b/app/appearance/langs/it.json
-index f7c59bd..8058e97 100644
+index 3300aa6..dcb5953 100644
 --- a/app/appearance/langs/it.json
 +++ b/app/appearance/langs/it.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Precaricamento dei contenuti",
 +	"contentPrefetchTip": "Se attivato, precarica i contenuti vicini del documento corrente e le relative immagini locali durante la lettura per ridurre l’attesa dello scorrimento; disattivato per impostazione predefinita",
- 	"markdownAppearanceSettings": "Impostazioni dell’aspetto",
- 	"markdownFontSizeSettings": "Impostazioni della dimensione del carattere",
- 	"markdownFontSettings": "Impostazioni dei caratteri",
+ 	"confirmActionFailed": "Operazione non riuscita. Riprova",
+ 	"updateInstallNow": "Installa ora",
+ 	"updateInstallLater": "Non ora",
 diff --git a/app/appearance/langs/ja.json b/app/appearance/langs/ja.json
-index 1f795dc..e829e45 100644
+index fe7dcc7..273c6b0 100644
 --- a/app/appearance/langs/ja.json
 +++ b/app/appearance/langs/ja.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "コンテンツの先読み",
 +	"contentPrefetchTip": "有効にすると、閲覧中に現在のドキュメントの近接する内容とそのローカル画像を先読みし、スクロール時の待ち時間を短縮します。既定では無効",
- 	"markdownAppearanceSettings": "外観設定",
- 	"markdownFontSizeSettings": "文字サイズ設定",
- 	"markdownFontSettings": "フォント設定",
+ 	"confirmActionFailed": "操作に失敗しました。もう一度お試しください",
+ 	"updateInstallNow": "今すぐインストール",
+ 	"updateInstallLater": "今はインストールしない",
 diff --git a/app/appearance/langs/ko.json b/app/appearance/langs/ko.json
-index c3499f4..6756f10 100644
+index da54f58..a9f10e3 100644
 --- a/app/appearance/langs/ko.json
 +++ b/app/appearance/langs/ko.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "콘텐츠 미리 가져오기",
 +	"contentPrefetchTip": "활성화하면 읽는 동안 현재 문서 주변 콘텐츠와 로컬 이미지를 미리 가져와 스크롤 대기 시간을 줄입니다. 기본값은 꺼짐",
- 	"markdownAppearanceSettings": "외관 설정",
- 	"markdownFontSizeSettings": "글꼴 크기 설정",
- 	"markdownFontSettings": "글꼴 설정",
+ 	"confirmActionFailed": "작업에 실패했습니다. 다시 시도해 주세요",
+ 	"updateInstallNow": "지금 설치",
+ 	"updateInstallLater": "나중에 설치",
 diff --git a/app/appearance/langs/nl.json b/app/appearance/langs/nl.json
-index 93b4b73..7f9ba16 100644
+index 48da5b1..929e4f1 100644
 --- a/app/appearance/langs/nl.json
 +++ b/app/appearance/langs/nl.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Inhoud vooraf laden",
 +	"contentPrefetchTip": "Indien ingeschakeld worden tijdens het lezen nabije inhoud van het huidige document en de bijbehorende lokale afbeeldingen vooraf geladen om de wachttijd bij scrollen te verkorten; standaard uitgeschakeld",
- 	"markdownAppearanceSettings": "Weergave-instellingen",
- 	"markdownFontSizeSettings": "Instellingen voor lettergrootte",
- 	"markdownFontSettings": "Lettertype-instellingen",
+ 	"confirmActionFailed": "De bewerking is mislukt. Probeer het opnieuw",
+ 	"updateInstallNow": "Nu installeren",
+ 	"updateInstallLater": "Niet nu",
 diff --git a/app/appearance/langs/pl.json b/app/appearance/langs/pl.json
-index 42397df..86062bc 100644
+index da10678..e183347 100644
 --- a/app/appearance/langs/pl.json
 +++ b/app/appearance/langs/pl.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Wstępne wczytywanie treści",
 +	"contentPrefetchTip": "Po włączeniu podczas czytania wstępnie wczytywana jest sąsiednia treść bieżącego dokumentu i jej lokalne obrazy, aby skrócić oczekiwanie na przewijanie; domyślnie wyłączone",
- 	"markdownAppearanceSettings": "Ustawienia wyglądu",
- 	"markdownFontSizeSettings": "Ustawienia rozmiaru czcionki",
- 	"markdownFontSettings": "Ustawienia czcionek",
+ 	"confirmActionFailed": "Operacja nie powiodła się. Spróbuj ponownie",
+ 	"updateInstallNow": "Zainstaluj teraz",
+ 	"updateInstallLater": "Nie teraz",
 diff --git a/app/appearance/langs/pt-BR.json b/app/appearance/langs/pt-BR.json
-index 2479e77..fe96daf 100644
+index baa56d0..29e10b0 100644
 --- a/app/appearance/langs/pt-BR.json
 +++ b/app/appearance/langs/pt-BR.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Pré-carregamento de conteúdo",
 +	"contentPrefetchTip": "Quando ativado, pré-carrega o conteúdo próximo do documento atual e suas imagens locais durante a leitura para reduzir a espera ao rolar; desativado por padrão",
- 	"markdownAppearanceSettings": "Configurações de aparência",
- 	"markdownFontSizeSettings": "Configurações de tamanho da fonte",
- 	"markdownFontSettings": "Configurações de fonte",
+ 	"confirmActionFailed": "Falha na operação. Tente novamente",
+ 	"updateInstallNow": "Instalar agora",
+ 	"updateInstallLater": "Agora não",
 diff --git a/app/appearance/langs/ru.json b/app/appearance/langs/ru.json
-index e94b744..4e03b5b 100644
+index 9cfa66e..d812294 100644
 --- a/app/appearance/langs/ru.json
 +++ b/app/appearance/langs/ru.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Предзагрузка содержимого",
 +	"contentPrefetchTip": "Если включено, при чтении предварительно загружается соседнее содержимое текущего документа и его локальные изображения, чтобы сократить ожидание при прокрутке; по умолчанию выключено",
- 	"markdownAppearanceSettings": "Настройки внешнего вида",
- 	"markdownFontSizeSettings": "Настройки размера шрифта",
- 	"markdownFontSettings": "Настройки шрифтов",
+ 	"confirmActionFailed": "Не удалось выполнить операцию. Попробуйте ещё раз",
+ 	"updateInstallNow": "Установить сейчас",
+ 	"updateInstallLater": "Не сейчас",
 diff --git a/app/appearance/langs/sk.json b/app/appearance/langs/sk.json
-index b55a023..08376a9 100644
+index 6d37a5c..be0e666 100644
 --- a/app/appearance/langs/sk.json
 +++ b/app/appearance/langs/sk.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Predbežné načítanie obsahu",
 +	"contentPrefetchTip": "Po zapnutí sa pri čítaní predbežne načítava susedný obsah aktuálneho dokumentu a jeho lokálne obrázky, aby sa skrátilo čakanie pri posúvaní; predvolene vypnuté",
- 	"markdownAppearanceSettings": "Nastavenia vzhľadu",
- 	"markdownFontSizeSettings": "Nastavenia veľkosti písma",
- 	"markdownFontSettings": "Nastavenia písma",
+ 	"confirmActionFailed": "Operácia zlyhala. Skúste to znova",
+ 	"updateInstallNow": "Nainštalovať teraz",
+ 	"updateInstallLater": "Teraz nie",
 diff --git a/app/appearance/langs/sr.json b/app/appearance/langs/sr.json
-index e0c71fa..71a61fe 100644
+index 06b7696..f0a31b0 100644
 --- a/app/appearance/langs/sr.json
 +++ b/app/appearance/langs/sr.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Учитавање садржаја унапред",
 +	"contentPrefetchTip": "Када је укључено, током читања се унапред учитава оближњи садржај тренутног документа и његове локалне слике ради краћег чекања при померању; подразумевано искључено",
- 	"markdownAppearanceSettings": "Подешавања изгледа",
- 	"markdownFontSizeSettings": "Подешавања величине фонта",
- 	"markdownFontSettings": "Подешавања фонта",
+ 	"confirmActionFailed": "Радња није успела. Покушајте поново",
+ 	"updateInstallNow": "Инсталирај сада",
+ 	"updateInstallLater": "Не сада",
 diff --git a/app/appearance/langs/th.json b/app/appearance/langs/th.json
-index 7dc72ed..b40d269 100644
+index e1fec0e..86d0e69 100644
 --- a/app/appearance/langs/th.json
 +++ b/app/appearance/langs/th.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "โหลดเนื้อหาล่วงหน้า",
 +	"contentPrefetchTip": "เมื่อเปิดใช้งาน ระบบจะโหลดเนื้อหาใกล้เคียงของเอกสารปัจจุบันและรูปภาพในเครื่องล่วงหน้าระหว่างการอ่าน เพื่อลดระยะเวลารอเมื่อเลื่อนหน้า ปิดเป็นค่าเริ่มต้น",
- 	"markdownAppearanceSettings": "การตั้งค่ารูปลักษณ์",
- 	"markdownFontSizeSettings": "การตั้งค่าขนาดแบบอักษร",
- 	"markdownFontSettings": "การตั้งค่าแบบอักษร",
+ 	"confirmActionFailed": "การดำเนินการล้มเหลว โปรดลองอีกครั้ง",
+ 	"updateInstallNow": "ติดตั้งตอนนี้",
+ 	"updateInstallLater": "ยังไม่ติดตั้ง",
 diff --git a/app/appearance/langs/tr.json b/app/appearance/langs/tr.json
-index 6d741c9..a7b76cf 100644
+index 04ac5f8..05b958b 100644
 --- a/app/appearance/langs/tr.json
 +++ b/app/appearance/langs/tr.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "İçerik ön yükleme",
 +	"contentPrefetchTip": "Etkinleştirildiğinde, kaydırma beklemesini azaltmak için okuma sırasında geçerli belgenin yakınındaki içeriği ve yerel görsellerini önceden yükler; varsayılan olarak kapalı",
- 	"markdownAppearanceSettings": "Görünüm ayarları",
- 	"markdownFontSizeSettings": "Yazı tipi boyutu ayarları",
- 	"markdownFontSettings": "Yazı tipi ayarları",
+ 	"confirmActionFailed": "İşlem başarısız oldu. Lütfen tekrar deneyin",
+ 	"updateInstallNow": "Şimdi yükle",
+ 	"updateInstallLater": "Şimdi değil",
 diff --git a/app/appearance/langs/uk.json b/app/appearance/langs/uk.json
-index 6519c31..ce235df 100644
+index 7a25a5d..f8f0174 100644
 --- a/app/appearance/langs/uk.json
 +++ b/app/appearance/langs/uk.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Попереднє завантаження вмісту",
 +	"contentPrefetchTip": "Якщо ввімкнено, під час читання попередньо завантажується сусідній вміст поточного документа та його локальні зображення, щоб скоротити очікування під час прокручування; типово вимкнено",
- 	"markdownAppearanceSettings": "Налаштування зовнішнього вигляду",
- 	"markdownFontSizeSettings": "Налаштування розміру шрифту",
- 	"markdownFontSettings": "Налаштування шрифтів",
+ 	"confirmActionFailed": "Не вдалося виконати операцію. Спробуйте ще раз",
+ 	"updateInstallNow": "Встановити зараз",
+ 	"updateInstallLater": "Не зараз",
 diff --git a/app/appearance/langs/zh-CN.json b/app/appearance/langs/zh-CN.json
-index 3a83922..2499c7f 100644
+index e371cbb..9453324 100644
 --- a/app/appearance/langs/zh-CN.json
 +++ b/app/appearance/langs/zh-CN.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "内容预取",
 +	"contentPrefetchTip": "开启后阅读时预取当前文档邻近内容及其中本地图片，减少滚动加载等待；默认关闭",
- 	"markdownAppearanceSettings": "外观设置",
- 	"markdownFontSizeSettings": "字号设置",
- 	"markdownFontSettings": "字体设置",
+ 	"confirmActionFailed": "操作失败，请重试",
+ 	"updateInstallNow": "现在安装",
+ 	"updateInstallLater": "暂不安装",
 diff --git a/app/appearance/langs/zh-TW.json b/app/appearance/langs/zh-TW.json
-index db01937..ee0cbbf 100644
+index a713f11..cf1b47a 100644
 --- a/app/appearance/langs/zh-TW.json
 +++ b/app/appearance/langs/zh-TW.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "內容預取",
 +	"contentPrefetchTip": "開啟後閱讀時預取目前文件鄰近內容及其中本機圖片，減少捲動載入等待；預設關閉",
- 	"markdownAppearanceSettings": "外觀設定",
- 	"markdownFontSizeSettings": "字型大小設定",
- 	"markdownFontSettings": "字型設定",
+ 	"confirmActionFailed": "操作失敗，請重試",
+ 	"updateInstallNow": "立即安裝",
+ 	"updateInstallLater": "暫不安裝",
 diff --git a/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy b/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
 index afdb9f6..e875672 100644
 --- a/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
@@ -341,7 +341,7 @@ index 162e789..1f2a574 100644
  			"ID": "20240530101000-ode6qmq",
  			"Type": "NodeParagraph",
 diff --git a/app/src/config/tabs/editorRuntime.ts b/app/src/config/tabs/editorRuntime.ts
-index 4542cd8..d3bca04 100644
+index 7486f2f..f6d6500 100644
 --- a/app/src/config/tabs/editorRuntime.ts
 +++ b/app/src/config/tabs/editorRuntime.ts
 @@ -9,6 +9,7 @@ import {shouldResetBottomBacklinkPanel} from "./editorRuntimeState";
@@ -352,7 +352,7 @@ index 4542cd8..d3bca04 100644
  /// #if MOBILE
  import {setTitleAutoDirection} from "../../protyle/render/autoDirection";
  import {updateMobileBottomBacklinkPanel} from "../../mobile/util/bottomBacklink";
-@@ -85,6 +86,11 @@ const runtime = createSectionRuntime<Config.IEditor>({
+@@ -88,6 +89,11 @@ const runtime = createSectionRuntime<Config.IEditor>({
                  });
              }
          },
@@ -365,10 +365,10 @@ index 4542cd8..d3bca04 100644
  });
  
 diff --git a/app/src/config/tabs/editorTab.ts b/app/src/config/tabs/editorTab.ts
-index a831938..f569d23 100644
+index 155b4f5..39f341e 100644
 --- a/app/src/config/tabs/editorTab.ts
 +++ b/app/src/config/tabs/editorTab.ts
-@@ -88,6 +88,10 @@ const registerEditorBehaviorGroup = (tab: SettingTabBuilder) => {
+@@ -92,6 +92,10 @@ const registerEditorBehaviorGroup = (tab: SettingTabBuilder) => {
          desc: window.siyuan.languages.dynamicLoadBlocksTip,
          min: 48,
      });
@@ -408,7 +408,7 @@ index fc562ef..a655027 100644
                  const {cancelTemplateHTTPExecutions}: typeof import("../template/http") = require("../template/http");
                  cancelTemplateHTTPExecutions();
 diff --git a/app/src/protyle/index.ts b/app/src/protyle/index.ts
-index 725beba..379ec5f 100644
+index 51af361..7c80948 100644
 --- a/app/src/protyle/index.ts
 +++ b/app/src/protyle/index.ts
 @@ -11,6 +11,7 @@ import {Options} from "./util/Options";
@@ -419,7 +419,7 @@ index 725beba..379ec5f 100644
  import {Model} from "../layout/Model";
  import {genUUID} from "../util/genID";
  import {WYSIWYG} from "./wysiwyg";
-@@ -490,6 +491,7 @@ export class Protyle {
+@@ -494,6 +495,7 @@ export class Protyle {
      }
  
      private onTransaction(data: IWebSocketData) {
@@ -2083,11 +2083,11 @@ index 0545b1e..d592a25 100644
                  requests.push({data, callback, finish});
              }),
 diff --git a/app/src/protyle/util/destroy.ts b/app/src/protyle/util/destroy.ts
-index 29bcb7e..8027ae8 100644
+index 4bc51e6..3eacbb2 100644
 --- a/app/src/protyle/util/destroy.ts
 +++ b/app/src/protyle/util/destroy.ts
-@@ -16,11 +16,17 @@ import {unregisterViewFoldContext} from "./viewFold";
- import {destroyAutoDirection} from "../render/autoDirection";
+@@ -17,11 +17,17 @@ import {destroyAutoDirection} from "../render/autoDirection";
+ import {destroyTableCorners} from "../render/tableCorners";
  import {disposeSyncEditorSave} from "./editorSave";
  import {destroyRelatedAVViews} from "../render/av/relatedView";
 +import {invalidateContentPrefetchFor} from "../scroll/contentPrefetchStore";
@@ -2105,7 +2105,7 @@ index 29bcb7e..8027ae8 100644
      destroyRelatedAVViews(protyle.id);
      protyle.title?.destroy?.();
 diff --git a/app/src/protyle/wysiwyg/transaction.ts b/app/src/protyle/wysiwyg/transaction.ts
-index e3ea1fc..e0707ca 100644
+index db976cb..2180174 100644
 --- a/app/src/protyle/wysiwyg/transaction.ts
 +++ b/app/src/protyle/wysiwyg/transaction.ts
 @@ -2,6 +2,7 @@ import {suspendTabTitleEditingExit} from "../render/tabsRender";
@@ -2116,7 +2116,7 @@ index e3ea1fc..e0707ca 100644
  import dayjs from "dayjs";
  import {restoreInlineElementBoundaryHTML} from "../util/inlineElementBoundary";
  import {getEditorTransaction} from "../util/transactionContract";
-@@ -924,6 +925,7 @@ const updateBlock = (updateElements: Element[], protyle: IProtyle, operation: Ex
+@@ -941,6 +942,7 @@ const updateBlock = (updateElements: Element[], protyle: IProtyle, operation: Ex
  // 用于推送和撤销；普通模式在内核事务完成后回放，lite 模式仅更新本地 DOM。
  export const onTransaction = (protyle: IProtyle, operations: IOperation[], isUndo: boolean,
                                preserveTrackedRanges = isUndo) => {
@@ -2124,7 +2124,7 @@ index e3ea1fc..e0707ca 100644
      if (protyle.wysiwyg.element.firstElementChild?.classList.contains("protyle-password")) {
          return;
      }
-@@ -2603,6 +2605,9 @@ export const transaction = (protyle: IProtyle, doOperations: IOperation[], undoO
+@@ -2614,6 +2616,9 @@ export const transaction = (protyle: IProtyle, doOperations: IOperation[], undoO
          options?.callback?.();
          return;
      }
@@ -2135,22 +2135,22 @@ index e3ea1fc..e0707ca 100644
      cleanBlockSelectionModeOperations(undoOperations);
      [doOperations, undoOperations].forEach(operations => operations?.forEach(operation => {
 diff --git a/app/src/protyle/wysiwyg/transactionAV.test.ts b/app/src/protyle/wysiwyg/transactionAV.test.ts
-index 72fff1b..e805f7c 100644
+index 5678f7b..6b8467e 100644
 --- a/app/src/protyle/wysiwyg/transactionAV.test.ts
 +++ b/app/src/protyle/wysiwyg/transactionAV.test.ts
-@@ -16,6 +16,7 @@ const fixture = () => {
-     const undo: IOperation[][] = [];
-     const requests: {transactions: {collectionRemovalSourceVersions?: Record<string, string>}[]}[] = [];
-     const dependencies = {
+@@ -22,6 +22,7 @@ const fixture = () => {
+         shouldReloadForHeadingBatch: () => false,
+         invalidateTrackedRangesByOperations() {},
+         isUndoViewportPreserved: () => false,
 +        invalidateContentPrefetchFor: (): void => undefined,
          prepareAVHostTransaction: (_protyle: unknown, operations?: IOperation[]) => operations,
          getTagRemovalChanges: (): [] => [],
          hasReferenceRemoval: () => false,
 diff --git a/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts b/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts
-index 2730a96..27a4a5b 100644
+index 45f441a..f7367b4 100644
 --- a/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts
 +++ b/app/src/protyle/wysiwyg/transactionCollectionRemoval.test.ts
-@@ -56,6 +56,7 @@ const fixture = (kind: "tags" | "references" | "mixed", mode = "") => {
+@@ -57,6 +57,7 @@ const fixture = (kind: "tags" | "references" | "mixed", mode = "") => {
      const cleanup: IOperation = {action: "cleanupAttrViewBlocks", avID: "database", data: {ruleVersion: "version", items: []}};
      const changes = kind === "references" ? [] : [{id: "block", tags: ["todo"]}];
      const dependencies = {
@@ -2158,7 +2158,7 @@ index 2730a96..27a4a5b 100644
          prepareAVHostTransaction: (_protyle: unknown, operations?: IOperation[]) => operations,
          getProtyleTransactionOwner,
          syncTrackedRanges: (editor: IProtyle) => synced.push(editor),
-@@ -311,6 +312,7 @@ for (const mode of ["success", "cancel", "previewError", "saveError"]) {
+@@ -329,6 +330,7 @@ for (const mode of ["success", "cancel", "previewError", "saveError"]) {
                  focus: () => { containerFocusCalls++; document.activeElement = f.protyle.element; },
              });
              const dependencies = {
@@ -2191,39 +2191,39 @@ index deebaaf..291bd43 100644
          getTagRemovalChanges: (): [] => [],
          hasReferenceRemoval: () => false,
 diff --git a/app/src/types/api/index.d.ts b/app/src/types/api/index.d.ts
-index fc6028d..9cbed81 100644
+index bf7d824..b63fdee 100644
 --- a/app/src/types/api/index.d.ts
 +++ b/app/src/types/api/index.d.ts
-@@ -2128,7 +2128,7 @@ export type SetCriterionRequestInput = { "criterion": CriterionInput | null; };
+@@ -2152,7 +2152,7 @@ export type SetCriterionRequestInput = { "criterion": CriterionInput | null; };
  
  export type SetDatabaseBlockViewRequestInput = { "avID": string; "id": string; "viewID": string; };
  
--export type SetEditorRequestInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
-+export type SetEditorRequestInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "contentPrefetch"?: boolean | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
+-export type SetEditorRequestInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "databaseShowIcon"?: boolean | null; "databaseShowRelationIcon"?: boolean | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "hideBreadcrumbIcons"?: boolean | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
++export type SetEditorRequestInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "contentPrefetch"?: boolean | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "databaseShowIcon"?: boolean | null; "databaseShowRelationIcon"?: boolean | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "hideBreadcrumbIcons"?: boolean | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
  
  export type SetEntryVisibilityRequestInput = { "active"?: string | null; "profiles"?: Array<SettingEntryVisibilityProfileInput | null> | null; "version"?: number | null; };
  
-@@ -2272,13 +2272,13 @@ export type SettingEditing = { "maxCompletionTokens": number; "maxHistoryMessage
+@@ -2296,13 +2296,13 @@ export type SettingEditing = { "maxCompletionTokens": number; "maxHistoryMessage
  
  export type SettingEditingInput = { "maxCompletionTokens"?: number | null; "maxHistoryMessages"?: number | null; "modelId"?: string | null; "temperature"?: number | null; };
  
--export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
-+export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "contentPrefetch": boolean; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
+-export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "databaseShowIcon": boolean | null; "databaseShowRelationIcon": boolean | null; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "hideBreadcrumbIcons": boolean; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
++export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "contentPrefetch": boolean; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "databaseShowIcon": boolean | null; "databaseShowRelationIcon": boolean | null; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "hideBreadcrumbIcons": boolean; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
  
  export type SettingEditorFont = { "displayName": string; "family": string; "weight": number; };
  
  export type SettingEditorFontInput = { "displayName"?: string | null; "family"?: string | null; "weight"?: number | null; };
  
--export type SettingEditorInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
-+export type SettingEditorInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "contentPrefetch"?: boolean | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
+-export type SettingEditorInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "databaseShowIcon"?: boolean | null; "databaseShowRelationIcon"?: boolean | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "hideBreadcrumbIcons"?: boolean | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
++export type SettingEditorInput = { "allowHTMLBLockScript"?: boolean | null; "allowSVGScript"?: boolean | null; "assetOpen"?: SettingAssetOpenInput | null; "autoCloseRefBrackets"?: boolean | null; "autoDirection"?: boolean | null; "backlinkBlockSort"?: number | null; "backlinkContainChildren"?: boolean | null; "backlinkExpandCount"?: number | null; "backlinkGlobalSort"?: number | null; "backlinkHideReference"?: boolean | null; "backlinkMentionExclude"?: string | null; "backlinkShowBottom"?: boolean | null; "backlinkSort"?: number | null; "backmentionExpandCount"?: number | null; "backmentionSort"?: number | null; "blockGutterMode"?: boolean | null; "blockRefDynamicAnchorTextMaxLen"?: number | null; "checkBlockRef"?: boolean | null; "codeFontFamilies"?: Array<SettingEditorFontInput | null> | null; "codeLigatures"?: boolean | null; "codeLineWrap"?: boolean | null; "codeSyntaxHighlightLineNum"?: boolean | null; "codeTabSpaces"?: number | null; "contentPrefetch"?: boolean | null; "cursorSurroundingLines"?: number | null; "databaseAttrClickMode"?: number | null; "databaseAttrHideEmpty"?: boolean | null; "databaseAttrLayout"?: number | null; "databaseAttrShow"?: boolean | null; "databaseAttrUseTabs"?: boolean | null; "databaseAttrViewMode"?: number | null; "databaseShowIcon"?: boolean | null; "databaseShowRelationIcon"?: boolean | null; "displayBookmarkIcon"?: boolean | null; "displayImgAlt"?: boolean | null; "displayImgName"?: boolean | null; "displayNetImgMark"?: boolean | null; "dragHTMLFileToIframe"?: boolean | null; "dynamicLoadBlocks"?: number | null; "embedBlockBreadcrumb"?: boolean | null; "embedBlockBreadcrumbParentPath"?: boolean | null; "emoji"?: Array<string> | null; "floatWindowDelay"?: number | null; "floatWindowMode"?: number | null; "fontFamilies"?: Array<SettingEditorFontInput | null> | null; "fontFamily"?: string | null; "fontFamilyDisplay"?: string | null; "fontSize"?: number | null; "fontSizeScrollZoom"?: boolean | null; "fontWeight"?: number | null; "fullWidth"?: boolean | null; "generateHistoryInterval"?: number | null; "globalBreadcrumb"?: boolean | null; "hashTagSearch"?: boolean | null; "headingEmbedMode"?: number | null; "headingNumber"?: boolean | null; "headingNumberFormat"?: string | null; "hideBreadcrumbIcons"?: boolean | null; "historyRetentionDays"?: number | null; "justify"?: boolean | null; "katexMacros"?: string | null; "keepLoadedContent"?: boolean | null; "listItemDotNumberClickFocus"?: boolean | null; "listLogicalOutdent"?: boolean | null; "markdown"?: SettingMarkdownInput | null; "mathDelimiterCompatibility"?: boolean | null; "onlySearchForDoc"?: boolean | null; "pageScrollButtons"?: boolean | null; "pasteURLAutoConvert"?: boolean | null; "plantUMLServePath"?: string | null; "readOnly"?: boolean | null; "rtl"?: boolean | null; "spellcheck"?: boolean | null; "spellcheckLanguages"?: Array<string> | null; "virtualBlockRef"?: boolean | null; "virtualBlockRefExclude"?: string | null; "virtualBlockRefInclude"?: string | null; };
  
  export type SettingEmbedding = { "apiKey": string; "baseURL": string; "batchSize": number; "concurrency": number; "dimensions": number; "enabled": boolean; "id": string; "name": string; "timeout": number; };
  
 diff --git a/app/src/types/config.d.ts b/app/src/types/config.d.ts
-index bd3f224..300e075 100644
+index a3abd9f..288a5ec 100644
 --- a/app/src/types/config.d.ts
 +++ b/app/src/types/config.d.ts
-@@ -723,6 +723,8 @@ declare namespace Config {
+@@ -725,6 +725,8 @@ declare namespace Config {
           * The number of blocks loaded each time they are dynamically loaded
           */
          dynamicLoadBlocks: number;
@@ -2233,10 +2233,10 @@ index bd3f224..300e075 100644
           * Whether the embedded block displays breadcrumbs
           */
 diff --git a/kernel/api/setting_contract.go b/kernel/api/setting_contract.go
-index 98f1d3c..e3d1902 100644
+index f68a6e7..c2287c8 100644
 --- a/kernel/api/setting_contract.go
 +++ b/kernel/api/setting_contract.go
-@@ -424,6 +424,7 @@ func settingEditorPayload(value *conf.Editor) *apicontract.SettingEditor {
+@@ -427,6 +427,7 @@ func settingEditorPayload(value *conf.Editor) *apicontract.SettingEditor {
  	result.KeepLoadedContent = value.KeepLoadedContent
  	result.PageScrollButtons = value.PageScrollButtons
  	result.DynamicLoadBlocks = value.DynamicLoadBlocks
@@ -2245,10 +2245,10 @@ index 98f1d3c..e3d1902 100644
  	result.RTL = value.RTL
  	result.AutoDirection = value.AutoDirection
 diff --git a/kernel/apicontract/schema.json b/kernel/apicontract/schema.json
-index 764529f..9f07f49 100644
+index 6c6fdb6..4be6737 100644
 --- a/kernel/apicontract/schema.json
 +++ b/kernel/apicontract/schema.json
-@@ -44857,6 +44857,16 @@
+@@ -45181,6 +45181,16 @@
              }
            ]
          },
@@ -2265,7 +2265,7 @@ index 764529f..9f07f49 100644
          "cursorSurroundingLines": {
            "anyOf": [
              {
-@@ -49403,6 +49413,9 @@
+@@ -49777,6 +49787,9 @@
          "codeTabSpaces": {
            "type": "integer"
          },
@@ -2275,7 +2275,7 @@ index 764529f..9f07f49 100644
          "cursorSurroundingLines": {
            "type": "integer"
          },
-@@ -49671,6 +49684,7 @@
+@@ -50068,6 +50081,7 @@
          "codeLineWrap",
          "codeSyntaxHighlightLineNum",
          "codeTabSpaces",
@@ -2283,7 +2283,7 @@ index 764529f..9f07f49 100644
          "cursorSurroundingLines",
          "databaseAttrClickMode",
          "databaseAttrHideEmpty",
-@@ -50023,6 +50037,16 @@
+@@ -50423,6 +50437,16 @@
              }
            ]
          },
@@ -2301,10 +2301,10 @@ index 764529f..9f07f49 100644
            "anyOf": [
              {
 diff --git a/kernel/apicontract/setting.go b/kernel/apicontract/setting.go
-index c768a48..ca773b1 100644
+index 8135845..2fefe39 100644
 --- a/kernel/apicontract/setting.go
 +++ b/kernel/apicontract/setting.go
-@@ -290,6 +290,7 @@ type SettingEditor struct {
+@@ -296,6 +296,7 @@ type SettingEditor struct {
  	// PageScrollButtons 控制翻屏按钮，默认关闭，不迁移旧的本地偏好。
  	PageScrollButtons bool `json:"pageScrollButtons" api:"optional,nullable"`
  	DynamicLoadBlocks int  `json:"dynamicLoadBlocks" api:"optional,nullable"`
@@ -2313,10 +2313,10 @@ index c768a48..ca773b1 100644
  	RTL               bool `json:"rtl" api:"optional,nullable"`
  	// AutoDirection 默认关闭；段落和标题按首个强方向字符排版，列表项独立调整标记和缩进。
 diff --git a/kernel/conf/editor.go b/kernel/conf/editor.go
-index 72c434e..3f866c5 100644
+index 87fa92f..9befa52 100644
 --- a/kernel/conf/editor.go
 +++ b/kernel/conf/editor.go
-@@ -105,6 +105,7 @@ type Editor struct {
+@@ -108,6 +108,7 @@ type Editor struct {
  	MathDelimiterCompatibility      *bool          `json:"mathDelimiterCompatibility"`      // 粘贴和导入时兼容 LaTeX 公式分隔符，默认开启
  	DragHTMLFileToIframe            bool           `json:"dragHTMLFileToIframe"`            // 是否将拖拽的 HTML 文件嵌入为 IFrame 块
  	Markdown                        *util.Markdown `json:"markdown"`                        // Markdown 配置
@@ -2324,7 +2324,7 @@ index 72c434e..3f866c5 100644
  }
  
  // NormalizeFontFamilies 清理字体列表并同步兼容旧版本的首选字体字段。
-@@ -228,6 +229,7 @@ func NewEditor() *Editor {
+@@ -234,6 +235,7 @@ func NewEditor() *Editor {
  		FloatWindowMode:                 0,
  		FloatWindowDelay:                new(620),
  		KeepLoadedContent:               false,

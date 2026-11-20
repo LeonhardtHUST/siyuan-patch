@@ -21,7 +21,7 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 单一来源：`PATCH_REVISION`
 
-仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `2`），**全局单调、跨上游不重置**。
+仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `3`），**全局单调、跨上游不重置**。
 例如上游到 v3.8.11 时 N 若为 7，镜像 tag 是 `v3.8.11-p7`，不会回到 p1。
 
 - `release-docker` / `watch-upstream` 的 `patch_revision` 输入仅为向后兼容：留空即使用文件，填写则必须与文件相等，否则拒绝。
@@ -184,7 +184,7 @@ pnpm run api:check
 
 ### 适用范围与验证
 
-补丁基于 **v3.8.10**，只修改 `app/src/boot/startupError.ts` 与其单测。PC / Docker / Android / iOS 均在 `content-prefetch.patch` 之后应用；`watch-upstream` 的预演顺序与 `release-docker` 一致，本补丁位于末尾。
+补丁基于 **v3.8.10**，上游 v3.8.11 未改动 `app/src/boot/startupError.ts`，该补丁在 v3.8.11 上仍可干净应用，无需重基线。只修改该文件与其单测。PC / Docker / Android / iOS 均在 `content-prefetch.patch` 之后应用；`watch-upstream` 的预演顺序与 `release-docker` 一致，本补丁位于末尾。
 
 ```bash
 git apply --check /path/to/siyuan-patch/patches/siyuan/startup-slow-loading.patch
