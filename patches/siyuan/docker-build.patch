@@ -1,8 +1,37 @@
 diff --git a/Dockerfile b/Dockerfile
-index 42c33c5..0b891e6 100644
+index 42c33c5..8b28e1f 100644
 --- a/Dockerfile
 +++ b/Dockerfile
-@@ -148,6 +148,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
+@@ -69,14 +69,26 @@ retry() {
+ }
+ git init /onnxruntime
+ cd /onnxruntime
+-git remote add origin https://github.com/microsoft/onnxruntime
+ git config http.version HTTP/1.1
+ git config remote.origin.promisor true
+ git config remote.origin.partialclonefilter blob:none
+ # 运行库不构建单元测试，避免下载体积较大的测试模型；编译源码和许可文件保持完整。
+ git sparse-checkout init --no-cone
+ git sparse-checkout set --no-cone '/*' '!/onnxruntime/test/testdata/' '!/winml/test/'
+-retry git fetch --filter=blob:none --depth=1 --no-tags origin "${ONNX_COMMIT}"
++# microsoft/onnxruntime 自 2026-11-17 起整仓 404。仍按固定提交取同一 Git 对象：
++# 先试原始地址（若恢复则自动回到上游），失败再退到保留该提交的公开 fork；
++# 取到后下面的 SHA 与 VERSION_NUMBER 校验不变，来源变化不影响内容。
++for mirror in \
++    https://github.com/microsoft/onnxruntime \
++    https://github.com/intel/onnxruntime \
++    https://github.com/moonshine-ai/onnxruntime; do
++    git remote remove origin 2>/dev/null || true
++    git remote add origin "${mirror}"
++    echo "Fetching ONNX Runtime ${ONNX_COMMIT} from ${mirror}" >&2
++    if retry git fetch --filter=blob:none --depth=1 --no-tags origin "${ONNX_COMMIT}"; then
++        break
++    fi
++done
+ git checkout --detach FETCH_HEAD
+ test "$(git rev-parse HEAD)" = "${ONNX_COMMIT}"
+ # 源码版本不匹配时，在下载子模块和编译各平台之前停止。
+@@ -148,6 +160,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
  COPY --from=onnx-runtime /onnx-artifacts/ /ocr/linux-${TARGETARCH}/
  
  FROM ${ALPINE_IMAGE}
@@ -10,7 +39,7 @@ index 42c33c5..0b891e6 100644
  LABEL maintainer="Liang Ding<845765@qq.com>"
  
  RUN apk add --no-cache 'ca-certificates>=20261020-r0' tzdata su-exec libstdc++
-@@ -163,6 +164,11 @@ COPY --from=node-build /artifacts .
+@@ -163,6 +176,11 @@ COPY --from=node-build /artifacts .
  COPY --from=ocr-build /ocr stage/ocr/runtime
  COPY LICENSE THIRD_PARTY_NOTICES.md .
  

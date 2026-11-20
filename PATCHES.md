@@ -21,7 +21,7 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 单一来源：`PATCH_REVISION`
 
-仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `3`），**全局单调、跨上游不重置**。
+仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `4`），**全局单调、跨上游不重置**。
 例如上游到 v3.8.11 时 N 若为 7，镜像 tag 是 `v3.8.11-p7`，不会回到 p1。
 
 - `release-docker` / `watch-upstream` 的 `patch_revision` 输入仅为向后兼容：留空即使用文件，填写则必须与文件相等，否则拒绝。
@@ -65,7 +65,7 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 | `patches/siyuan/disable-update.patch` | 禁用自动更新提示 | 全部 | 上游自带 |
 | `patches/siyuan/default-config.patch` | 默认配置调整 | 全部 | 上游自带 |
 | `patches/siyuan/mock-vip-user.patch` | 模拟付费用户（解锁功能） | 全部 | 上游自带 |
-| `patches/siyuan/docker-build.patch` | Docker 构建适配 | docker | 上游自带 |
+| `patches/siyuan/docker-build.patch` | Docker 构建适配 | docker | 上游自带，本 fork 追加 ONNX 源回退，见下 |
 | **`patches/siyuan/math-renderer-registry.patch`** | **数学渲染器注册表：允许插件在 KaTeX 之前认领公式节点** | **docker（已接）** | **本 fork 新增，见下** |
 | **`patches/siyuan/content-prefetch.patch`** | **可选的块边界内容预取与同源图片预取** | **PC / Docker / Android / iOS** | **默认关闭，见下** |
 | **`patches/siyuan/startup-slow-loading.patch`** | **慢启动诊断：页面资源阶段独立 120 秒预算，业务阶段仍 30 秒** | **PC / Docker / Android / iOS** | **本 fork 新增，见下** |
@@ -196,6 +196,13 @@ pnpm run test:focused src/boot/startupError.test.ts
 
 补丁应用与单测通过只说明启动诊断的计时逻辑正确；现场网络、CDN 与浏览器行为仍需分别观察，不能据此推断所有慢启动都会被覆盖。
 
+## ONNX Runtime 源码来源回退（在 `docker-build.patch` 内）
+
+`microsoft/onnxruntime` 自 2026-11-17 起整仓 404（GitHub API 与 `git ls-remote` 都返回 Not Found）。上游 Dockerfile 恰好按 `ONNX_COMMIT` 从这个仓库取源码，`onnx-source` 阶段因此必然失败，错误表现为 `fatal: could not read Username for 'https://github.com': No such device or address`——Git 拿到 404 后转去要账号，而不是网络超时。
+
+本 fork 把单次 fetch 改成地址回退链：先试原地址（上游若恢复会自动回到官方源），失败再依次试仍保留该提交的公开 fork。取到后 Dockerfile 原有的两道校验照旧生效——`git rev-parse HEAD` 必须等于 `ONNX_COMMIT`，`VERSION_NUMBER` 必须等于 `ONNX_VERSION`，因此来源变化不改变内容，只改变谁来提供这个 Git 对象。子模块指向 `onnx/onnx`、`google/libprotobuf-mutator`、`emscripten-core/emsdk`，都不受影响。
+
+本地已验证：原地址 404 → `intel/onnxruntime` 取到 `3a728b7`（ORT 1.24.3）→ 版本校验通过。上游恢复或 SiYuan 上游改用其他来源后，应从 `docker-build.patch` 中移除这段回退。
 ## 构建注意事项
 
 - `release-docker.yml` 已加入数学渲染器补丁的 `git apply` 行，并改造为推送 **GHCR**
