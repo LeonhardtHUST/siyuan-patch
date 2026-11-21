@@ -54,16 +54,26 @@ jobs:
 
       - name: Publish upstream branch for manual merge
         if: steps.ff.outputs.status == 'diverged'
+        continue-on-error: true
         run: |
+          # 记录上游 SHA，issue 里用它给出不依赖分支的等价命令。
+          echo "UPSTREAM_SHA=$(git rev-parse upstream/main)" >> "$GITHUB_ENV"
           BRANCH="sync/upstream-$(date -u +%Y%m%d)"
-          git push origin "upstream/main:refs/heads/${BRANCH}"
-          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
+          # GITHUB_TOKEN 不能创建或更新 .github/workflows/*.yml。父仓库的提交会改动这些文件，
+          # 推送会被拒：refusing to allow a GitHub App to create or update workflow。
+          # 这一步失败不中断任务；需要分支时改用带 workflow 权限的 PAT。
+          if git push origin "upstream/main:refs/heads/${BRANCH}"; then
+            echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
+          else
+            echo "::warning::无法推送 ${BRANCH}（GITHUB_TOKEN 无 workflow 文件写权限），请按 issue 中的直接 fetch 步骤合并"
+          fi
 
       - name: Open issue when diverged
         if: steps.ff.outputs.status == 'diverged'
         uses: actions/github-script@v7
         env:
           BRANCH: ${{ env.BRANCH }}
+          UPSTREAM_SHA: ${{ env.UPSTREAM_SHA }}
         with:
           script: |
             const label = "upstream-sync";
@@ -73,16 +83,24 @@ jobs:
               state: "open",
               labels: label,
             });
-            const body = [
+            const branch = process.env.BRANCH || "";
+            const sha = process.env.UPSTREAM_SHA || "";
+            const lines = [
               "上游 `MohamedElashri/siyuan-patch` 的 `main` 已与本 fork 分叉，无法快进合并。",
               "",
-              `上游最新提交已推送到分支 \`${process.env.BRANCH}\`。`,
-              "",
+            ];
+            if (sha) lines.push(`上游最新提交：\`${sha}\``);
+            if (branch) lines.push(`上游已推送到分支 \`${branch}\`。`);
+            if (sha || branch) lines.push("");
+            lines.push(
               "处理步骤：",
-              "1. 本地 `git fetch origin && git merge origin/" + process.env.BRANCH + "`",
-              "2. 解决冲突（重点：`patches/siyuan/math-renderer-registry.patch` 的上下文是否仍匹配新版本源码）",
-              "3. `git push` 后关闭本 issue",
-            ].join("\n");
+              "```bash",
+              "git fetch https://github.com/MohamedElashri/siyuan-patch main",
+              "git merge FETCH_HEAD",
+              "```",
+              "解决冲突（重点：`patches/siyuan/math-renderer-registry.patch` 的上下文是否仍匹配新版本源码）后 `git push`，再关闭本 issue。",
+            );
+            const body = lines.join("\n");
             if (open.length > 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
