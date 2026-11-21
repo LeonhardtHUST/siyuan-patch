@@ -113,7 +113,7 @@ Git 拿到 404 后会转去索要账号。回退链保持原地址优先，失�
 |---|---|---|
 | issue #1 | CLOSED | 已于 2026-11-21 以 completed 关闭并留说明；标题是创建时自动生成的 `v3.8.11-p1`，未改，与实际 p4 不一致 |
 | 部署 | 未执行 | 私有 config 仓库的 `SIYUAN_TAG` 需自行指向 `v3.8.11-p4`；本仓库不掌握该仓库 |
-| sync-upstream `44729285526` | failure | 失败在 `Fetch upstream` 步骤（从父仓库 `MohamedElashri/siyuan-patch` 拉取），与补丁内容无关，需单独排查 |
+| sync-upstream `44729285526` | 已修复 | 根因是 `git fetch upstream main --tags` 与本 fork 自建的 `v3.8.8` / `v3.8.10` 标签同名冲突（`would clobber existing tag`），在 `bash -e` 下中断整步。已改为 `--no-tags`，见 `d6cabda` 之后的提交 |
 | release-pc / android / ios | failure | 三者最后一次运行是 2026-11-19 的 `68fc10c`，均失败；v3.8.11 未构建过这些产物，失败原因未排查 |
 | 7 个未跟踪补丁 | 未纳入版本控制 | 见下表，未接入任何 workflow |
 | 前端与后端回归 | 未运行 | 本地无该源码树的 pnpm / go 依赖，仅做静态核对；TS 编译由镜像构建覆盖，单测未跑 |
@@ -139,6 +139,29 @@ issue #1 已关闭，剩下的三项按顺序：
    接管者拿到部署权限后直接从这一步开始
 2. 排查 `sync-upstream` 的 `Fetch upstream` 失败（`.github/workflows/sync-upstream.yml`）
 3. 决定 7 个 `math-conversion-*.patch` 的去向：接入 workflow 或删除，不要长期停在未跟踪状态
+
+## 向上游对齐的现状
+
+父仓库 `MohamedElashri/siyuan-patch` 的 `main` 与本 fork 已经双向分叉：我们比它多 20 个提交
+（本 fork 自己的补丁工作），它比我们多 3 个提交。共同祖先停在 `c80af18`。
+
+它多的三个提交是：
+
+| commit | 内容 |
+|---|---|
+| `c436738` | README 版本号更新到 v3.8.11 |
+| `d3b8777` | 用预构建镜像恢复 ONNX Runtime 输入（见下） |
+| `b6ccc7a` | 上述修复的合并提交 |
+
+`d3b8777` 与本次 p4 面对的是同一个 ONNX 问题，但走的是另一条路：不再从源码编译 ONNX，
+而是给 `docker buildx` 传 `--build-arg ONNX_IMAGE=docker.io/b3log/siyuan@sha256:…`，
+直接复用官方 v3.8.11 镜像里已构建好的 musl 产物（两个架构各一个 digest）。
+v3.8.11 的 Dockerfile 第 141 行就是 `FROM ${ONNX_IMAGE} AS onnx-runtime`，所以这个覆盖
+在我们这套 Dockerfile 上同样成立，能整段跳过 `onnx-source` 与 `onnx-build`。
+
+两条路的取舍：复用官方镜像更快也更稳（不再依赖任何 fork 存活，也不再编译 ORT），
+但需要改 `release-docker.yml` 并递增 `PATCH_REVISION`，等于换一个新镜像；
+当前 p4 的回退链已经产出可用镜像。是否切换需要单独决定，不在本次冻结范围内。
 
 ## 边界声明
 

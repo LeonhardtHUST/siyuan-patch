@@ -34,7 +34,11 @@ jobs:
       - name: Fetch upstream
         run: |
           git remote add upstream https://github.com/MohamedElashri/siyuan-patch.git
-          git fetch upstream main --tags
+          # 只取分支，不带 --tags。本 fork 自己发布过 v3.8.8 / v3.8.10 等同名 release tag，
+          # 指向我们的提交；父仓库的同名 tag 指向另一批提交。`--tags` 会因
+          # "would clobber existing tag" 返回 1，在 bash -e 下直接中断整个步骤。
+          # 本工作流后续只使用 upstream/main，不需要父仓库的 tag。
+          git fetch upstream main --no-tags
 
       - name: Try fast-forward
         id: ff
