@@ -121,8 +121,10 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: amd64
+            onnx_digest: sha256:4f027099cfc94c3715c0ef50891d469ffefa99040edd13800e7fa42dc2a4574d
           - os: ubuntu-24.04-arm
             arch: arm64
+            onnx_digest: sha256:e8ce09abf4a191fbb6ac84582f1e77116be55b877d4a8f740b8c54ca31d0c779
     permissions:
       contents: read
       packages: write
@@ -205,9 +207,17 @@ jobs:
           UPSTREAM_TAG: ${{ needs.prepare.outputs.upstream_tag }}
           PATCH_REVISION: ${{ needs.prepare.outputs.patch_revision }}
           STAGING_TAG: ${{ steps.staging.outputs.staging_tag }}
+          ONNX_DIGEST: ${{ matrix.onnx_digest }}
         run: |
           set -euo pipefail
           image="ghcr.io/${OWNER,,}/siyuan"
+          # 上游 v3.8.11 起 microsoft/onnxruntime 整仓消失，改用官方镜像里已构建好的
+          # musl 产物，跳过 onnx-source/onnx-build 两个阶段。未提供 digest 的版本照旧
+          # 走 docker-build.patch 里的源码回退链。
+          build_args=()
+          if [[ "$UPSTREAM_TAG" == v3.8.11 && -n "${ONNX_DIGEST:-}" ]]; then
+            build_args+=(--build-arg "ONNX_IMAGE=docker.io/b3log/siyuan@${ONNX_DIGEST}")
+          fi
           docker buildx build \
             --push \
             --platform "linux/${ARCH}" \
@@ -217,6 +227,7 @@ jobs:
             --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
             --label "io.siyuan-patch.upstream-version=${UPSTREAM_TAG}" \
             --label "io.siyuan-patch.patch-revision=${PATCH_REVISION}" \
+            "${build_args[@]}" \
             -t "${image}:${STAGING_TAG}" \
             .
 

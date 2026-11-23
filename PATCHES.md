@@ -21,7 +21,7 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 单一来源：`PATCH_REVISION`
 
-仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `4`），**全局单调、跨上游不重置**。
+仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `5`），**全局单调、跨上游不重置**。
 例如上游到 v3.8.11 时 N 若为 7，镜像 tag 是 `v3.8.11-p7`，不会回到 p1。
 
 - `release-docker` / `watch-upstream` 的 `patch_revision` 输入仅为向后兼容：留空即使用文件，填写则必须与文件相等，否则拒绝。
@@ -64,6 +64,8 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 |---|---|---|---|
 | `patches/siyuan/disable-update.patch` | 禁用自动更新提示 | 全部 | 上游自带 |
 | `patches/siyuan/default-config.patch` | 默认配置调整 | 全部 | 上游自带 |
+| `patches/siyuan/ocr-arm64-recovery.patch` | 补 linux-arm64 / windows-arm64 的 OCR 运行时下载项 | PC | 上游父仓库引入，仅 v3.8.11 应用 |
+| `patches/siyuan-ios/onnxruntime-local-package.patch` | iOS 改用本地 ONNX Runtime Swift 包 | iOS | 上游父仓库引入，仅 v3.8.11 应用 |
 | `patches/siyuan/mock-vip-user.patch` | 模拟付费用户（解锁功能） | 全部 | 上游自带 |
 | `patches/siyuan/docker-build.patch` | Docker 构建适配 | docker | 上游自带，本 fork 追加 ONNX 源回退，见下 |
 | **`patches/siyuan/math-renderer-registry.patch`** | **数学渲染器注册表：允许插件在 KaTeX 之前认领公式节点** | **docker（已接）** | **本 fork 新增，见下** |
