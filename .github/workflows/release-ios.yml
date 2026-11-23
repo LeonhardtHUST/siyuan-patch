@@ -61,11 +61,17 @@ jobs:
         working-directory: ${{ github.workspace }}/siyuan-note/siyuan-ios
         run: |
           git apply ../patches/siyuan-ios/onnxruntime-local-package.patch
-          # The mirror carries the exact revision from the upstream Package.resolved.
-          git clone --depth=1 --branch 1.24.2 \
+          # microsoft/onnxruntime-swift-package-manager 已随 onnxruntime 主仓库一起消失；
+          # download.onnxruntime.ai 也返回 404 且证书与主机名不匹配，SwiftPM 无法解析
+          # 该包裹里的 binaryTarget。改用同一 fork 的 apx-mirror-binaries 分支，
+          # 它把两个二进制 target 指向该仓库自己的 GitHub Releases，校验和不变：
+          #   onnxruntime            f7100a99...
+          #   onnxruntime_extensions 346522d1...
+          # 固定到具体 commit，避免分支漂移。
+          git clone --depth=1 --branch apx-mirror-binaries \
             https://github.com/dominionapps/onnxruntime-swift-package-manager.git
           revision=$(git -C onnxruntime-swift-package-manager rev-parse HEAD)
-          if [ "$revision" != b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2 ]; then
+          if [ "$revision" != 213677283788bf766c8ac00e7d69814b57d63e97 ]; then
             echo "Unexpected ONNX Runtime Swift package revision: $revision" >&2
             exit 1
           fi

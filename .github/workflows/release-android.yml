@@ -16,6 +16,9 @@ permissions:
 jobs:
   build:
     runs-on: ${{ matrix.config.os }}
+    env:
+      # 步骤级 if 读不到自身的 env，这里放 job 级供 keystore 两个分支判断。
+      KEYSTORE_B64: ${{ secrets.KEYSTORE }}
     strategy:
       matrix:
         config:
@@ -136,11 +139,35 @@ jobs:
 
       - name: Decode Keystore
         id: decode_keystore
+        if: env.KEYSTORE_B64 != ''
         uses: timheuer/base64-to-file@v2.0.0
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
         with:
           fileName: "debug.jks"
           fileDir: ${{ github.workspace }}/siyuan-note/siyuan-android/keystore
           encodedString: ${{ secrets.KEYSTORE }}
+
+      # 仓库未配置 KEYSTORE secret 时退化：现场生成一次性 debug keystore。
+      # debug-build.patch 里的 signingConfigs.debug 用别名 debug + KEYSTORE_PASSWORD，
+      # 因此这里必须用同一别名与同一密码变量。本 fork 从未发布过 Android 产物，
+      # 生成新的调试签名不会破坏既有安装的升级路径；配置 secret 后自动走上面的分支。
+      - name: Generate fallback debug keystore
+        if: env.KEYSTORE_B64 == ''
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+        run: |
+          set -euo pipefail
+          keystore_dir="${{ github.workspace }}/siyuan-note/siyuan-android/keystore"
+          mkdir -p "$keystore_dir"
+          password="siyuanpatchdebug"
+          keytool -genkeypair -noprompt \
+            -keystore "$keystore_dir/debug.jks" \
+            -alias debug -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$password" -keypass "$password" \
+            -dname "CN=siyuan-patch,O=siyuan-patch,C=NA"
+          echo "::warning::未配置 KEYSTORE secret，已生成临时 debug keystore；产物为调试签名"
+          echo "KEYSTORE_PASSWORD=$password" >> "$GITHUB_ENV"
 
       - name: Building Android
         working-directory: ${{ github.workspace }}/siyuan-note/siyuan-android
