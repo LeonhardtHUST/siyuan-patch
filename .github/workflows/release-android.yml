@@ -167,7 +167,6 @@ jobs:
             -storepass "$password" -keypass "$password" \
             -dname "CN=siyuan-patch,O=siyuan-patch,C=NA"
           echo "::warning::未配置 KEYSTORE secret，已生成临时 debug keystore；产物为调试签名"
-          echo "KEYSTORE_PASSWORD=$password" >> "$GITHUB_ENV"
 
       - name: Building Android
         working-directory: ${{ github.workspace }}/siyuan-note/siyuan-android
@@ -175,7 +174,9 @@ jobs:
           chmod 777 ./gradlew
           ./gradlew :app:assembleDebug --refresh-dependencies --no-daemon
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          # 步骤级 env 优先于 GITHUB_ENV，所以未配置 secret 时必须在这里显式回退，
+          # 否则 build.gradle 读到空密码，报 "keystore password was incorrect"。
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'siyuanpatchdebug' }}
 
       - uses: joutvhu/get-release@v1.0.4
         id: get_current_release
