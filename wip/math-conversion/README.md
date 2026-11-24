@@ -43,13 +43,17 @@
 
 ## 接入构建前还要做
 
-1. **与 `content-prefetch` 做一次组合重基线**。两者都在语言包首行和 `destroy.ts` 同址插入，
-   组合应用时只剩两处冲突：
+1. **与 `content-prefetch` 做一次组合重基线（须在 v3.8.12 基线上做）**。2026-11-24 已在
+   v3.8.11 + 已接入补丁的组合树上验证：7 个补丁按序应用后只剩两处同址冲突，合并方式固定为
    - 22 个语言包：各自都想在 `{` 之后插入键（内容互不影响，合并即可）
-   - `app/src/protyle/util/destroy.ts`：两者都在 `destroy()` 的 protyle 空检查后插入清理代码，合并保留双方
-2. 把七个文件移到 `patches/siyuan/`，并在 `release-docker.yml`、`release-pc.yml`、
-   `release-android.yml`、`release-ios.yml` 与 `watch-upstream.yml` 的补丁列表里按上述顺序追加
-   （`watch-upstream` 的顺序必须与 `release-docker` 一致）
+   - `app/src/protyle/util/destroy.ts`：两者都在 `destroy()` 里插入清理代码，合并保留双方
+
+   但 `content-prefetch` 已在 2026-11-24 重基线到 v3.8.12（上游新增 22 个语言键、改写
+   `destroy.ts` 与 `index.d.ts` 类型），所以这套补丁也必须在 v3.8.12 上重做一次组合重基线，
+   再逐条核对语义。
+2. 把七个文件移到 `patches/siyuan/`，并在 `release-docker.yml` 与 `watch-upstream.yml` 的补丁
+   列表里按上述顺序追加（顺序必须两处一致）。平台 dist 构建自 2026-11-24 起已停用，
+   平台 dist 工作流已删除，不再需要改它们。
 3. 递增 `PATCH_REVISION`（`patches/**` 变更强制要求），这会产生新的 `pN` 镜像
 4. 验证：`pnpm run test:focused src/protyle/render/mathConversionBridge.test.ts` 等、
    `go test ./kernel/mathconversion/...`、`go test ./kernel/model -run MathConversion`；

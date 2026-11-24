@@ -2,7 +2,7 @@
 
 本 fork（`LeonhardtHUST/siyuan-patch`）在 [MohamedElashri/siyuan-patch](https://github.com/MohamedElashri/siyuan-patch)
 的基础上维护补丁集。所有补丁以 `git apply` 方式应用到 [siyuan-note/siyuan](https://github.com/siyuan-note/siyuan)
-对应 tag 的源码树上，由 `.github/workflows/release-*.yml` 构建分发。
+对应 tag 的源码树上，由 docker 镜像流程（`watch-upstream` → `release-docker`）构建分发；平台 dist 构建已于 2026-11-24 停止。
 
 > 原则：本仓库承载**通用呈现管线注入点和可选前端体验增强**，不包含任何 Typst 专属逻辑（Typst 渲染逻辑在
 > [siyuan-typst-plugin](https://github.com/LeonhardtHUST/siyuan-typst-plugin) 插件侧）。
@@ -21,12 +21,12 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 单一来源：`PATCH_REVISION`
 
-仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `5`），**全局单调、跨上游不重置**。
+仓库根 `PATCH_REVISION` 是唯一来源：纯文本十进制正整数（当前 `6`），**全局单调、跨上游不重置**。
 例如上游到 v3.8.11 时 N 若为 7，镜像 tag 是 `v3.8.11-p7`，不会回到 p1。
 
 - `release-docker` / `watch-upstream` 的 `patch_revision` 输入仅为向后兼容：留空即使用文件，填写则必须与文件相等，否则拒绝。
 - 完整 tag 中的 N 必须等于文件值；历史重建应 checkout 对应历史 commit，而不是把当前补丁塞进旧 N。机制引入前的历史 commit 没有 `check-image-version` push 运行，`release-docker` 的 gate 会拒绝发布（不提供绕过开关）。
-- 任何 `patches/**`、`release-docker.yml`、`watch-upstream.yml`、`release-cron.yml`、版本 helper / 检查 workflow 的变更，都必须递增 N（保守策略）。只改文档不强制；单独递增 N 可用于重建。
+- 任何 `patches/**`、`release-docker.yml`、`watch-upstream.yml`、版本 helper / 检查 workflow 的变更，都必须递增 N（保守策略）。只改文档不强制；单独递增 N 可用于重建。
 - 强制点：`.github/workflows/check-image-version.yml` 对每个 main push 与 PR 比较 base 与 head；首次引入必须为 1，回退必败。CI 会先从 base commit 取出旧 checker 复跑，避免通过修改 checker 自我绕过。
 - `release-docker` 发布前还要求：本次 `github.sha` 在 main 上存在最新的 `check-image-version` **push** 运行且结论为 success，并要求只从 main 运行。手动在红色 commit 上 dispatch 会被拒绝。
 - 保护边界：这些检查保护 CI 触发的发布与并发 workflow；不能阻止拥有仓库写权限的人直接向 GHCR 推送同名 tag，也不代表已经配置 branch protection / 强制 review。建议对 main 开启 required status check、禁止 force push。
@@ -53,7 +53,12 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 部署端兼容与合入顺序
 
-`release-cron` 仍按上游 `vX.Y.Z` 创建 GitHub Release；PC / iOS / Android 发行流程也未迁移到 `-pN`。
+**2026-11-24 起，本仓库 CI 只保留 docker 镜像构建。** PC / iOS / Android 的 dist 构建、
+`release-cron`（上游语义 GitHub Release）与 `release-checksums` 已删除，平台侧补丁
+（`patches/siyuan-ios/`、`patches/siyuan-android/`、`patches/siyuan/ocr-arm64-recovery.patch`）
+也随之一并删除，不再参与任何构建。
+docker 镜像的构建入口只剩 `watch-upstream` → `release-docker`。
+
 `deploy-siyuan` 位于**私有 config 仓库**（不在本仓库），由 `schedule`（每 30 分钟）+ `workflow_dispatch` 触发。兼容改造已先行合入 config 的 `master`（`8f441e4`）：识别 `vX.Y.Z-pN`，按 (X,Y,Z,N) 数值排序，旧无后缀 tag 按 p0 兼容。
 
 部署端将完整 tag 保存到 `SIYUAN_TAG`，健康检查同时比较上游 `X.Y.Z` 和运行容器的完整镜像引用，失败时回滚到上一个完整 tag。跨仓库迁移必须 **先 config、后 producer（镜像 tag 切换）**；旧版部署工作流无法正确检查带补丁后缀的目标。通用说明与历史本地交付物的使用边界见 `patches/config/README.md`。合入代码不等于已经构建或部署新标签，应分别核对版本检查、镜像构建和部署运行结果。
@@ -62,15 +67,16 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 | 补丁文件 | 用途 | 适用范围 | 说明 |
 |---|---|---|---|
-| `patches/siyuan/disable-update.patch` | 禁用自动更新提示 | 全部 | 上游自带 |
-| `patches/siyuan/default-config.patch` | 默认配置调整 | 全部 | 上游自带 |
-| `patches/siyuan/ocr-arm64-recovery.patch` | 补 linux-arm64 / windows-arm64 的 OCR 运行时下载项 | PC | 上游父仓库引入，仅 v3.8.11 应用 |
-| `patches/siyuan-ios/onnxruntime-local-package.patch` | iOS 改用本地 ONNX Runtime Swift 包 | iOS | 上游父仓库引入，仅 v3.8.11 应用 |
-| `patches/siyuan/mock-vip-user.patch` | 模拟付费用户（解锁功能） | 全部 | 上游自带 |
+| `patches/siyuan/disable-update.patch` | 禁用自动更新提示 | docker | 上游自带 |
+| `patches/siyuan/default-config.patch` | 默认配置调整 | docker | 上游自带 |
+| `patches/siyuan/mock-vip-user.patch` | 模拟付费用户（解锁功能） | docker | 上游自带 |
 | `patches/siyuan/docker-build.patch` | Docker 构建适配 | docker | 上游自带，本 fork 追加 ONNX 源回退，见下 |
 | **`patches/siyuan/math-renderer-registry.patch`** | **数学渲染器注册表：允许插件在 KaTeX 之前认领公式节点** | **docker（已接）** | **本 fork 新增，见下** |
-| **`patches/siyuan/content-prefetch.patch`** | **可选的块边界内容预取与同源图片预取** | **PC / Docker / Android / iOS** | **默认关闭，见下** |
-| **`patches/siyuan/startup-slow-loading.patch`** | **慢启动诊断：页面资源阶段独立 120 秒预算，业务阶段仍 30 秒** | **PC / Docker / Android / iOS** | **本 fork 新增，见下** |
+| **`patches/siyuan/content-prefetch.patch`** | **可选的块边界内容预取与同源图片预取** | **docker** | **默认关闭，见下；已重基线到 v3.8.12** |
+| **`patches/siyuan/startup-slow-loading.patch`** | **慢启动诊断：页面资源阶段独立 120 秒预算，业务阶段仍 30 秒** | **docker** | **本 fork 新增，见下** |
+
+> 平台侧补丁 `patches/siyuan-ios/*`、`patches/siyuan-android/*` 与 `patches/siyuan/ocr-arm64-recovery.patch`
+> 已随平台 dist 构建停止一并删除（见 git 历史）。
 
 ## math-renderer-registry.patch
 
@@ -147,13 +153,20 @@ npx esbuild app/src/protyle/render/mathRender.ts --loader:.ts=ts --outfile=/dev/
 
 ### 构建与验证
 
-本补丁基于 **v3.8.11**，独立于数学渲染器补丁，已接入 PC、Docker、Android、iOS 的源码补丁阶段及 `watch-upstream` 漂移预检。配置字段、UI、多语言和行为回归测试随补丁一起应用。
+本补丁当前基于 **v3.8.12**（2026-11-24 重基线），独立于数学渲染器补丁，只接入 docker 镜像构建与 `watch-upstream` 漂移预检。配置字段、UI、多语言和行为回归测试随补丁一起应用。
 
 v3.8.11 刷新时改动过的冲突点（供下次对照）：22 个语言包在文件首行各新增 `contentPrefetch` /
 `contentPrefetchTip`，上游同版本也在文件头部追加了新键，因此两条键放在上游新增键之前，键集合仍与其余语言一致；
 `app/src/types/api/index.d.ts` 的三处 `SetEditor*` 类型按字母序插在 `codeTabSpaces` 之后，并保留上游
 新增的 `databaseShowIcon`、`databaseShowRelationIcon`、`hideBreadcrumbIcons`；事务相关的单测夹具把
 `invalidateContentPrefetchFor` 桩并入上游扩展后的依赖对象。
+
+v3.8.12 重基线（2026-11-24）的冲突点是对的：上游在 22 个语言包文件头部追加了 22 个新键
+（`agentQuoteAdded`、`saveToGallery`、`aiPolish` 等），并在 `destroy.ts` 增加了
+`invalidateMobileEditorSheet` / `destroyAVHorizontalScrollbar` 的导入与调用，同时改写了
+`SettingEditing`、`SettingEditor` 等类型；因此本次只把 `contentPrefetch` / `contentPrefetchTip`
+两条键插到 `{` 之后、把清理代码插到新增调用之后、把 `contentPrefetch` 成员按字母序插进新版本的
+类型单行里，其余上游改动全部保留。
 
 ```bash
 # 在未打补丁的固定版本源码树中检查，再应用
@@ -186,7 +199,7 @@ pnpm run api:check
 
 ### 适用范围与验证
 
-补丁基于 **v3.8.10**，上游 v3.8.11 未改动 `app/src/boot/startupError.ts`，该补丁在 v3.8.11 上仍可干净应用，无需重基线。只修改该文件与其单测。PC / Docker / Android / iOS 均在 `content-prefetch.patch` 之后应用；`watch-upstream` 的预演顺序与 `release-docker` 一致，本补丁位于末尾。
+补丁基于 **v3.8.10**，上游 v3.8.11 / v3.8.12 均未改动 `app/src/boot/startupError.ts`，该补丁在这两个版本上都能干净应用，无需重基线。只修改该文件与其单测。只在 docker 链里应用，位于 `content-prefetch.patch` 之后；`watch-upstream` 的预演顺序与 `release-docker` 一致，本补丁位于末尾。
 
 ```bash
 git apply --check /path/to/siyuan-patch/patches/siyuan/startup-slow-loading.patch
@@ -210,8 +223,8 @@ pnpm run test:focused src/boot/startupError.test.ts
 - `release-docker.yml` 已加入数学渲染器补丁的 `git apply` 行，并改造为推送 **GHCR**
   （`ghcr.io/<owner>/siyuan`，使用内置 `GITHUB_TOKEN`，**无需配置任何 secrets**）；
   镜像按 canonical tag `vX.Y.Z-pN` 发布，见上文「镜像版本与不可变 tag 纪律」。
-  `release-pc.yml` / `release-android.yml` / `release-ios.yml` **尚未加入**——需要对应平台
-  产物时再逐条添加并验证。
+  平台产物工作流（`release-pc.yml` / `release-android.yml` / `release-ios.yml` /
+  `release-cron.yml` / `release-checksums.yml`）已于 2026-11-24 删除。
 - GHCR 上的 `siyuan` 包**当前是 public**，匿名即可拉取与查询 tag。`deploy-siyuan` 的
   `tag_version.py pick` 走匿名令牌，因此**不要把包改回 private**，否则部署会在选版本阶段失败。
 - 上游同步：`.github/workflows/sync-upstream.yml` 每日自动快进；出现分叉会推
@@ -239,6 +252,10 @@ pnpm run test:focused src/boot/startupError.test.ts
 | `check-image-version.yml` | 每个 PR / main push | 版本纪律硬校验：N 严格递增、首次引入为 1、回退失败；base checker 复跑防自我绕过 |
 | `release-docker.yml` | 手动 / 被 watch 触发 | 发布不可变多架构镜像 `vX.Y.Z-pN` 到 GHCR |
 | `deploy-siyuan`（私有 config 仓库） | schedule 每 30 分钟 + 手动 | 按上游版本与补丁修订号选镜像，在服务器 runner 上更新、健康检查及失败回滚 |
+
+> **已删除（2026-11-24）**：`release-cron.yml`、`release-checksums.yml`、`release-pc.yml`、
+> `release-ios.yml`、`release-android.yml`。平台上不再有 dist 构建；docker 镜像的唯一构建入口
+> 是 `watch-upstream` → `release-docker`。
 
 ### watch-upstream
 

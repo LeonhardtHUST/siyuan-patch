@@ -1,245 +1,245 @@
 diff --git a/app/appearance/langs/ar.json b/app/appearance/langs/ar.json
-index 5b9c1a7..266ecef 100644
+index 8e35be7..9e75fca 100644
 --- a/app/appearance/langs/ar.json
 +++ b/app/appearance/langs/ar.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "الجلب المسبق للمحتوى",
 +	"contentPrefetchTip": "عند التفعيل، يتم الجلب المسبق للمحتوى المجاور في المستند الحالي وصوره المحلية أثناء القراءة لتقليل انتظار التمرير؛ معطّل افتراضيًا",
- 	"confirmActionFailed": "فشلت العملية. يرجى المحاولة مرة أخرى",
- 	"updateInstallNow": "التثبيت الآن",
- 	"updateInstallLater": "ليس الآن",
+ 	"agentQuoteAdded": "أُضيف الاقتباس إلى محادثة الوكيل (${count})",
+ 	"saveToGallery": "حفظ في المعرض",
+ 	"bazaarUpdateDate": "تاريخ التحديث",
 diff --git a/app/appearance/langs/de.json b/app/appearance/langs/de.json
-index 224b266..0970369 100644
+index c6b4a42..acc62c8 100644
 --- a/app/appearance/langs/de.json
 +++ b/app/appearance/langs/de.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Inhalte vorab laden",
 +	"contentPrefetchTip": "Wenn aktiviert, werden beim Lesen benachbarte Inhalte des aktuellen Dokuments und deren lokale Bilder vorab geladen, um die Wartezeit beim Scrollen zu verkürzen; standardmäßig deaktiviert",
- 	"confirmActionFailed": "Vorgang fehlgeschlagen. Bitte erneut versuchen",
- 	"updateInstallNow": "Jetzt installieren",
- 	"updateInstallLater": "Später installieren",
+ 	"agentQuoteAdded": "Zitat zum Agenten-Chat hinzugefügt (${count})",
+ 	"saveToGallery": "In der Galerie speichern",
+ 	"bazaarUpdateDate": "Aktualisierungsdatum",
 diff --git a/app/appearance/langs/en.json b/app/appearance/langs/en.json
-index 3c230b8..a5adaeb 100644
+index b93f3e1..66648f7 100644
 --- a/app/appearance/langs/en.json
 +++ b/app/appearance/langs/en.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Content prefetch",
 +	"contentPrefetchTip": "Prefetch nearby content of the current document and its local images while reading to reduce scroll loading time; off by default",
- 	"confirmActionFailed": "Operation failed. Please try again",
- 	"updateInstallNow": "Install now",
- 	"updateInstallLater": "Not now",
+ 	"agentQuoteAdded": "Quote added to Agent Chat (${count})",
+ 	"saveToGallery": "Save to Gallery",
+ 	"bazaarUpdateDate": "Update date",
 diff --git a/app/appearance/langs/es.json b/app/appearance/langs/es.json
-index e395675..bb846ff 100644
+index ae4a0cc..bd02e2b 100644
 --- a/app/appearance/langs/es.json
 +++ b/app/appearance/langs/es.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Precarga de contenido",
 +	"contentPrefetchTip": "Al activarse, precarga el contenido cercano del documento actual y sus imágenes locales durante la lectura para reducir la espera al desplazarse; desactivado de forma predeterminada",
- 	"confirmActionFailed": "La operación falló. Inténtalo de nuevo",
- 	"updateInstallNow": "Instalar ahora",
- 	"updateInstallLater": "Ahora no",
+ 	"agentQuoteAdded": "Cita añadida al chat del agente (${count})",
+ 	"saveToGallery": "Guardar en la galería",
+ 	"bazaarUpdateDate": "Fecha de actualización",
 diff --git a/app/appearance/langs/fr.json b/app/appearance/langs/fr.json
-index 3a9375b..f07ddf3 100644
+index bc50e6e..61c255b 100644
 --- a/app/appearance/langs/fr.json
 +++ b/app/appearance/langs/fr.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Préchargement du contenu",
 +	"contentPrefetchTip": "Une fois activé, précharge le contenu voisin du document actuel et ses images locales pendant la lecture afin de réduire l’attente lors du défilement ; désactivé par défaut",
- 	"confirmActionFailed": "L'opération a échoué. Veuillez réessayer",
- 	"updateInstallNow": "Installer maintenant",
- 	"updateInstallLater": "Plus tard",
+ 	"agentQuoteAdded": "Citation ajoutée à la conversation avec l’agent (${count})",
+ 	"saveToGallery": "Enregistrer dans la galerie",
+ 	"bazaarUpdateDate": "Date de mise à jour",
 diff --git a/app/appearance/langs/he.json b/app/appearance/langs/he.json
-index f9906c7..951582e 100644
+index 8f1b9e0..5bb03d6 100644
 --- a/app/appearance/langs/he.json
 +++ b/app/appearance/langs/he.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "טעינה מוקדמת של תוכן",
 +	"contentPrefetchTip": "כאשר מופעל, נטענים מראש תוכן סמוך במסמך הנוכחי והתמונות המקומיות שבו בזמן הקריאה כדי לקצר את ההמתנה בגלילה; מושבת כברירת מחדל",
- 	"confirmActionFailed": "הפעולה נכשלה. יש לנסות שוב",
- 	"updateInstallNow": "התקנה עכשיו",
- 	"updateInstallLater": "לא עכשיו",
+ 	"agentQuoteAdded": "הציטוט נוסף לצ׳אט עם הסוכן (${count})",
+ 	"saveToGallery": "שמירה בגלריה",
+ 	"bazaarUpdateDate": "תאריך עדכון",
 diff --git a/app/appearance/langs/hi.json b/app/appearance/langs/hi.json
-index 9e17092..b2f8a57 100644
+index ee205b9..a8491ec 100644
 --- a/app/appearance/langs/hi.json
 +++ b/app/appearance/langs/hi.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "सामग्री प्रीफ़ेच",
 +	"contentPrefetchTip": "सक्षम होने पर पढ़ते समय वर्तमान दस्तावेज़ की निकटवर्ती सामग्री और उसकी स्थानीय छवियाँ पहले से लोड की जाती हैं ताकि स्क्रॉल करते समय प्रतीक्षा कम हो; डिफ़ॉल्ट रूप से बंद",
- 	"confirmActionFailed": "कार्रवाई विफल रही। कृपया दोबारा प्रयास करें",
- 	"updateInstallNow": "अभी इंस्टॉल करें",
- 	"updateInstallLater": "अभी नहीं",
+ 	"agentQuoteAdded": "एजेंट चैट में उद्धरण जोड़ा गया (${count})",
+ 	"saveToGallery": "गैलरी में सहेजें",
+ 	"bazaarUpdateDate": "अपडेट की तारीख",
 diff --git a/app/appearance/langs/id.json b/app/appearance/langs/id.json
-index 4e53f1e..a44a315 100644
+index 30d0a72..49234b3 100644
 --- a/app/appearance/langs/id.json
 +++ b/app/appearance/langs/id.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Pramuat konten",
 +	"contentPrefetchTip": "Saat diaktifkan, konten di sekitar dokumen saat ini dan gambar lokalnya dimuat terlebih dahulu selama membaca untuk mengurangi waktu tunggu saat menggulir; nonaktif secara default",
- 	"confirmActionFailed": "Operasi gagal. Silakan coba lagi",
- 	"updateInstallNow": "Instal sekarang",
- 	"updateInstallLater": "Nanti saja",
+ 	"agentQuoteAdded": "Kutipan ditambahkan ke percakapan agen (${count})",
+ 	"saveToGallery": "Simpan ke Galeri",
+ 	"bazaarUpdateDate": "Tanggal Pembaruan",
 diff --git a/app/appearance/langs/it.json b/app/appearance/langs/it.json
-index 3300aa6..dcb5953 100644
+index a4e8d18..6883de8 100644
 --- a/app/appearance/langs/it.json
 +++ b/app/appearance/langs/it.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Precaricamento dei contenuti",
 +	"contentPrefetchTip": "Se attivato, precarica i contenuti vicini del documento corrente e le relative immagini locali durante la lettura per ridurre l’attesa dello scorrimento; disattivato per impostazione predefinita",
- 	"confirmActionFailed": "Operazione non riuscita. Riprova",
- 	"updateInstallNow": "Installa ora",
- 	"updateInstallLater": "Non ora",
+ 	"agentQuoteAdded": "Citazione aggiunta alla chat con l’agente (${count})",
+ 	"saveToGallery": "Salva nella galleria",
+ 	"bazaarUpdateDate": "Data di aggiornamento",
 diff --git a/app/appearance/langs/ja.json b/app/appearance/langs/ja.json
-index fe7dcc7..273c6b0 100644
+index 208e53a..c55d545 100644
 --- a/app/appearance/langs/ja.json
 +++ b/app/appearance/langs/ja.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "コンテンツの先読み",
 +	"contentPrefetchTip": "有効にすると、閲覧中に現在のドキュメントの近接する内容とそのローカル画像を先読みし、スクロール時の待ち時間を短縮します。既定では無効",
- 	"confirmActionFailed": "操作に失敗しました。もう一度お試しください",
- 	"updateInstallNow": "今すぐインストール",
- 	"updateInstallLater": "今はインストールしない",
+ 	"agentQuoteAdded": "エージェントのチャットに引用を追加しました（${count} 件）",
+ 	"saveToGallery": "ギャラリーに保存",
+ 	"bazaarUpdateDate": "更新日",
 diff --git a/app/appearance/langs/ko.json b/app/appearance/langs/ko.json
-index da54f58..a9f10e3 100644
+index 332afae..fe779f0 100644
 --- a/app/appearance/langs/ko.json
 +++ b/app/appearance/langs/ko.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "콘텐츠 미리 가져오기",
 +	"contentPrefetchTip": "활성화하면 읽는 동안 현재 문서 주변 콘텐츠와 로컬 이미지를 미리 가져와 스크롤 대기 시간을 줄입니다. 기본값은 꺼짐",
- 	"confirmActionFailed": "작업에 실패했습니다. 다시 시도해 주세요",
- 	"updateInstallNow": "지금 설치",
- 	"updateInstallLater": "나중에 설치",
+ 	"agentQuoteAdded": "에이전트 대화에 인용을 추가했습니다(${count}개)",
+ 	"saveToGallery": "갤러리에 저장",
+ 	"bazaarUpdateDate": "업데이트 날짜",
 diff --git a/app/appearance/langs/nl.json b/app/appearance/langs/nl.json
-index 48da5b1..929e4f1 100644
+index 8902405..c285a06 100644
 --- a/app/appearance/langs/nl.json
 +++ b/app/appearance/langs/nl.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Inhoud vooraf laden",
 +	"contentPrefetchTip": "Indien ingeschakeld worden tijdens het lezen nabije inhoud van het huidige document en de bijbehorende lokale afbeeldingen vooraf geladen om de wachttijd bij scrollen te verkorten; standaard uitgeschakeld",
- 	"confirmActionFailed": "De bewerking is mislukt. Probeer het opnieuw",
- 	"updateInstallNow": "Nu installeren",
- 	"updateInstallLater": "Niet nu",
+ 	"agentQuoteAdded": "Citaat aan agentchat toegevoegd (${count})",
+ 	"saveToGallery": "Opslaan in galerij",
+ 	"bazaarUpdateDate": "Bijgewerkt op",
 diff --git a/app/appearance/langs/pl.json b/app/appearance/langs/pl.json
-index da10678..e183347 100644
+index 6781725..ee528df 100644
 --- a/app/appearance/langs/pl.json
 +++ b/app/appearance/langs/pl.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Wstępne wczytywanie treści",
 +	"contentPrefetchTip": "Po włączeniu podczas czytania wstępnie wczytywana jest sąsiednia treść bieżącego dokumentu i jej lokalne obrazy, aby skrócić oczekiwanie na przewijanie; domyślnie wyłączone",
- 	"confirmActionFailed": "Operacja nie powiodła się. Spróbuj ponownie",
- 	"updateInstallNow": "Zainstaluj teraz",
- 	"updateInstallLater": "Nie teraz",
+ 	"agentQuoteAdded": "Dodano cytat do czatu z agentem (${count})",
+ 	"saveToGallery": "Zapisz w galerii",
+ 	"bazaarUpdateDate": "Data aktualizacji",
 diff --git a/app/appearance/langs/pt-BR.json b/app/appearance/langs/pt-BR.json
-index baa56d0..29e10b0 100644
+index 97b716c..4a0d4aa 100644
 --- a/app/appearance/langs/pt-BR.json
 +++ b/app/appearance/langs/pt-BR.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Pré-carregamento de conteúdo",
 +	"contentPrefetchTip": "Quando ativado, pré-carrega o conteúdo próximo do documento atual e suas imagens locais durante a leitura para reduzir a espera ao rolar; desativado por padrão",
- 	"confirmActionFailed": "Falha na operação. Tente novamente",
- 	"updateInstallNow": "Instalar agora",
- 	"updateInstallLater": "Agora não",
+ 	"agentQuoteAdded": "Citação adicionada à conversa com o agente (${count})",
+ 	"saveToGallery": "Salvar na galeria",
+ 	"bazaarUpdateDate": "Data da atualização",
 diff --git a/app/appearance/langs/ru.json b/app/appearance/langs/ru.json
-index 9cfa66e..d812294 100644
+index c04f734..ec586dd 100644
 --- a/app/appearance/langs/ru.json
 +++ b/app/appearance/langs/ru.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Предзагрузка содержимого",
 +	"contentPrefetchTip": "Если включено, при чтении предварительно загружается соседнее содержимое текущего документа и его локальные изображения, чтобы сократить ожидание при прокрутке; по умолчанию выключено",
- 	"confirmActionFailed": "Не удалось выполнить операцию. Попробуйте ещё раз",
- 	"updateInstallNow": "Установить сейчас",
- 	"updateInstallLater": "Не сейчас",
+ 	"agentQuoteAdded": "Цитата добавлена в чат с агентом (${count})",
+ 	"saveToGallery": "Сохранить в галерею",
+ 	"bazaarUpdateDate": "Дата обновления",
 diff --git a/app/appearance/langs/sk.json b/app/appearance/langs/sk.json
-index 6d37a5c..be0e666 100644
+index d21b9ab..7bab3b8 100644
 --- a/app/appearance/langs/sk.json
 +++ b/app/appearance/langs/sk.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Predbežné načítanie obsahu",
 +	"contentPrefetchTip": "Po zapnutí sa pri čítaní predbežne načítava susedný obsah aktuálneho dokumentu a jeho lokálne obrázky, aby sa skrátilo čakanie pri posúvaní; predvolene vypnuté",
- 	"confirmActionFailed": "Operácia zlyhala. Skúste to znova",
- 	"updateInstallNow": "Nainštalovať teraz",
- 	"updateInstallLater": "Teraz nie",
+ 	"agentQuoteAdded": "Citát bol pridaný do chatu s agentom (${count})",
+ 	"saveToGallery": "Uložiť do galérie",
+ 	"bazaarUpdateDate": "Dátum aktualizácie",
 diff --git a/app/appearance/langs/sr.json b/app/appearance/langs/sr.json
-index 06b7696..f0a31b0 100644
+index 44a88dc..e02d747 100644
 --- a/app/appearance/langs/sr.json
 +++ b/app/appearance/langs/sr.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Учитавање садржаја унапред",
 +	"contentPrefetchTip": "Када је укључено, током читања се унапред учитава оближњи садржај тренутног документа и његове локалне слике ради краћег чекања при померању; подразумевано искључено",
- 	"confirmActionFailed": "Радња није успела. Покушајте поново",
- 	"updateInstallNow": "Инсталирај сада",
- 	"updateInstallLater": "Не сада",
+ 	"agentQuoteAdded": "Цитат је додат у разговор са агентом (${count})",
+ 	"saveToGallery": "Сачувај у галерију",
+ 	"bazaarUpdateDate": "Datum ažuriranja",
 diff --git a/app/appearance/langs/th.json b/app/appearance/langs/th.json
-index e1fec0e..86d0e69 100644
+index 99c4f7b..506ab09 100644
 --- a/app/appearance/langs/th.json
 +++ b/app/appearance/langs/th.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "โหลดเนื้อหาล่วงหน้า",
 +	"contentPrefetchTip": "เมื่อเปิดใช้งาน ระบบจะโหลดเนื้อหาใกล้เคียงของเอกสารปัจจุบันและรูปภาพในเครื่องล่วงหน้าระหว่างการอ่าน เพื่อลดระยะเวลารอเมื่อเลื่อนหน้า ปิดเป็นค่าเริ่มต้น",
- 	"confirmActionFailed": "การดำเนินการล้มเหลว โปรดลองอีกครั้ง",
- 	"updateInstallNow": "ติดตั้งตอนนี้",
- 	"updateInstallLater": "ยังไม่ติดตั้ง",
+ 	"agentQuoteAdded": "เพิ่มข้อความอ้างอิงในแชตกับเอเจนต์แล้ว (${count} รายการ)",
+ 	"saveToGallery": "บันทึกลงในแกลเลอรี",
+ 	"bazaarUpdateDate": "วันที่อัปเดต",
 diff --git a/app/appearance/langs/tr.json b/app/appearance/langs/tr.json
-index 04ac5f8..05b958b 100644
+index 35babff..2012957 100644
 --- a/app/appearance/langs/tr.json
 +++ b/app/appearance/langs/tr.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "İçerik ön yükleme",
 +	"contentPrefetchTip": "Etkinleştirildiğinde, kaydırma beklemesini azaltmak için okuma sırasında geçerli belgenin yakınındaki içeriği ve yerel görsellerini önceden yükler; varsayılan olarak kapalı",
- 	"confirmActionFailed": "İşlem başarısız oldu. Lütfen tekrar deneyin",
- 	"updateInstallNow": "Şimdi yükle",
- 	"updateInstallLater": "Şimdi değil",
+ 	"agentQuoteAdded": "Aracı sohbetine alıntı eklendi (${count})",
+ 	"saveToGallery": "Galeriye kaydet",
+ 	"bazaarUpdateDate": "Güncelleme tarihi",
 diff --git a/app/appearance/langs/uk.json b/app/appearance/langs/uk.json
-index 7a25a5d..f8f0174 100644
+index 49e9a68..e33c4e9 100644
 --- a/app/appearance/langs/uk.json
 +++ b/app/appearance/langs/uk.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "Попереднє завантаження вмісту",
 +	"contentPrefetchTip": "Якщо ввімкнено, під час читання попередньо завантажується сусідній вміст поточного документа та його локальні зображення, щоб скоротити очікування під час прокручування; типово вимкнено",
- 	"confirmActionFailed": "Не вдалося виконати операцію. Спробуйте ще раз",
- 	"updateInstallNow": "Встановити зараз",
- 	"updateInstallLater": "Не зараз",
+ 	"agentQuoteAdded": "Цитату додано до чату з агентом (${count})",
+ 	"saveToGallery": "Зберегти в галерею",
+ 	"bazaarUpdateDate": "Дата оновлення",
 diff --git a/app/appearance/langs/zh-CN.json b/app/appearance/langs/zh-CN.json
-index e371cbb..9453324 100644
+index 5ecf122..023034b 100644
 --- a/app/appearance/langs/zh-CN.json
 +++ b/app/appearance/langs/zh-CN.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "内容预取",
 +	"contentPrefetchTip": "开启后阅读时预取当前文档邻近内容及其中本地图片，减少滚动加载等待；默认关闭",
- 	"confirmActionFailed": "操作失败，请重试",
- 	"updateInstallNow": "现在安装",
- 	"updateInstallLater": "暂不安装",
+ 	"agentQuoteAdded": "已引用到智能体（${count} 条）",
+ 	"saveToGallery": "保存到相册",
+ 	"bazaarUpdateDate": "更新日期",
 diff --git a/app/appearance/langs/zh-TW.json b/app/appearance/langs/zh-TW.json
-index a713f11..cf1b47a 100644
+index a5629f6..b8f9759 100644
 --- a/app/appearance/langs/zh-TW.json
 +++ b/app/appearance/langs/zh-TW.json
 @@ -1,4 +1,6 @@
  {
 +	"contentPrefetch": "內容預取",
 +	"contentPrefetchTip": "開啟後閱讀時預取目前文件鄰近內容及其中本機圖片，減少捲動載入等待；預設關閉",
- 	"confirmActionFailed": "操作失敗，請重試",
- 	"updateInstallNow": "立即安裝",
- 	"updateInstallLater": "暫不安裝",
+ 	"agentQuoteAdded": "已引用到智能體（${count} 則）",
+ 	"saveToGallery": "儲存到相簿",
+ 	"bazaarUpdateDate": "更新日期",
 diff --git a/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy b/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
 index afdb9f6..e875672 100644
 --- a/app/guide/20210808180117-6v0mkxr/20230405172236-pg3l9eu.sy
@@ -1880,10 +1880,10 @@ index 0000000..ea1b3ac
 +    });
 +};
 diff --git a/app/src/protyle/scroll/event.ts b/app/src/protyle/scroll/event.ts
-index 7154e3c..53fc252 100644
+index f77c1c3..1cb00b1 100644
 --- a/app/src/protyle/scroll/event.ts
 +++ b/app/src/protyle/scroll/event.ts
-@@ -78,6 +78,8 @@ export const scrollEvent = (protyle: IProtyle, element: HTMLElement) => {
+@@ -85,6 +85,8 @@ export const scrollEvent = (protyle: IProtyle, element: HTMLElement) => {
              }, Constants.TIMEOUT_LOAD);
          }
  
@@ -2083,19 +2083,21 @@ index 0545b1e..d592a25 100644
                  requests.push({data, callback, finish});
              }),
 diff --git a/app/src/protyle/util/destroy.ts b/app/src/protyle/util/destroy.ts
-index 4bc51e6..3eacbb2 100644
+index d72cbeb..53d6860 100644
 --- a/app/src/protyle/util/destroy.ts
 +++ b/app/src/protyle/util/destroy.ts
-@@ -17,11 +17,17 @@ import {destroyAutoDirection} from "../render/autoDirection";
+@@ -17,6 +17,7 @@ import {destroyAutoDirection} from "../render/autoDirection";
  import {destroyTableCorners} from "../render/tableCorners";
  import {disposeSyncEditorSave} from "./editorSave";
  import {destroyRelatedAVViews} from "../render/av/relatedView";
 +import {invalidateContentPrefetchFor} from "../scroll/contentPrefetchStore";
- 
- export const destroy = (protyle: IProtyle) => {
-     if (!protyle) {
+ import {invalidateMobileEditorSheet} from "../toolbar/mobileEditorSheet";
+ /// #if !MOBILE
+ import {destroyAVHorizontalScrollbar} from "../render/av/horizontalScrollbar";
+@@ -27,6 +28,11 @@ export const destroy = (protyle: IProtyle) => {
          return;
      }
+     invalidateMobileEditorSheet(protyle);
 +    if (protyle.scroll) {
 +        protyle.scroll.invalidateDynamicLoad(protyle);
 +    } else {
@@ -2103,7 +2105,7 @@ index 4bc51e6..3eacbb2 100644
 +    }
      protyle.title?.cancelPendingInput();
      destroyRelatedAVViews(protyle.id);
-     protyle.title?.destroy?.();
+     /// #if !MOBILE
 diff --git a/app/src/protyle/wysiwyg/transaction.ts b/app/src/protyle/wysiwyg/transaction.ts
 index db976cb..2180174 100644
 --- a/app/src/protyle/wysiwyg/transaction.ts
@@ -2191,10 +2193,10 @@ index deebaaf..291bd43 100644
          getTagRemovalChanges: (): [] => [],
          hasReferenceRemoval: () => false,
 diff --git a/app/src/types/api/index.d.ts b/app/src/types/api/index.d.ts
-index bf7d824..b63fdee 100644
+index 00625d6..bbc9c5b 100644
 --- a/app/src/types/api/index.d.ts
 +++ b/app/src/types/api/index.d.ts
-@@ -2152,7 +2152,7 @@ export type SetCriterionRequestInput = { "criterion": CriterionInput | null; };
+@@ -2156,7 +2156,7 @@ export type SetCriterionRequestInput = { "criterion": CriterionInput | null; };
  
  export type SetDatabaseBlockViewRequestInput = { "avID": string; "id": string; "viewID": string; };
  
@@ -2203,9 +2205,9 @@ index bf7d824..b63fdee 100644
  
  export type SetEntryVisibilityRequestInput = { "active"?: string | null; "profiles"?: Array<SettingEntryVisibilityProfileInput | null> | null; "version"?: number | null; };
  
-@@ -2296,13 +2296,13 @@ export type SettingEditing = { "maxCompletionTokens": number; "maxHistoryMessage
+@@ -2300,13 +2300,13 @@ export type SettingEditing = { "maxCompletionTokens": number; "maxHistoryMessage
  
- export type SettingEditingInput = { "maxCompletionTokens"?: number | null; "maxHistoryMessages"?: number | null; "modelId"?: string | null; "temperature"?: number | null; };
+ export type SettingEditingInput = { "maxCompletionTokens"?: number | null; "maxHistoryMessages"?: number | null; "modelId"?: string | null; "reasoningEffort"?: string | null; "temperature"?: number | null; };
  
 -export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "databaseShowIcon": boolean | null; "databaseShowRelationIcon": boolean | null; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "hideBreadcrumbIcons": boolean; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
 +export type SettingEditor = { "allowHTMLBLockScript": boolean; "allowSVGScript": boolean; "assetOpen": SettingAssetOpen | null; "autoCloseRefBrackets": boolean; "autoDirection": boolean; "backlinkBlockSort": number; "backlinkContainChildren": boolean; "backlinkExpandCount": number; "backlinkGlobalSort": number; "backlinkHideReference": boolean; "backlinkMentionExclude": string; "backlinkShowBottom": boolean; "backlinkSort": number | null; "backmentionExpandCount": number; "backmentionSort": number | null; "blockGutterMode": boolean; "blockRefDynamicAnchorTextMaxLen": number; "checkBlockRef": boolean | null; "codeFontFamilies": Array<SettingEditorFont | null> | null; "codeLigatures": boolean; "codeLineWrap": boolean; "codeSyntaxHighlightLineNum": boolean; "codeTabSpaces": number; "contentPrefetch": boolean; "cursorSurroundingLines": number; "databaseAttrClickMode": number; "databaseAttrHideEmpty": boolean; "databaseAttrLayout": number | null; "databaseAttrShow": boolean | null; "databaseAttrUseTabs": boolean | null; "databaseAttrViewMode": number; "databaseShowIcon": boolean | null; "databaseShowRelationIcon": boolean | null; "displayBookmarkIcon": boolean; "displayImgAlt": boolean; "displayImgName": boolean; "displayNetImgMark": boolean; "dragHTMLFileToIframe": boolean; "dynamicLoadBlocks": number; "embedBlockBreadcrumb": boolean; "embedBlockBreadcrumbParentPath": boolean | null; "emoji": Array<string> | null; "floatWindowDelay": number | null; "floatWindowMode": number; "fontFamilies": Array<SettingEditorFont | null> | null; "fontFamily": string; "fontFamilyDisplay": string; "fontSize": number; "fontSizeScrollZoom": boolean; "fontWeight": number; "fullWidth": boolean; "generateHistoryInterval": number; "globalBreadcrumb": boolean; "hashTagSearch": boolean | null; "headingEmbedMode": number; "headingNumber": boolean; "headingNumberFormat": string; "hideBreadcrumbIcons": boolean; "historyRetentionDays": number; "justify": boolean; "katexMacros": string; "keepLoadedContent": boolean; "listItemDotNumberClickFocus": boolean; "listLogicalOutdent": boolean; "markdown": SettingMarkdown | null; "mathDelimiterCompatibility": boolean | null; "onlySearchForDoc": boolean; "pageScrollButtons": boolean; "pasteURLAutoConvert": boolean; "plantUMLServePath": string; "readOnly": boolean; "rtl": boolean; "spellcheck": boolean; "spellcheckLanguages": Array<string> | null; "virtualBlockRef": boolean; "virtualBlockRefExclude": string; "virtualBlockRefInclude": string; };
@@ -2220,10 +2222,10 @@ index bf7d824..b63fdee 100644
  export type SettingEmbedding = { "apiKey": string; "baseURL": string; "batchSize": number; "concurrency": number; "dimensions": number; "enabled": boolean; "id": string; "name": string; "timeout": number; };
  
 diff --git a/app/src/types/config.d.ts b/app/src/types/config.d.ts
-index a3abd9f..288a5ec 100644
+index df7442a..e75dc46 100644
 --- a/app/src/types/config.d.ts
 +++ b/app/src/types/config.d.ts
-@@ -725,6 +725,8 @@ declare namespace Config {
+@@ -726,6 +726,8 @@ declare namespace Config {
           * The number of blocks loaded each time they are dynamically loaded
           */
          dynamicLoadBlocks: number;
@@ -2233,10 +2235,10 @@ index a3abd9f..288a5ec 100644
           * Whether the embedded block displays breadcrumbs
           */
 diff --git a/kernel/api/setting_contract.go b/kernel/api/setting_contract.go
-index f68a6e7..c2287c8 100644
+index 323079f..2c9467b 100644
 --- a/kernel/api/setting_contract.go
 +++ b/kernel/api/setting_contract.go
-@@ -427,6 +427,7 @@ func settingEditorPayload(value *conf.Editor) *apicontract.SettingEditor {
+@@ -428,6 +428,7 @@ func settingEditorPayload(value *conf.Editor) *apicontract.SettingEditor {
  	result.KeepLoadedContent = value.KeepLoadedContent
  	result.PageScrollButtons = value.PageScrollButtons
  	result.DynamicLoadBlocks = value.DynamicLoadBlocks
@@ -2245,10 +2247,10 @@ index f68a6e7..c2287c8 100644
  	result.RTL = value.RTL
  	result.AutoDirection = value.AutoDirection
 diff --git a/kernel/apicontract/schema.json b/kernel/apicontract/schema.json
-index 6c6fdb6..4be6737 100644
+index dc235a0..37de350 100644
 --- a/kernel/apicontract/schema.json
 +++ b/kernel/apicontract/schema.json
-@@ -45181,6 +45181,16 @@
+@@ -45276,6 +45276,16 @@
              }
            ]
          },
@@ -2265,7 +2267,7 @@ index 6c6fdb6..4be6737 100644
          "cursorSurroundingLines": {
            "anyOf": [
              {
-@@ -49777,6 +49787,9 @@
+@@ -49886,6 +49896,9 @@
          "codeTabSpaces": {
            "type": "integer"
          },
@@ -2275,7 +2277,7 @@ index 6c6fdb6..4be6737 100644
          "cursorSurroundingLines": {
            "type": "integer"
          },
-@@ -50068,6 +50081,7 @@
+@@ -50177,6 +50190,7 @@
          "codeLineWrap",
          "codeSyntaxHighlightLineNum",
          "codeTabSpaces",
@@ -2283,7 +2285,7 @@ index 6c6fdb6..4be6737 100644
          "cursorSurroundingLines",
          "databaseAttrClickMode",
          "databaseAttrHideEmpty",
-@@ -50423,6 +50437,16 @@
+@@ -50532,6 +50546,16 @@
              }
            ]
          },
@@ -2301,10 +2303,10 @@ index 6c6fdb6..4be6737 100644
            "anyOf": [
              {
 diff --git a/kernel/apicontract/setting.go b/kernel/apicontract/setting.go
-index 8135845..2fefe39 100644
+index 25c9b64..5ae266f 100644
 --- a/kernel/apicontract/setting.go
 +++ b/kernel/apicontract/setting.go
-@@ -296,6 +296,7 @@ type SettingEditor struct {
+@@ -297,6 +297,7 @@ type SettingEditor struct {
  	// PageScrollButtons 控制翻屏按钮，默认关闭，不迁移旧的本地偏好。
  	PageScrollButtons bool `json:"pageScrollButtons" api:"optional,nullable"`
  	DynamicLoadBlocks int  `json:"dynamicLoadBlocks" api:"optional,nullable"`

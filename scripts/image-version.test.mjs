@@ -207,7 +207,6 @@ test("isImageAffectingPath：patches 与构建/调度输入保守计入", () => 
     "./patches/siyuan/x.patch",
     ".github/workflows/release-docker.yml",
     ".github/workflows/watch-upstream.yml",
-    ".github/workflows/release-cron.yml",
     ".github/workflows/check-image-version.yml",
     "scripts/image-version.mjs",
     "scripts/registry-tag-state.mjs",
@@ -235,7 +234,6 @@ test("evaluateRevisionChange：首次引入/递增/回退/无关变更", () => {
     ["patches/siyuan/disable-update.patch"],
     [".github/workflows/release-docker.yml"],
     [".github/workflows/watch-upstream.yml"],
-    [".github/workflows/release-cron.yml"],
     ["scripts/image-version.mjs"],
   ]) {
     const result = evaluateRevisionChange({ baseText: "1\n", headText: "1\n", changedPaths: changed });

@@ -65,7 +65,6 @@ test("镜像相关变更必须严格递增", () => {
       "patches/siyuan/disable-update.patch",
       ".github/workflows/release-docker.yml",
       ".github/workflows/watch-upstream.yml",
-      ".github/workflows/release-cron.yml",
       "scripts/image-version.mjs",
     ]) {
       const failed = runCi(dir, { baseFile, changedPaths: [changed] });

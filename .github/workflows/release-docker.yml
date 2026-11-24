@@ -7,7 +7,8 @@ name: release-docker
 # - prepare 与 publish 均对 canonical tag 做 fail-closed 存在性检查
 # - 所有 release-docker 运行串行，避免同 upstream 并发发布竞争
 #
-# 本 workflow 不创建 GitHub Release；Release 仍由 release-cron 按上游 vX.Y.Z 语义维护。
+# 本 workflow 不创建 GitHub Release。2026-11-24 起平台 dist 构建与 release-cron 已删除，
+# 本仓库只在 GHCR 发布镜像 tag（vX.Y.Z-pN 与 latest），不再有上游语义的 Release。
 
 on:
   workflow_dispatch:

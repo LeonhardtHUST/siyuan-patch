@@ -23,7 +23,6 @@ export const TAG_ERROR = "error";
 export const IMAGE_AFFECTING_EXACT = Object.freeze([
   ".github/workflows/release-docker.yml",
   ".github/workflows/watch-upstream.yml",
-  ".github/workflows/release-cron.yml",
   ".github/workflows/check-image-version.yml",
   "scripts/image-version.mjs",
   "scripts/registry-tag-state.mjs",
