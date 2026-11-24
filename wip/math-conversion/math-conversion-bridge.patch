@@ -1,0 +1,2583 @@
+diff --git a/app/appearance/langs/ar.json b/app/appearance/langs/ar.json
+index 5b9c1a7..1b50c45 100644
+--- a/app/appearance/langs/ar.json
++++ b/app/appearance/langs/ar.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "تم تغيير المحتوى في نافذة أو جهاز آخر. حدّث الصفحة ثم أعد المحاولة",
++	"mathConversionUnsupported": "لا يمكن تحويل هذه الصيغة أو هذه الفقرة بعد",
++	"mathConversionPermission": "هذه الكتلة غير قابلة للتحرير، لذا لا يمكن تحويلها",
++	"mathConversionChanged": "تغيّر الهدف أثناء التحضير. أعد المحاولة",
++	"mathConversionFailed": "فشل تحويل الصيغة",
++	"mathConversionNoTarget": "تعذّر تحديد هدف صيغة واحد بشكل مؤكد، ولم يتم إجراء أي تحويل",
+ 	"confirmActionFailed": "فشلت العملية. يرجى المحاولة مرة أخرى",
+ 	"updateInstallNow": "التثبيت الآن",
+ 	"updateInstallLater": "ليس الآن",
+diff --git a/app/appearance/langs/de.json b/app/appearance/langs/de.json
+index 224b266..e5e29fc 100644
+--- a/app/appearance/langs/de.json
++++ b/app/appearance/langs/de.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Der Inhalt wurde in einem anderen Fenster oder auf einem anderen Gerät geändert. Bitte aktualisieren und erneut versuchen",
++	"mathConversionUnsupported": "Diese Formel oder dieser Absatz kann noch nicht umgewandelt werden",
++	"mathConversionPermission": "Dieser Block ist nicht bearbeitbar und kann daher nicht umgewandelt werden",
++	"mathConversionChanged": "Das Ziel hat sich während der Vorbereitung geändert. Bitte erneut versuchen",
++	"mathConversionFailed": "Formelumwandlung fehlgeschlagen",
++	"mathConversionNoTarget": "Es konnte kein eindeutiges Formelziel ermittelt werden; nichts wurde umgewandelt",
+ 	"confirmActionFailed": "Vorgang fehlgeschlagen. Bitte erneut versuchen",
+ 	"updateInstallNow": "Jetzt installieren",
+ 	"updateInstallLater": "Später installieren",
+diff --git a/app/appearance/langs/en.json b/app/appearance/langs/en.json
+index 3c230b8..fe44e11 100644
+--- a/app/appearance/langs/en.json
++++ b/app/appearance/langs/en.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "The content changed in another window or device. Refresh and try again",
++	"mathConversionUnsupported": "This formula or paragraph cannot be converted yet",
++	"mathConversionPermission": "This block is not editable, so it cannot be converted",
++	"mathConversionChanged": "The conversion target changed while preparing. Try again",
++	"mathConversionFailed": "Formula conversion failed",
++	"mathConversionNoTarget": "Could not identify a unique formula target, so nothing was converted",
+ 	"confirmActionFailed": "Operation failed. Please try again",
+ 	"updateInstallNow": "Install now",
+ 	"updateInstallLater": "Not now",
+diff --git a/app/appearance/langs/es.json b/app/appearance/langs/es.json
+index e395675..fbe111c 100644
+--- a/app/appearance/langs/es.json
++++ b/app/appearance/langs/es.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "El contenido cambió en otra ventana o dispositivo. Actualiza e inténtalo de nuevo",
++	"mathConversionUnsupported": "Esta fórmula o párrafo aún no se puede convertir",
++	"mathConversionPermission": "Este bloque no es editable, por lo que no se puede convertir",
++	"mathConversionChanged": "El destino cambió durante la preparación. Inténtalo de nuevo",
++	"mathConversionFailed": "Error al convertir la fórmula",
++	"mathConversionNoTarget": "No se pudo identificar un destino de fórmula único, no se realizó la conversión",
+ 	"confirmActionFailed": "La operación falló. Inténtalo de nuevo",
+ 	"updateInstallNow": "Instalar ahora",
+ 	"updateInstallLater": "Ahora no",
+diff --git a/app/appearance/langs/fr.json b/app/appearance/langs/fr.json
+index 3a9375b..bf99122 100644
+--- a/app/appearance/langs/fr.json
++++ b/app/appearance/langs/fr.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Le contenu a été modifié dans une autre fenêtre ou sur un autre appareil. Actualisez puis réessayez",
++	"mathConversionUnsupported": "Cette formule ou ce paragraphe ne peut pas encore être converti",
++	"mathConversionPermission": "Ce bloc n'est pas modifiable, la conversion est impossible",
++	"mathConversionChanged": "La cible a changé pendant la préparation. Réessayez",
++	"mathConversionFailed": "La conversion de la formule a échoué",
++	"mathConversionNoTarget": "Impossible d'identifier une cible de formule unique ; aucune conversion n'a été effectuée",
+ 	"confirmActionFailed": "L'opération a échoué. Veuillez réessayer",
+ 	"updateInstallNow": "Installer maintenant",
+ 	"updateInstallLater": "Plus tard",
+diff --git a/app/appearance/langs/he.json b/app/appearance/langs/he.json
+index f9906c7..256f4a6 100644
+--- a/app/appearance/langs/he.json
++++ b/app/appearance/langs/he.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "התוכן השתנה בחלון או במכשיר אחר. רעננו ונסו שוב",
++	"mathConversionUnsupported": "לא ניתן עדיין להמיר נוסחה או פסקה זו",
++	"mathConversionPermission": "בלוק זה אינו ניתן לעריכה, ולכן לא ניתן להמיר אותו",
++	"mathConversionChanged": "היעד השתנה במהלך ההכנה. נסו שוב",
++	"mathConversionFailed": "המרת הנוסחה נכשלה",
++	"mathConversionNoTarget": "לא ניתן היה לזהות יעד נוסחה יחיד בוודאות, ולכן לא בוצעה המרה",
+ 	"confirmActionFailed": "הפעולה נכשלה. יש לנסות שוב",
+ 	"updateInstallNow": "התקנה עכשיו",
+ 	"updateInstallLater": "לא עכשיו",
+diff --git a/app/appearance/langs/hi.json b/app/appearance/langs/hi.json
+index 9e17092..3ea2a10 100644
+--- a/app/appearance/langs/hi.json
++++ b/app/appearance/langs/hi.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "सामग्री किसी अन्य विंडो या डिवाइस में बदल गई है। रीफ़्रेश करके फिर प्रयास करें",
++	"mathConversionUnsupported": "यह सूत्र या अनुच्छेद अभी परिवर्तित नहीं किया जा सकता",
++	"mathConversionPermission": "यह ब्लॉक संपादन योग्य नहीं है, इसलिए परिवर्तित नहीं किया जा सकता",
++	"mathConversionChanged": "तैयारी के दौरान लक्ष्य बदल गया। फिर प्रयास करें",
++	"mathConversionFailed": "सूत्र परिवर्तित करने में विफल",
++	"mathConversionNoTarget": "एक स्पष्ट सूत्र लक्ष्य निर्धारित नहीं हो सका, इसलिए कोई परिवर्तन नहीं किया गया",
+ 	"confirmActionFailed": "कार्रवाई विफल रही। कृपया दोबारा प्रयास करें",
+ 	"updateInstallNow": "अभी इंस्टॉल करें",
+ 	"updateInstallLater": "अभी नहीं",
+diff --git a/app/appearance/langs/id.json b/app/appearance/langs/id.json
+index 4e53f1e..fd77ee6 100644
+--- a/app/appearance/langs/id.json
++++ b/app/appearance/langs/id.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Konten berubah di jendela atau perangkat lain. Segarkan lalu coba lagi",
++	"mathConversionUnsupported": "Rumus atau paragraf ini belum dapat dikonversi",
++	"mathConversionPermission": "Blok ini tidak dapat diedit, sehingga tidak dapat dikonversi",
++	"mathConversionChanged": "Target berubah selama persiapan. Coba lagi",
++	"mathConversionFailed": "Gagal mengonversi rumus",
++	"mathConversionNoTarget": "Tidak dapat menentukan satu target rumus secara unik; tidak ada yang dikonversi",
+ 	"confirmActionFailed": "Operasi gagal. Silakan coba lagi",
+ 	"updateInstallNow": "Instal sekarang",
+ 	"updateInstallLater": "Nanti saja",
+diff --git a/app/appearance/langs/it.json b/app/appearance/langs/it.json
+index 3300aa6..3c862c8 100644
+--- a/app/appearance/langs/it.json
++++ b/app/appearance/langs/it.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Il contenuto è cambiato in un'altra finestra o dispositivo. Aggiorna e riprova",
++	"mathConversionUnsupported": "Questa formula o paragrafo non può ancora essere convertito",
++	"mathConversionPermission": "Questo blocco non è modificabile, quindi non può essere convertito",
++	"mathConversionChanged": "La destinazione è cambiata durante la preparazione. Riprova",
++	"mathConversionFailed": "Conversione della formula non riuscita",
++	"mathConversionNoTarget": "Impossibile identificare una destinazione univoca per la formula; nessuna conversione eseguita",
+ 	"confirmActionFailed": "Operazione non riuscita. Riprova",
+ 	"updateInstallNow": "Installa ora",
+ 	"updateInstallLater": "Non ora",
+diff --git a/app/appearance/langs/ja.json b/app/appearance/langs/ja.json
+index fe7dcc7..1f56073 100644
+--- a/app/appearance/langs/ja.json
++++ b/app/appearance/langs/ja.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "他のウィンドウまたはデバイスで内容が変更されました。再読み込みして再試行してください",
++	"mathConversionUnsupported": "この数式または段落はまだ変換できません",
++	"mathConversionPermission": "このブロックは編集できないため、変換できません",
++	"mathConversionChanged": "変換の準備中に対象が変更されました。再試行してください",
++	"mathConversionFailed": "数式の変換に失敗しました",
++	"mathConversionNoTarget": "数式の対象を一意に特定できないため、変換は実行されませんでした",
+ 	"confirmActionFailed": "操作に失敗しました。もう一度お試しください",
+ 	"updateInstallNow": "今すぐインストール",
+ 	"updateInstallLater": "今はインストールしない",
+diff --git a/app/appearance/langs/ko.json b/app/appearance/langs/ko.json
+index da54f58..c2701f4 100644
+--- a/app/appearance/langs/ko.json
++++ b/app/appearance/langs/ko.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "다른 창이나 기기에서 내용이 변경되었습니다. 새로 고친 후 다시 시도하세요",
++	"mathConversionUnsupported": "이 수식 또는 단락은 아직 변환할 수 없습니다",
++	"mathConversionPermission": "이 블록은 편집할 수 없어 변환할 수 없습니다",
++	"mathConversionChanged": "준비 중에 대상이 변경되었습니다. 다시 시도하세요",
++	"mathConversionFailed": "수식 변환에 실패했습니다",
++	"mathConversionNoTarget": "수식 대상을 하나로 특정할 수 없어 변환하지 않았습니다",
+ 	"confirmActionFailed": "작업에 실패했습니다. 다시 시도해 주세요",
+ 	"updateInstallNow": "지금 설치",
+ 	"updateInstallLater": "나중에 설치",
+diff --git a/app/appearance/langs/nl.json b/app/appearance/langs/nl.json
+index 48da5b1..4d80185 100644
+--- a/app/appearance/langs/nl.json
++++ b/app/appearance/langs/nl.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "De inhoud is gewijzigd in een ander venster of op een ander apparaat. Vernieuw en probeer het opnieuw",
++	"mathConversionUnsupported": "Deze formule of alinea kan nog niet worden omgezet",
++	"mathConversionPermission": "Dit blok is niet bewerkbaar en kan daarom niet worden omgezet",
++	"mathConversionChanged": "Het doel is tijdens de voorbereiding gewijzigd. Probeer het opnieuw",
++	"mathConversionFailed": "Omzetten van de formule mislukt",
++	"mathConversionNoTarget": "Kon geen uniek formule-doel bepalen; er is niets omgezet",
+ 	"confirmActionFailed": "De bewerking is mislukt. Probeer het opnieuw",
+ 	"updateInstallNow": "Nu installeren",
+ 	"updateInstallLater": "Niet nu",
+diff --git a/app/appearance/langs/pl.json b/app/appearance/langs/pl.json
+index da10678..932236f 100644
+--- a/app/appearance/langs/pl.json
++++ b/app/appearance/langs/pl.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Treść została zmieniona w innym oknie lub na innym urządzeniu. Odśwież i spróbuj ponownie",
++	"mathConversionUnsupported": "Ta formuła lub akapit nie obsługują jeszcze konwersji",
++	"mathConversionPermission": "Ten blok nie jest edytowalny, więc nie można go przekonwertować",
++	"mathConversionChanged": "Cel zmienił się podczas przygotowania. Spróbuj ponownie",
++	"mathConversionFailed": "Nie udało się przekonwertować formuły",
++	"mathConversionNoTarget": "Nie udało się jednoznacznie wskazać formuły docelowej; nic nie przekonwertowano",
+ 	"confirmActionFailed": "Operacja nie powiodła się. Spróbuj ponownie",
+ 	"updateInstallNow": "Zainstaluj teraz",
+ 	"updateInstallLater": "Nie teraz",
+diff --git a/app/appearance/langs/pt-BR.json b/app/appearance/langs/pt-BR.json
+index baa56d0..4a6d62c 100644
+--- a/app/appearance/langs/pt-BR.json
++++ b/app/appearance/langs/pt-BR.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "O conteúdo mudou em outra janela ou dispositivo. Atualize e tente novamente",
++	"mathConversionUnsupported": "Esta fórmula ou parágrafo ainda não pode ser convertido",
++	"mathConversionPermission": "Este bloco não é editável, portanto não pode ser convertido",
++	"mathConversionChanged": "O destino mudou durante a preparação. Tente novamente",
++	"mathConversionFailed": "Falha ao converter a fórmula",
++	"mathConversionNoTarget": "Não foi possível identificar um destino de fórmula único; nada foi convertido",
+ 	"confirmActionFailed": "Falha na operação. Tente novamente",
+ 	"updateInstallNow": "Instalar agora",
+ 	"updateInstallLater": "Agora não",
+diff --git a/app/appearance/langs/ru.json b/app/appearance/langs/ru.json
+index 9cfa66e..fa20b02 100644
+--- a/app/appearance/langs/ru.json
++++ b/app/appearance/langs/ru.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Содержимое изменилось в другом окне или на другом устройстве. Обновите и повторите попытку",
++	"mathConversionUnsupported": "Эта формула или абзац пока не поддерживают преобразование",
++	"mathConversionPermission": "Этот блок недоступен для редактирования, преобразование невозможно",
++	"mathConversionChanged": "Цель изменилась во время подготовки. Повторите попытку",
++	"mathConversionFailed": "Не удалось преобразовать формулу",
++	"mathConversionNoTarget": "Не удалось однозначно определить целевую формулу, преобразование не выполнено",
+ 	"confirmActionFailed": "Не удалось выполнить операцию. Попробуйте ещё раз",
+ 	"updateInstallNow": "Установить сейчас",
+ 	"updateInstallLater": "Не сейчас",
+diff --git a/app/appearance/langs/sk.json b/app/appearance/langs/sk.json
+index 6d37a5c..16af517 100644
+--- a/app/appearance/langs/sk.json
++++ b/app/appearance/langs/sk.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Obsah sa zmenil v inom okne alebo zariadení. Obnovte a skúste znova",
++	"mathConversionUnsupported": "Tento vzorec alebo odsek zatiaľ nie je možné previesť",
++	"mathConversionPermission": "Tento blok nie je možné upravovať, preto ho nemožno previesť",
++	"mathConversionChanged": "Počas prípravy sa cieľ zmenil. Skúste znova",
++	"mathConversionFailed": "Prevod vzorca zlyhal",
++	"mathConversionNoTarget": "Nepodarilo sa jednoznačne určiť cieľový vzorec, nič sa nepreviedlo",
+ 	"confirmActionFailed": "Operácia zlyhala. Skúste to znova",
+ 	"updateInstallNow": "Nainštalovať teraz",
+ 	"updateInstallLater": "Teraz nie",
+diff --git a/app/appearance/langs/sr.json b/app/appearance/langs/sr.json
+index 06b7696..00bfe8a 100644
+--- a/app/appearance/langs/sr.json
++++ b/app/appearance/langs/sr.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Sadržaj je izmenjen u drugom prozoru ili na drugom uređaju. Osvežite i pokušajte ponovo",
++	"mathConversionUnsupported": "Ova formula ili pasus još ne mogu da se konvertuju",
++	"mathConversionPermission": "Ovaj blok se ne može uređivati, pa se ne može konvertovati",
++	"mathConversionChanged": "Cilj se promenio tokom pripreme. Pokušajte ponovo",
++	"mathConversionFailed": "Konvertovanje formule nije uspelo",
++	"mathConversionNoTarget": "Nije bilo moguće jedinstveno odrediti ciljnu formulu, ništa nije konvertovano",
+ 	"confirmActionFailed": "Радња није успела. Покушајте поново",
+ 	"updateInstallNow": "Инсталирај сада",
+ 	"updateInstallLater": "Не сада",
+diff --git a/app/appearance/langs/th.json b/app/appearance/langs/th.json
+index e1fec0e..0b2de70 100644
+--- a/app/appearance/langs/th.json
++++ b/app/appearance/langs/th.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "เนื้อหาเปลี่ยนแปลงในหน้าต่างหรืออุปกรณ์อื่น กรุณารีเฟรชแล้วลองใหม่",
++	"mathConversionUnsupported": "สูตรหรือย่อหน้านี้ยังไม่รองรับการแปลง",
++	"mathConversionPermission": "บล็อกนี้แก้ไขไม่ได้ จึงไม่สามารถแปลงได้",
++	"mathConversionChanged": "เป้าหมายเปลี่ยนไประหว่างการเตรียมการ กรุณาลองใหม่",
++	"mathConversionFailed": "การแปลงสูตรล้มเหลว",
++	"mathConversionNoTarget": "ไม่สามารถระบุเป้าหมายสูตรได้อย่างชัดเจน จึงไม่ได้ดำเนินการแปลง",
+ 	"confirmActionFailed": "การดำเนินการล้มเหลว โปรดลองอีกครั้ง",
+ 	"updateInstallNow": "ติดตั้งตอนนี้",
+ 	"updateInstallLater": "ยังไม่ติดตั้ง",
+diff --git a/app/appearance/langs/tr.json b/app/appearance/langs/tr.json
+index 04ac5f8..ed6d8f6 100644
+--- a/app/appearance/langs/tr.json
++++ b/app/appearance/langs/tr.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "İçerik başka bir pencerede veya cihazda değişti. Yenileyip tekrar deneyin",
++	"mathConversionUnsupported": "Bu formül veya paragraf henüz dönüştürülemiyor",
++	"mathConversionPermission": "Bu blok düzenlenemiyor, bu yüzden dönüştürülemiyor",
++	"mathConversionChanged": "Hazırlık sırasında hedef değişti. Tekrar deneyin",
++	"mathConversionFailed": "Formül dönüştürme başarısız oldu",
++	"mathConversionNoTarget": "Tek bir formül hedefi belirlenemedi; dönüştürme yapılmadı",
+ 	"confirmActionFailed": "İşlem başarısız oldu. Lütfen tekrar deneyin",
+ 	"updateInstallNow": "Şimdi yükle",
+ 	"updateInstallLater": "Şimdi değil",
+diff --git a/app/appearance/langs/uk.json b/app/appearance/langs/uk.json
+index 7a25a5d..7e3d144 100644
+--- a/app/appearance/langs/uk.json
++++ b/app/appearance/langs/uk.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "Вміст змінено в іншому вікні або на іншому пристрої. Оновіть і повторіть спробу",
++	"mathConversionUnsupported": "Ця формула або абзац поки не підтримують перетворення",
++	"mathConversionPermission": "Цей блок недоступний для редагування, перетворення неможливе",
++	"mathConversionChanged": "Ціль змінилася під час підготовки. Повторіть спробу",
++	"mathConversionFailed": "Не вдалося перетворити формулу",
++	"mathConversionNoTarget": "Не вдалося однозначно визначити цільову формулу, нічого не перетворено",
+ 	"confirmActionFailed": "Не вдалося виконати операцію. Спробуйте ще раз",
+ 	"updateInstallNow": "Встановити зараз",
+ 	"updateInstallLater": "Не зараз",
+diff --git a/app/appearance/langs/zh-CN.json b/app/appearance/langs/zh-CN.json
+index e371cbb..3b5f098 100644
+--- a/app/appearance/langs/zh-CN.json
++++ b/app/appearance/langs/zh-CN.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "内容已在其他窗口或设备中变更，请刷新后重试",
++	"mathConversionUnsupported": "当前公式或段落暂不支持转换",
++	"mathConversionPermission": "当前块不可编辑，无法转换",
++	"mathConversionChanged": "转换准备期间目标已变化，请重试",
++	"mathConversionFailed": "公式转换失败",
++	"mathConversionNoTarget": "无法唯一确定公式目标，未执行转换",
+ 	"confirmActionFailed": "操作失败，请重试",
+ 	"updateInstallNow": "现在安装",
+ 	"updateInstallLater": "暂不安装",
+diff --git a/app/appearance/langs/zh-TW.json b/app/appearance/langs/zh-TW.json
+index a713f11..818eca2 100644
+--- a/app/appearance/langs/zh-TW.json
++++ b/app/appearance/langs/zh-TW.json
+@@ -1,4 +1,10 @@
+ {
++	"mathConversionConflict": "內容已在其他視窗或裝置中變更，請重新整理後重試",
++	"mathConversionUnsupported": "目前公式或段落暫不支援轉換",
++	"mathConversionPermission": "目前區塊不可編輯，無法轉換",
++	"mathConversionChanged": "轉換準備期間目標已變更，請重試",
++	"mathConversionFailed": "公式轉換失敗",
++	"mathConversionNoTarget": "無法唯一確定公式目標，未執行轉換",
+ 	"confirmActionFailed": "操作失敗，請重試",
+ 	"updateInstallNow": "立即安裝",
+ 	"updateInstallLater": "暫不安裝",
+diff --git a/app/src/menus/protyle.ts b/app/src/menus/protyle.ts
+index 3b50afb..aea3448 100644
+--- a/app/src/menus/protyle.ts
++++ b/app/src/menus/protyle.ts
+@@ -37,6 +37,7 @@ import {
+ } from "../protyle/util/table";
+ import {mathRender} from "../protyle/render/mathRender";
+ import {createMathConversionMenu} from "../protyle/render/mathConversionMenuRegistry";
++import {installMathConversionBridge} from "../protyle/render/mathConversionBridge";
+ import {transaction, updateTransaction} from "../protyle/wysiwyg/transaction";
+ import {openMenu} from "./commonMenuItem";
+ import {fetchPost, fetchSyncPost} from "../util/fetch";
+@@ -103,6 +104,8 @@ import {
+     stripSemanticMarkersFromRangeText,
+ } from "../protyle/util/inlineElementMarker";
+ 
++installMathConversionBridge();
++
+ const renderAssetPreview = (element: HTMLElement, path: string) => {
+     if (element.dataset.assetPreviewPath === path) {
+         return;
+diff --git a/app/src/protyle/render/mathConversionBridge.test.ts b/app/src/protyle/render/mathConversionBridge.test.ts
+new file mode 100644
+index 0000000..532b579
+--- /dev/null
++++ b/app/src/protyle/render/mathConversionBridge.test.ts
+@@ -0,0 +1,1237 @@
++import * as assert from "node:assert/strict";
++import {readFileSync} from "node:fs";
++import {resolve} from "node:path";
++import test from "node:test";
++import type {
++    IMathConversionRuntime,
++    IMathConversionSignature,
++    IMathConversionSnapshot,
++    TMathConversionTargetResponse,
++    TMathConversionTransactionResponse,
++} from "./mathConversionBridge";
++import type {IMathConversionMenuContext} from "./mathConversionMenuRegistry";
++
++// constants.ts 在模块加载时读取这两个编译期常量，Node 测试里用固定值代替。
++Object.assign(globalThis, {SIYUAN_VERSION: "test", NODE_ENV: "test"});
++
++const languages = {
++    math: "Formula block",
++    "inline-math": "Inline Formula",
++    mathConversionConflict: "Conversion conflict",
++    mathConversionUnsupported: "Conversion unsupported",
++    mathConversionPermission: "Conversion permission",
++    mathConversionChanged: "Conversion changed",
++    mathConversionFailed: "Conversion failed",
++    mathConversionNoTarget: "Conversion target missing",
++};
++
++const mockWindow = (readonly = false) => {
++    const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
++    Object.defineProperty(globalThis, "window", {
++        configurable: true,
++        value: {
++            siyuan: {
++                isPublish: false,
++                config: {readonly, editor: {readOnly: false}},
++                languages: {...languages},
++            },
++        },
++    });
++    return () => {
++        if (previous) {
++            Object.defineProperty(globalThis, "window", previous);
++        } else {
++            Reflect.deleteProperty(globalThis, "window");
++        }
++    };
++};
++
++class FakeText {
++    public nodeType = 3;
++    public childNodes: FakeText[] = [];
++    public parentElement: FakeElement | null = null;
++
++    constructor(public nodeValue: string) {
++    }
++}
++
++class FakeElement {
++    public nodeType = 1;
++    public childNodes: Array<FakeElement | FakeText> = [];
++    public children: FakeElement[] = [];
++    public parentElement: FakeElement | null = null;
++    public isConnected = true;
++    private attributes = new Map<string, string>();
++    private listeners = new Map<string, Set<(event: unknown) => void>>();
++
++    constructor(public tagName: string, attributes: Record<string, string> = {}) {
++        Object.entries(attributes).forEach(([name, value]) => this.attributes.set(name, value));
++    }
++
++    public append(...nodes: Array<FakeElement | FakeText>) {
++        for (const node of nodes) {
++            node.parentElement = this;
++            this.childNodes.push(node);
++            if (node instanceof FakeElement) {
++                this.children.push(node);
++            }
++        }
++        return this;
++    }
++
++    public getAttribute(name: string) {
++        return this.attributes.has(name) ? this.attributes.get(name)! : null;
++    }
++
++    public hasAttribute(name: string) {
++        return this.attributes.has(name);
++    }
++
++    public setAttribute(name: string, value: string) {
++        this.attributes.set(name, value);
++    }
++
++    public removeAttribute(name: string) {
++        this.attributes.delete(name);
++    }
++
++    public addEventListener(type: string, listener: (event: unknown) => void) {
++        if (!this.listeners.has(type)) {
++            this.listeners.set(type, new Set());
++        }
++        this.listeners.get(type)!.add(listener);
++    }
++
++    public removeEventListener(type: string, listener: (event: unknown) => void) {
++        this.listeners.get(type)?.delete(listener);
++    }
++
++    public dispatch(type: string) {
++        this.listeners.get(type)?.forEach(listener => listener({type}));
++    }
++
++    public contains(node: unknown) {
++        for (let current = node as FakeElement | null; current; current = current.parentElement) {
++            if (current === this) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public querySelector(selector: string): FakeElement | null {
++        const match = /^\[data-node-id="(.*)"\]$/.exec(selector);
++        if (!match) {
++            return null;
++        }
++        for (const child of this.children) {
++            if (child.getAttribute("data-node-id") === match[1]) {
++                return child;
++            }
++            const nested = child.querySelector(selector);
++            if (nested) {
++                return nested;
++            }
++        }
++        return null;
++    }
++}
++
++const asElement = <T>(value: T) => value as unknown as HTMLElement;
++
++interface IFakeParagraph {
++    block: FakeElement;
++    content: FakeElement;
++}
++
++const paragraph = (id = "p1", children: Array<FakeElement | FakeText> = []): IFakeParagraph => {
++    const block = new FakeElement("DIV", {"data-node-id": id, "data-type": "NodeParagraph"});
++    const content = new FakeElement("DIV", {contenteditable: "true"});
++    content.append(...children);
++    block.append(content, new FakeElement("DIV", {class: "protyle-attr"}));
++    return {block, content};
++};
++
++const inlineMath = (source: string, options: { rendered?: string } = {}) => {
++    const formula = new FakeElement("SPAN", {
++        "data-type": "inline-math",
++        "data-subtype": "math",
++        "data-content": source,
++        "data-render": "true",
++        contenteditable: "false",
++    });
++    formula.append(new FakeElement("SPAN", {class: "katex"}), new FakeText(options.rendered ?? "rendered"));
++    return formula;
++};
++
++/**
++ * 真实 NodeMathBlock 渲染结构：div[spin="1"]（无 contenteditable）加 .protyle-attr[contenteditable=false]，
++ * 属性节点是运行时装饰，不能被当成内容容器。
++ */
++const realMathBlock = (source: string, id = "m1") => {
++    const block = new FakeElement("DIV", {
++        "data-node-id": id,
++        "data-type": "NodeMathBlock",
++        "data-subtype": "math",
++        "data-content": source,
++        "data-render": "true",
++    });
++    const spin = new FakeElement("DIV", {spin: "1"});
++    spin.append(new FakeElement("SPAN", {contenteditable: "false"}).append(new FakeText("rendered")));
++    const attr = new FakeElement("DIV", {class: "protyle-attr", contenteditable: "false"});
++    attr.append(new FakeText("\u200B"));
++    block.append(spin, attr);
++    return {block, spin, attr};
++};
++
++const mathBlock = (source: string, id = "m1") => realMathBlock(source, id).block;
++
++const editor = (...blocks: FakeElement[]) => {
++    const root = new FakeElement("DIV", {class: "protyle-wysiwyg", contenteditable: "true"});
++    root.append(...blocks);
++    return root;
++};
++
++const fakeProtyle = (editorElement: FakeElement, rootID = "root1", overrides: Partial<IProtyle> = {}) => {
++    const protyle = {
++        disabled: false,
++        lite: false,
++        id: "session-1",
++        block: {rootID},
++        element: editorElement,
++        wysiwyg: {element: editorElement},
++        getInstance: () => ({flushPendingTransactions: async (): Promise<void> => undefined,
++            reload: (): void => undefined}),
++        ...overrides,
++    } as unknown as IProtyle;
++    return protyle;
++};
++
++const inlineContext = (formula: FakeElement, block: FakeElement, protyle: IProtyle,
++                       surface: "inline-context" | "block-convert" = "inline-context"): IMathConversionMenuContext => ({
++    element: asElement(formula),
++    blockElement: asElement(block),
++    protyle,
++    surface,
++    isReadOnly: false,
++});
++
++const validVersion = "a".repeat(64);
++
++const snapshot = (overrides: Partial<IMathConversionSnapshot> = {}): IMathConversionSnapshot => ({
++    notebook: "20240101000000-box1234",
++    rootID: "root1",
++    path: "/20240101000000-box1234.sy",
++    version: validVersion,
++    blockType: "NodeParagraph",
++    topLevel: true,
++    targets: [{path: [1], type: "inline-math", source: "x^2", supported: true, reason: ""}],
++    ...overrides,
++});
++
++const targetSuccess = (data: IMathConversionSnapshot): TMathConversionTargetResponse =>
++    ({code: 0, msg: "", data: {notebook: data.notebook, rootID: data.rootID, path: data.path, version: data.version,
++        blockType: data.blockType, topLevel: data.topLevel, targets: data.targets}}) as TMathConversionTargetResponse;
++
++const transactionSuccess = (): TMathConversionTransactionResponse => ({
++    code: 0, msg: "", data: [{doOperations: [{action: "convertMath", id: "p1", blockID: "p1", retData: ["p1"]}],
++        undoOperations: [], timestamp: 1}],
++}) as unknown as TMathConversionTransactionResponse;
++
++const transactionFailure = (code: number, msg: string): TMathConversionTransactionResponse =>
++    ({code, msg, data: {closeTimeout: 0}}) as unknown as TMathConversionTransactionResponse;
++
++const failureResponse = (code: number, msg: string): TMathConversionTargetResponse =>
++    ({code, msg, data: {closeTimeout: 0}}) as unknown as TMathConversionTargetResponse;
++
++interface IRuntimeCalls {
++    flush: number;
++    requestTarget: number;
++    enqueue: number;
++    submit: number;
++    refresh: number;
++    notify: string[];
++    order: string[];
++    requests: Array<import("../../types/api").PerformTransactionsRequestInput>;
++    refreshRoot?: string;
++    disposed: number;
++}
++
++const createFakeRuntime = async (options: {
++    flush?: (protyle: IProtyle) => Promise<void>;
++    target?: (blockID: string, call: number) => Promise<TMathConversionTargetResponse>;
++    submit?: (request: import("../../types/api").PerformTransactionsRequestInput, call: number) =>
++        Promise<TMathConversionTransactionResponse>;
++    refresh?: (protyle: IProtyle, rootID: string) => void;
++    imeActive?: () => boolean;
++} = {}) => {
++    // 测试走真实 queueTransaction，避免假 enqueue 掩盖自等待与排队顺序问题。
++    const {queueTransaction} = await import("../util/transactionQueue");
++    const calls: IRuntimeCalls = {
++        flush: 0, requestTarget: 0, enqueue: 0, submit: 0, refresh: 0, notify: [], order: [], requests: [], disposed: 0,
++    };
++    const runtime: IMathConversionRuntime = {
++        now: () => 1700000000000,
++        flush: async (protyle) => {
++            calls.flush++;
++            calls.order.push("flush");
++            await options.flush?.(protyle);
++        },
++        requestTarget: async (blockID) => {
++            calls.requestTarget++;
++            calls.order.push("target");
++            return options.target ? options.target(blockID, calls.requestTarget) : targetSuccess(snapshot());
++        },
++        enqueue: (protyle, task) => {
++            calls.enqueue++;
++            calls.order.push("enqueue");
++            return queueTransaction(protyle, task);
++        },
++        submit: async (request) => {
++            calls.submit++;
++            calls.requests.push(request);
++            calls.order.push("submit");
++            return options.submit ? options.submit(request, calls.submit) : transactionSuccess();
++        },
++        refresh: (protyle, rootID) => {
++            calls.refresh++;
++            calls.order.push("refresh");
++            calls.refreshRoot = rootID;
++            if (options.refresh) {
++                options.refresh(protyle, rootID);
++            }
++        },
++        notify: (message) => {
++            calls.notify.push(message);
++            calls.order.push("notify");
++        },
++        trackIme: () => ({
++            isActive: () => options.imeActive?.() ?? false,
++            dispose: () => {
++                calls.disposed++;
++            },
++        }),
++    };
++    return {calls, runtime};
++};
++
++const signatureOf = (block: FakeElement): IMathConversionSignature => {
++    const bridge = loadBridgeSync();
++    return bridge.buildMathConversionSignature(asElement(block), "inline-to-block");
++};
++
++let bridgeModule: typeof import("./mathConversionBridge") | undefined;
++const loadBridgeSync = () => {
++    if (!bridgeModule) {
++        bridgeModule = require("./mathConversionBridge") as typeof import("./mathConversionBridge");
++    }
++    return bridgeModule;
++};
++
++const requireBridge = async () => {
++    if (!bridgeModule) {
++        bridgeModule = await import("./mathConversionBridge");
++    }
++    return bridgeModule;
++};
++
++test("signature keeps user zero-width, entity-looking text and excludes runtime decorations", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block, content} = paragraph("p1", [new FakeText("a\u200B\u2060&amp;"), formula, new FakeText("b")]);
++        const run = (extra?: (target: FakeElement) => void) => {
++            const next = paragraph("p1", [new FakeText("a\u200B\u2060&amp;"), inlineMath("x^2"), new FakeText("b")]);
++            extra?.(next.content);
++            return bridge.buildMathConversionSignature(asElement(next.block), "inline-to-block");
++        };
++        const before = run();
++        assert.equal(before.ok, true);
++        assert.equal(before.formulas.length, 1);
++        assert.equal(before.formulas[0].source, "x^2");
++        assert.ok(before.value.includes("\u200B"));
++        assert.ok(before.value.includes("\u2060"));
++        assert.ok(before.value.includes("&amp;"));
++        assert.ok(!before.value.includes("katex"));
++        assert.ok(!before.value.includes("rendered"));
++        assert.ok(!before.value.includes("protyle-attr"));
++
++        const decorated = run(target => {
++            target.append(new FakeElement("WBR"), new FakeElement("DIV", {class: "protyle-attr"}));
++            target.append(new FakeElement("SPAN", {"data-render": "true"}).append(new FakeText("derived")));
++        });
++        assert.equal(decorated.value, before.value);
++        assert.equal(signatureOf(block).value, before.value);
++
++        const changed = run(target => {
++            target.childNodes[0] = new FakeText("a\u200B\u2060&amp;c");
++        });
++        assert.notEqual(changed.value, before.value);
++        assert.equal(content.childNodes.length, 3);
++    } finally {
++        restore();
++    }
++});
++
++test("signature includes marks and formula positions in document order", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const build = (markType: string) => {
++            const strong = new FakeElement("STRONG", {"data-type": markType});
++            strong.append(new FakeText("b"), inlineMath("y"));
++            const {block} = paragraph("p1", [new FakeText("a"), strong, inlineMath("x")]);
++            return bridge.buildMathConversionSignature(asElement(block), "inline-to-block");
++        };
++        const first = build("strong");
++        assert.equal(first.ok, true);
++        assert.deepEqual(first.formulas.map(item => item.source), ["y", "x"]);
++        assert.notEqual(build("em").value, first.value);
++    } finally {
++        restore();
++    }
++});
++
++test("signature rejects unbounded or source-less structures", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const many = paragraph("p1", Array.from({length: 33}, (_, index) => inlineMath(`x${index}`)));
++        const tooMany = bridge.buildMathConversionSignature(asElement(many.block), "inline-to-block");
++        assert.equal(tooMany.ok, false);
++        assert.equal(tooMany.failure, "too-many-formulas");
++
++        const deep = paragraph("p1");
++        let current = deep.content;
++        for (let index = 0; index < 70; index++) {
++            const next = new FakeElement("SPAN", {"data-type": "strong"});
++            current.append(next);
++            current = next;
++        }
++        current.append(new FakeText("x"));
++        const tooDeep = bridge.buildMathConversionSignature(asElement(deep.block), "inline-to-block");
++        assert.equal(tooDeep.ok, false);
++        assert.equal(tooDeep.failure, "too-deep");
++
++        const missing = paragraph("p1", [new FakeElement("SPAN", {"data-type": "inline-math", "data-subtype": "math"})]);
++        const source = bridge.buildMathConversionSignature(asElement(missing.block), "inline-to-block");
++        assert.equal(source.ok, false);
++        assert.equal(source.failure, "missing-source");
++    } finally {
++        restore();
++    }
++});
++
++test("duplicate same-source formulas map by structural ordinal, never by value search", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const first = inlineMath("x");
++        const second = inlineMath("x");
++        const {block} = paragraph("p1", [new FakeText("a"), first, new FakeText("mid"), second, new FakeText("b")]);
++        const signature = bridge.buildMathConversionSignature(asElement(block), "inline-to-block");
++        const data = snapshot({
++            targets: [
++                {path: [1], type: "inline-math", source: "x", supported: true, reason: ""},
++                {path: [3], type: "inline-math", source: "x", supported: true, reason: ""},
++            ],
++        });
++        const firstMatch = bridge.matchMathConversionTarget(data, signature, "inline-to-block", asElement(first));
++        const secondMatch = bridge.matchMathConversionTarget(data, signature, "inline-to-block", asElement(second));
++        assert.equal(firstMatch.ok, true);
++        assert.equal(secondMatch.ok, true);
++        assert.deepEqual(firstMatch.targetPath, [1]);
++        assert.deepEqual(secondMatch.targetPath, [3]);
++        assert.equal(firstMatch.ordinal, 0);
++        assert.equal(secondMatch.ordinal, 1);
++
++        const reordered = snapshot({
++            targets: [
++                {path: [1], type: "inline-math", source: "y", supported: true, reason: ""},
++                {path: [3], type: "inline-math", source: "x", supported: true, reason: ""},
++            ],
++        });
++        assert.deepEqual(bridge.matchMathConversionTarget(reordered, signature, "inline-to-block", asElement(second)),
++            {ok: false, failure: "target-source"});
++        const extra = snapshot({
++            targets: [{path: [1], type: "inline-math", source: "x", supported: true, reason: ""}],
++        });
++        assert.deepEqual(bridge.matchMathConversionTarget(extra, signature, "inline-to-block", asElement(second)),
++            {ok: false, failure: "target-count"});
++        const duplicatePath = snapshot({
++            targets: [
++                {path: [1], type: "inline-math", source: "x", supported: true, reason: ""},
++                {path: [1], type: "inline-math", source: "x", supported: true, reason: ""},
++            ],
++        });
++        assert.deepEqual(bridge.matchMathConversionTarget(duplicatePath, signature, "inline-to-block", asElement(second)),
++            {ok: false, failure: "target-path"});
++    } finally {
++        restore();
++    }
++});
++
++test("unsupported and nested targets refuse conversion with kernel reason", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x");
++        const {block} = paragraph("p1", [formula]);
++        const signature = bridge.buildMathConversionSignature(asElement(block), "inline-to-block");
++        const nested = snapshot({topLevel: false});
++        assert.deepEqual(bridge.matchMathConversionTarget(nested, signature, "inline-to-block", asElement(formula)),
++            {ok: false, failure: "nested"});
++        const unsupported = snapshot({
++            targets: [{path: [1], type: "inline-math", source: "x", supported: false, reason: "mixed paragraph"}],
++        });
++        assert.deepEqual(bridge.matchMathConversionTarget(unsupported, signature, "inline-to-block", asElement(formula)),
++            {ok: false, failure: "unsupported-target", detail: "mixed paragraph"});
++        const mismatch = snapshot({blockType: "NodeMathBlock"});
++        assert.deepEqual(bridge.matchMathConversionTarget(mismatch, signature, "inline-to-block", asElement(formula)),
++            {ok: false, failure: "block-mismatch"});
++    } finally {
++        restore();
++    }
++});
++
++test("readonly, nested and multi-formula paragraphs hide inline and block menus", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const first = inlineMath("x");
++        const second = inlineMath("y");
++        const {block} = paragraph("p1", [first, new FakeText(" "), second]);
++        const root = editor(block);
++        const protyle = fakeProtyle(root);
++        // 混排段落（可见文字或其他公式）不提供入口，inline-context 与 block-convert 一致。
++        assert.equal(bridge.getMathConversionDirection(inlineContext(first, block, protyle)), undefined);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(second, block, protyle, "block-convert")), undefined);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(first, block, protyle, "inline-context")), undefined);
++
++        const sole = paragraph("p2", [inlineMath("z")]);
++        const rootSole = editor(sole.block);
++        const soleProtyle = fakeProtyle(rootSole);
++        assert.equal(bridge.getMathConversionDirection(
++            inlineContext(sole.content.children[0] as FakeElement, sole.block, soleProtyle, "block-convert")),
++            "inline-to-block");
++        assert.equal(bridge.getMathConversionDirection(
++            inlineContext(sole.content.children[0] as FakeElement, sole.block, soleProtyle, "inline-context")),
++            "inline-to-block");
++
++        const nestedBlock = paragraph("p3", [inlineMath("n")]);
++        const listItem = new FakeElement("DIV", {"data-node-id": "l1", "data-type": "NodeListItem"});
++        listItem.append(nestedBlock.block);
++        const nestedRoot = editor(listItem);
++        const nestedProtyle = fakeProtyle(nestedRoot);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(
++            nestedBlock.content.children[0] as FakeElement, nestedBlock.block, nestedProtyle)), undefined);
++
++        const wrapped = new FakeElement("STRONG");
++        wrapped.append(inlineMath("w"));
++        const wrappedParagraph = paragraph("p4", [wrapped]);
++        const wrappedRoot = editor(wrappedParagraph.block);
++        const wrappedProtyle = fakeProtyle(wrappedRoot);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(
++            wrapped.children[0] as FakeElement, wrappedParagraph.block, wrappedProtyle)), undefined);
++
++        const disabled = fakeProtyle(rootSole, "root1", {disabled: true});
++        assert.equal(bridge.getMathConversionDirection(
++            inlineContext(sole.content.children[0] as FakeElement, sole.block, disabled)), undefined);
++
++        const readonlyRoot = editor(sole.block);
++        readonlyRoot.setAttribute("custom-sy-readonly", "true");
++        const readonlyProtyle = fakeProtyle(readonlyRoot);
++        assert.equal(bridge.getMathConversionDirection(
++            inlineContext(sole.content.children[0] as FakeElement, sole.block, readonlyProtyle)), undefined);
++    } finally {
++        restore();
++    }
++});
++
++test("math block menus offer block-to-inline only for top-level canonical math blocks", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const block = mathBlock("x^2");
++        const root = editor(block);
++        const protyle = fakeProtyle(root);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(block, block, protyle, "block-convert")),
++            "block-to-inline");
++        const signature = bridge.buildMathConversionSignature(asElement(block), "block-to-inline");
++        assert.equal(signature.ok, true);
++        assert.equal(signature.blockSource, "x^2");
++        const matched = bridge.matchMathConversionTarget(snapshot({blockType: "NodeMathBlock",
++            targets: [{path: [], type: "math-block", source: "x^2", supported: true, reason: ""}]}),
++        signature, "block-to-inline", asElement(block));
++        assert.equal(matched.ok, true);
++        assert.deepEqual(matched.targetPath, []);
++
++        const wrongSubtype = mathBlock("x^2", "m2");
++        wrongSubtype.setAttribute("data-subtype", "abc");
++        const wrongRoot = editor(wrongSubtype);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(
++            wrongSubtype, wrongSubtype, fakeProtyle(wrongRoot), "block-convert")), undefined);
++    } finally {
++        restore();
++    }
++});
++
++test("real NodeMathBlock converts block-to-inline with a block fallback lease", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const {block, spin, attr} = realMathBlock("x^2");
++        const root = editor(block);
++        const protyle = fakeProtyle(root);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(block, block, protyle, "block-convert")),
++            "block-to-inline");
++        const data = snapshot({blockType: "NodeMathBlock",
++            targets: [{path: [], type: "math-block", source: "x^2", supported: true, reason: ""}]});
++        let leaseDuringSubmit = "";
++        let spinDuringSubmit = "";
++        let attrDuringSubmit = "";
++        const {calls, runtime} = await createFakeRuntime({
++            target: async () => targetSuccess(data),
++            submit: async () => {
++                leaseDuringSubmit = block.getAttribute("contenteditable") ?? "";
++                spinDuringSubmit = spin.getAttribute("contenteditable") ?? "";
++                attrDuringSubmit = attr.getAttribute("contenteditable") ?? "";
++                return transactionSuccess();
++            },
++        });
++        await bridge.runMathConversion(inlineContext(block, block, protyle, "block-convert"), runtime);
++        assert.deepEqual(calls.notify, []);
++        assert.equal(calls.enqueue, 1);
++        assert.equal(calls.submit, 1);
++        assert.equal(calls.refresh, 1);
++        assert.equal(calls.refreshRoot, "root1");
++        // 租约回退到块本身；spin 渲染帧与 .protyle-attr 装饰始终没有被写入
++        assert.equal(leaseDuringSubmit, "false");
++        assert.equal(spinDuringSubmit, "");
++        assert.equal(attrDuringSubmit, "false");
++        assert.equal(block.getAttribute("contenteditable"), null);
++        assert.equal(spin.getAttribute("contenteditable"), null);
++        assert.equal(attr.getAttribute("contenteditable"), "false");
++        const operation = calls.requests[0]!.transactions[0]!.doOperations![0]! as
++            import("../../types/api").TransactionOperationRequest;
++        assert.equal(operation.action, "convertMath");
++        assert.equal(operation.blockID, "m1");
++        const operationData = operation.data as import("../../types/api").TransactionMathConversionInput;
++        assert.equal(operationData.direction, "block-to-inline");
++        assert.deepEqual(operationData.targetPath, []);
++        assert.equal(operationData.expectedSource, "x^2");
++    } finally {
++        restore();
++    }
++});
++
++test("real math block with a genuinely non-editable target is rejected untouched", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const {block, spin, attr} = realMathBlock("x^2");
++        block.setAttribute("contenteditable", "false");
++        const protyle = fakeProtyle(editor(block));
++        const data = snapshot({blockType: "NodeMathBlock",
++            targets: [{path: [], type: "math-block", source: "x^2", supported: true, reason: ""}]});
++        const {calls, runtime} = await createFakeRuntime({target: async () => targetSuccess(data)});
++        await bridge.runMathConversion(inlineContext(block, block, protyle, "block-convert"), runtime);
++        assert.deepEqual(calls.notify, ["Conversion changed"]);
++        assert.equal(calls.enqueue, 0);
++        assert.equal(calls.submit, 0);
++        assert.equal(block.getAttribute("contenteditable"), "false");
++        assert.equal(spin.getAttribute("contenteditable"), null);
++        assert.equal(attr.getAttribute("contenteditable"), "false");
++    } finally {
++        restore();
++    }
++});
++
++test("mixed paragraph with visible text hides the formula-block entry", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x");
++        const {block} = paragraph("p1", [new FakeText("lead "), formula, new FakeText(" tail")]);
++        const protyle = fakeProtyle(editor(block));
++        const context = inlineContext(formula, block, protyle);
++        assert.equal(bridge.getMathConversionDirection(context), undefined);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(formula, block, protyle, "block-convert")), undefined);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(formula, block, protyle, "inline-context")), undefined);
++        assert.deepEqual(bridge.createMathConversionMenuProvider().items(context), []);
++        const mixed = await createFakeRuntime();
++        await bridge.runMathConversion(context, mixed.runtime);
++        assert.equal(mixed.calls.enqueue, 0);
++        assert.equal(mixed.calls.submit, 0);
++
++        // 空白文本与运行时装饰不构成混排
++        const spaced = inlineMath("y");
++        const spacedParagraph = paragraph("p2", [new FakeText("  "), spaced]);
++        spacedParagraph.content.append(new FakeElement("WBR"));
++        assert.equal(bridge.getMathConversionDirection(inlineContext(
++            spaced, spacedParagraph.block, fakeProtyle(editor(spacedParagraph.block)))), "inline-to-block");
++    } finally {
++        restore();
++    }
++});
++
++test("boundary ZWSP and FEFF text around a sole inline formula keeps inline-to-block", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        // 真实边界钩子在公式前后插入 ZWSP、FEFF、换行或空白文本节点，这些不是正文。
++        const boundary = (leading: string, trailing: string) => {
++            const formula = inlineMath("x");
++            const {block} = paragraph("p1", [new FakeText(leading), formula, new FakeText(trailing)]);
++            const protyle = fakeProtyle(editor(block));
++            return {formula, block, protyle};
++        };
++        const cases: Array<[string, string]> = [
++            ["\u200B", ""],
++            ["", "\u200B"],
++            ["\u200B", "\n"],
++            ["\uFEFF", "\uFEFF"],
++            [" \u200B\t", "\uFEFF\n"],
++            ["\u200B", "\u200B"],
++        ];
++        for (const [leading, trailing] of cases) {
++            const {formula, block, protyle} = boundary(leading, trailing);
++            const label = JSON.stringify([leading, trailing]);
++            assert.equal(bridge.getMathConversionDirection(inlineContext(formula, block, protyle)),
++                "inline-to-block", label);
++            assert.equal(bridge.getMathConversionDirection(inlineContext(formula, block, protyle, "block-convert")),
++                "inline-to-block", label);
++        }
++
++        const sample = boundary("\u200B", "\uFEFF");
++        assert.equal(bridge.createMathConversionMenuProvider().items(
++            inlineContext(sample.formula, sample.block, sample.protyle)).length, 1);
++        // 入口判定忽略边界文本，签名仍保留它们的精确内容。
++        const signature = bridge.buildMathConversionSignature(asElement(sample.block), "inline-to-block");
++        assert.equal(signature.ok, true);
++        assert.equal(signature.formulas.length, 1);
++        assert.ok(signature.value.includes("\u200B"));
++        assert.ok(signature.value.includes("\uFEFF"));
++
++        const mixed = (leading: string, trailing: string) => {
++            const formula = inlineMath("y");
++            const {block} = paragraph("p2", [new FakeText(leading), formula, new FakeText(trailing)]);
++            const protyle = fakeProtyle(editor(block));
++            const label = JSON.stringify([leading, trailing]);
++            assert.equal(bridge.getMathConversionDirection(inlineContext(formula, block, protyle)), undefined,
++                label);
++            assert.deepEqual(bridge.createMathConversionMenuProvider().items(
++                inlineContext(formula, block, protyle)), [], label);
++        };
++        mixed("a", "");
++        mixed("", "b");
++        mixed("\u200B a", "\u200B");
++        mixed("\u200B", "b\u200B");
++
++        const first = inlineMath("x");
++        const second = inlineMath("y");
++        const multi = paragraph("p3", [new FakeText("\u200B"), first, new FakeText("\u200B"), second,
++            new FakeText("\n")]);
++        assert.equal(bridge.getMathConversionDirection(inlineContext(first, multi.block,
++            fakeProtyle(editor(multi.block)))), undefined);
++    } finally {
++        restore();
++    }
++});
++
++test("provider appends only the supported direction and installs under the host namespace", async () => {
++    const bridge = await requireBridge();
++    const registry = await import("./mathConversionMenuRegistry");
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block} = paragraph("p1", [formula]);
++        const root = editor(block);
++        const context = inlineContext(formula, block, fakeProtyle(root));
++        const provider = bridge.createMathConversionMenuProvider();
++        const items = provider.items(context);
++        assert.equal(items.length, 1);
++        assert.equal(items[0].id, "inline-to-block");
++        assert.equal(items[0].label, "Formula block");
++        assert.equal(items[0].icon, "iconMath");
++        assert.equal(typeof items[0].click, "function");
++
++        const blockContext = inlineContext(formula, block, fakeProtyle(root), "block-convert");
++        assert.equal(provider.items(blockContext).length, 1);
++        const multiFirst = inlineMath("x");
++        const multiSecond = inlineMath("y");
++        const multi = paragraph("p2", [multiFirst, multiSecond]);
++        const multiContext = inlineContext(multiSecond, multi.block, fakeProtyle(editor(multi.block)), "block-convert");
++        assert.deepEqual(provider.items(multiContext), []);
++
++        bridge.installMathConversionBridge();
++        try {
++            const installed = registry.getMathConversionMenuItems(context);
++            assert.deepEqual(installed.map(item => item.id), ["siyuan%2Fmath-conversion:inline-to-block"]);
++        } finally {
++            registry.unregisterMathConversionMenuProvider(bridge.MATH_CONVERSION_PROVIDER_ID);
++        }
++    } finally {
++        restore();
++    }
++});
++
++test("successful conversion submits one convertMath transaction without touching DOM or undo", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block, content} = paragraph("p1", [formula]);
++        const root = editor(block);
++        const protyle = fakeProtyle(root);
++        const signature = bridge.buildMathConversionSignature(asElement(block), "inline-to-block");
++        const data = snapshot({targets: [{path: [0], type: "inline-math", source: signature.formulas[0].source,
++            supported: true, reason: ""}]});
++        let leaseDuringSubmit = "";
++        const {calls, runtime} = await createFakeRuntime({
++            target: async () => targetSuccess(data),
++            submit: async () => {
++                leaseDuringSubmit = content.getAttribute("contenteditable") || "";
++                return transactionSuccess();
++            },
++        });
++        const domBefore = JSON.stringify(content.childNodes.map(node => (node as FakeElement).getAttribute?.("data-content") ??
++            (node as FakeText).nodeValue));
++        await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++        assert.deepEqual(calls.notify, []);
++        assert.equal(calls.order[0], "flush");
++        assert.ok(calls.order.indexOf("flush") < calls.order.indexOf("target"));
++        assert.ok(calls.order.indexOf("target") < calls.order.indexOf("enqueue"));
++        assert.equal(calls.enqueue, 1);
++        assert.equal(calls.submit, 1);
++        assert.equal(calls.flush, 2);
++        assert.equal(calls.refresh, 1);
++        assert.equal(calls.refreshRoot, "root1");
++        assert.equal(calls.disposed, 1);
++        assert.equal(leaseDuringSubmit, "false");
++        assert.equal(content.getAttribute("contenteditable"), "true");
++        assert.ok(calls.order.lastIndexOf("flush") > calls.order.indexOf("submit"));
++        assert.equal(calls.order.at(-1), "refresh");
++        const request = calls.requests[0]!;
++        assert.equal(request.reqId, 1700000000000);
++        assert.equal(typeof request.app, "string");
++        assert.ok(request.app!.length > 0);
++        assert.equal(request.session, "session-1");
++        assert.equal(request.transactions.length, 1);
++        const transaction = request.transactions[0]!;
++        assert.equal(transaction.doOperations!.length, 1);
++        assert.deepEqual(transaction.undoOperations, []);
++        const operation = transaction.doOperations![0] as import("../../types/api").TransactionOperationRequest;
++        assert.equal(operation.action, "convertMath");
++        assert.equal(operation.id, "p1");
++        assert.equal(operation.blockID, "p1");
++        const operationData = operation.data as import("../../types/api").TransactionMathConversionInput;
++        assert.equal(operationData.notebook, data.notebook);
++        assert.equal(operationData.rootID, "root1");
++        assert.equal(operationData.path, data.path);
++        assert.equal(operationData.blockID, "p1");
++        assert.equal(operationData.direction, "inline-to-block");
++        assert.deepEqual(operationData.targetPath, [0]);
++        assert.equal(operationData.expectedSource, "x^2");
++        assert.equal(operationData.expectedVersion, validVersion);
++        const domAfter = JSON.stringify(content.childNodes.map(node => (node as FakeElement).getAttribute?.("data-content") ??
++            (node as FakeText).nodeValue));
++        assert.equal(domAfter, domBefore);
++    } finally {
++        restore();
++    }
++});
++
++test("flush failure, disconnect, root switch, readonly and IME abort before enqueue", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const cases: Array<{
++            name: string;
++            prepare: (formula: FakeElement, block: FakeElement, protyle: IProtyle) => {
++                flush?: () => Promise<void>;
++                target?: () => Promise<TMathConversionTargetResponse>;
++                imeActive?: () => boolean;
++            };
++            message: string;
++        }> = [{
++            name: "flush rejects",
++            prepare: () => ({flush: async () => { throw new Error("save failed"); }}),
++            message: "Conversion failed",
++        }, {
++            name: "element disconnected after target",
++            prepare: (formula) => ({target: async () => {
++                formula.isConnected = false;
++                return targetSuccess(snapshot());
++            }}),
++            message: "Conversion changed",
++        }, {
++            name: "root switched after target",
++            prepare: (_formula, _block, protyle) => ({target: async () => {
++                protyle.block.rootID = "other-root";
++                return targetSuccess(snapshot());
++            }}),
++            message: "Conversion changed",
++        }, {
++            name: "readonly during flush",
++            prepare: (_formula, _block, protyle) => ({flush: async () => {
++                protyle.disabled = true;
++            }}),
++            message: "Conversion permission",
++        }, {
++            name: "IME composing after flush",
++            prepare: () => {
++                let composing = false;
++                return {flush: async () => {
++                    composing = true;
++                }, imeActive: () => composing};
++            },
++            message: "Conversion changed",
++        }, {
++            name: "pending input changed DOM during target read",
++            prepare: (_formula, block) => ({target: async () => {
++                (block.children[0] as FakeElement).append(new FakeText("pending"));
++                return targetSuccess(snapshot());
++            }}),
++            message: "Conversion changed",
++        }];
++        for (const item of cases) {
++            const formula = inlineMath("x^2");
++            const {block} = paragraph("p1", [formula]);
++            const protyle = fakeProtyle(editor(block));
++            const options = item.prepare(formula, block, protyle);
++            const {calls, runtime} = await createFakeRuntime(options);
++            await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++            assert.equal(calls.enqueue, 0, item.name);
++            assert.equal(calls.submit, 0, item.name);
++            assert.equal(calls.refresh, 0, item.name);
++            assert.ok(calls.notify.length > 0, item.name);
++            assert.ok(calls.notify[0].includes(item.message), `${item.name}: ${calls.notify[0]}`);
++            assert.equal(calls.disposed, 1, item.name);
++        }
++    } finally {
++        restore();
++    }
++});
++
++test("getTarget and transaction business codes surface readable messages and keep the view", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block, content} = paragraph("p1", [formula]);
++        const protyle = fakeProtyle(editor(block));
++        const domBefore = JSON.stringify(content.childNodes.map(node => (node as FakeText).nodeValue ??
++            (node as FakeElement).getAttribute("data-content")));
++        const targetFailures = [
++            [-409, "conflict: document source changed", "Conversion conflict: document source changed"],
++            [422, "unsupported: mixed paragraph", "Conversion unsupported: mixed paragraph"],
++            [403, "permission: encrypted notebook", "Conversion permission: encrypted notebook"],
++        ] as const;
++        for (const [code, msg, expected] of targetFailures) {
++            const {calls, runtime} = await createFakeRuntime({target: async () => failureResponse(code, msg)});
++            await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++            assert.deepEqual(calls.notify, [expected]);
++            assert.equal(calls.enqueue, 0);
++            assert.equal(calls.refresh, 0);
++        }
++        const submitFailures = [
++            [-409, "conflict: stale version", "Conversion conflict: stale version"],
++            [422, "unsupported: nested", "Conversion unsupported: nested"],
++            [403, "permission: readonly", "Conversion permission: readonly"],
++        ] as const;
++        for (const [code, msg, expected] of submitFailures) {
++            const {calls, runtime} = await createFakeRuntime({submit: async () => transactionFailure(code, msg)});
++            await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++            assert.deepEqual(calls.notify, [expected]);
++            // -409 会重取一次快照并重试一次，第二次仍冲突才提示；其他码不重试。
++            assert.equal(calls.submit, code === -409 ? 2 : 1);
++            assert.equal(calls.requestTarget, code === -409 ? 2 : 1);
++            assert.equal(calls.refresh, 0);
++            assert.equal(content.getAttribute("contenteditable"), "true");
++        }
++        const domAfter = JSON.stringify(content.childNodes.map(node => (node as FakeText).nodeValue ??
++            (node as FakeElement).getAttribute("data-content")));
++        assert.equal(domAfter, domBefore);
++    } finally {
++        restore();
++    }
++});
++
++test("unknown and failed transaction responses never refresh the wrong view", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block} = paragraph("p1", [formula]);
++        const protyle = fakeProtyle(editor(block));
++        const {calls, runtime} = await createFakeRuntime({submit: async () => {
++            throw new Error("network");
++        }});
++        await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++        assert.deepEqual(calls.notify, ["Conversion failed"]);
++        assert.equal(calls.refresh, 0);
++
++        const bridge2 = await requireBridge();
++        const {calls: calls2, runtime: runtime2} = await createFakeRuntime({submit: async () => transactionFailure(-1, "io: disk")});
++        await bridge2.runMathConversion(inlineContext(formula, block, protyle), runtime2);
++        assert.deepEqual(calls2.notify, ["Conversion failed: disk"]);
++        assert.equal(calls2.refresh, 0);
++
++        const {calls: calls3, runtime: runtime3} = await createFakeRuntime({refresh: () => undefined});
++        await bridge2.runMathConversion(inlineContext(formula, block, protyle), runtime3);
++        assert.deepEqual(calls3.notify, []);
++        assert.equal(calls3.refresh, 1);
++    } finally {
++        restore();
++    }
++});
++
++test("editing lease restores the original contenteditable on every exit path", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const scenarios = [
++            {name: "success", submit: async () => transactionSuccess(), expected: [] as string[]},
++            {name: "failure", submit: async () => transactionFailure(422, "unsupported: mixed"), expected:
++                ["Conversion unsupported: mixed"]},
++            {name: "thrown", submit: async () => {
++                throw new Error("boom");
++            }, expected: ["Conversion failed"]},
++        ];
++        for (const scenario of scenarios) {
++            const formula = inlineMath("x^2");
++            const {block, content} = paragraph("p1", [formula]);
++            const protyle = fakeProtyle(editor(block));
++            let leaseDuringSubmit = "";
++            const {calls, runtime} = await createFakeRuntime({submit: async () => {
++                leaseDuringSubmit = content.getAttribute("contenteditable") || "";
++                return scenario.submit();
++            }});
++            await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++            assert.equal(leaseDuringSubmit, "false", scenario.name);
++            assert.equal(content.getAttribute("contenteditable"), "true", scenario.name);
++            assert.deepEqual(calls.notify, scenario.expected, scenario.name);
++        }
++    } finally {
++        restore();
++    }
++});
++
++test("second flow on the same block is rejected without corrupting the lease", {timeout: 5000}, async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block, content} = paragraph("p1", [formula]);
++        const protyle = fakeProtyle(editor(block));
++        let resolveFirst: ((value: TMathConversionTransactionResponse) => void) | undefined;
++        const first = await createFakeRuntime({submit: () => new Promise(resolve => {
++            resolveFirst = resolve;
++        })});
++        const firstRun = bridge.runMathConversion(inlineContext(formula, block, protyle), first.runtime);
++        for (let index = 0; index < 100 && content.getAttribute("contenteditable") !== "false"; index++) {
++            await new Promise(resolve => setTimeout(resolve, 2));
++        }
++        assert.equal(content.getAttribute("contenteditable"), "false");
++        assert.equal(first.calls.submit, 1);
++        const second = await createFakeRuntime();
++        await bridge.runMathConversion(inlineContext(formula, block, protyle), second.runtime);
++        assert.deepEqual(second.calls.notify, ["Conversion changed"]);
++        assert.equal(second.calls.enqueue, 0);
++        assert.equal(second.calls.submit, 0);
++        // 第二流程不能把 false 当原值恢复，租约仍由第一流程持有。
++        assert.equal(content.getAttribute("contenteditable"), "false");
++        resolveFirst!(transactionSuccess());
++        await firstRun;
++        assert.equal(first.calls.refresh, 1);
++        assert.equal(content.getAttribute("contenteditable"), "true");
++    } finally {
++        restore();
++    }
++});
++
++test("an already non-editable target is rejected without being rewritten", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block, content} = paragraph("p1", [formula]);
++        content.setAttribute("contenteditable", "false");
++        const protyle = fakeProtyle(editor(block));
++        const {calls, runtime} = await createFakeRuntime();
++        await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++        assert.deepEqual(calls.notify, ["Conversion changed"]);
++        assert.equal(calls.enqueue, 0);
++        assert.equal(calls.submit, 0);
++        assert.equal(content.getAttribute("contenteditable"), "false");
++    } finally {
++        restore();
++    }
++});
++
++test("-409 refetches one snapshot and retries once with the same target", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block, content} = paragraph("p1", [formula]);
++        const protyle = fakeProtyle(editor(block));
++        const first = snapshot();
++        const second = snapshot({version: "b".repeat(64)});
++        let targetCalls = 0;
++        const {calls, runtime} = await createFakeRuntime({
++            target: async () => {
++                targetCalls++;
++                return targetSuccess(targetCalls === 1 ? first : second);
++            },
++            submit: async (request, call) => call === 1 ?
++                transactionFailure(-409, "conflict: same document saved another block") : transactionSuccess(),
++        });
++        await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++        assert.deepEqual(calls.notify, []);
++        assert.equal(calls.requestTarget, 2);
++        assert.equal(calls.submit, 2);
++        assert.equal(calls.refresh, 1);
++        const retried = calls.requests[1].transactions[0]!.doOperations![0]!
++            .data as import("../../types/api").TransactionMathConversionInput;
++        assert.equal(retried.expectedVersion, "b".repeat(64));
++        assert.equal(content.getAttribute("contenteditable"), "true");
++    } finally {
++        restore();
++    }
++});
++
++test("broadcast probe: same-block windows refresh, unrelated blocks do not, no echo suppression", async () => {
++    const refresh = await import("./mathConversionRefresh");
++    const {queueTransaction, waitForPendingTransactions} = await import("../util/transactionQueue");
++    const restore = mockWindow();
++    try {
++        const buildWindow = (blockID = "p1") => {
++            const formula = inlineMath("x");
++            const {block} = paragraph(blockID, [formula]);
++            const protyle = fakeProtyle(editor(block));
++            let flushes = 0;
++            let reloads = 0;
++            const runtime = {
++                flush: async (current: IProtyle) => {
++                    flushes++;
++                    await waitForPendingTransactions(current);
++                },
++                reload: () => {
++                    reloads++;
++                },
++            };
++            return {protyle, runtime, counts: () => ({flushes, reloads})};
++        };
++        // 内核实际广播：重建操作后 data 为 null，也没有 rootID，只有 id/blockID。
++        const operation = {action: "convertMath", id: "p1", blockID: "p1"} as IOperation;
++        const windowA = buildWindow();
++        const windowB = buildWindow();
++        const unrelated = buildWindow("other-block");
++        const dispatch = (target: ReturnType<typeof buildWindow>) => {
++            if (!refresh.mathConversionBroadcastTargetsProtyle(target.protyle, operation)) {
++                return Promise.resolve(false);
++            }
++            return refresh.scheduleMathConversionRefresh(target.protyle,
++                target.protyle.block.rootID || "", target.runtime).then(() => true);
++        };
++        // A 队列里有待保存任务：广播刷新必须先 flush，不能带着未保存输入 reload。
++        let pendingSaved = false;
++        void queueTransaction(windowA.protyle, async () => {
++            await new Promise(resolve => setTimeout(resolve, 10));
++            pendingSaved = true;
++        });
++        const [a, b, c] = await Promise.all([dispatch(windowA), dispatch(windowB), dispatch(unrelated)]);
++        assert.equal(a, true);
++        assert.equal(b, true);
++        assert.equal(c, false);
++        assert.equal(pendingSaved, true);
++        assert.deepEqual(windowA.counts(), {flushes: 1, reloads: 1});
++        assert.deepEqual(windowB.counts(), {flushes: 1, reloads: 1});
++        assert.deepEqual(unrelated.counts(), {flushes: 0, reloads: 0});
++
++        // 没有本地 echo 去重：刷新完成后的下一条同块广播仍必须刷新。
++        await dispatch(windowA);
++        assert.equal(windowA.counts().reloads, 2);
++        // 同一 protyle 的并发广播仍然合并为一次刷新。
++        await Promise.all([dispatch(windowA), dispatch(windowA)]);
++        assert.equal(windowA.counts().reloads, 3);
++
++        assert.equal(refresh.mathConversionBroadcastTargetsProtyle(windowA.protyle,
++            {action: "convertMath", id: "missing"} as IOperation), false);
++        assert.equal(refresh.mathConversionBroadcastTargetsProtyle(windowA.protyle,
++            {action: "convertMath"} as IOperation), false);
++        const refreshExports = refresh as unknown as Record<string, unknown>;
++        assert.equal(refreshExports.markInitiatedMathConversionRefresh, undefined);
++        assert.equal(refreshExports.consumeInitiatedMathConversionRefresh, undefined);
++        await waitForPendingTransactions(windowA.protyle);
++    } finally {
++        restore();
++    }
++});
++
++test("real queueTransaction runs conversion off the queue tail without self-wait", {timeout: 5000}, async () => {
++    const bridge = await requireBridge();
++    const {queueTransaction, waitForPendingTransactions} = await import("../util/transactionQueue");
++    const restore = mockWindow();
++    try {
++        const formula = inlineMath("x^2");
++        const {block} = paragraph("p1", [formula]);
++        const protyle = fakeProtyle(editor(block));
++        const {calls, runtime} = await createFakeRuntime();
++        let priorDone = false;
++        void queueTransaction(protyle, async () => {
++            await new Promise(resolve => setTimeout(resolve, 10));
++            priorDone = true;
++        });
++        await bridge.runMathConversion(inlineContext(formula, block, protyle), runtime);
++        assert.equal(priorDone, true);
++        assert.equal(calls.submit, 1);
++        assert.equal(calls.refresh, 1);
++        let afterDone = false;
++        await queueTransaction(protyle, async () => {
++            afterDone = true;
++        });
++        assert.equal(afterDone, true);
++        await waitForPendingTransactions(protyle);
++    } finally {
++        restore();
++    }
++});
++
++test("failure messages keep unknown codes on the generic key", async () => {
++    const bridge = await requireBridge();
++    const restore = mockWindow();
++    try {
++        assert.equal(bridge.mathConversionFailureMessage(-1, "io: disk"), "Conversion failed: disk");
++        assert.equal(bridge.mathConversionFailureMessage(-409, "conflict: stale"), "Conversion conflict: stale");
++        assert.equal(bridge.mathConversionFailureMessage(422, "unsupported: mixed"), "Conversion unsupported: mixed");
++        assert.equal(bridge.mathConversionFailureMessage(403, "permission: readonly"), "Conversion permission: readonly");
++        assert.equal(bridge.mathConversionFailureMessage(500, ""), "Conversion failed");
++    } finally {
++        restore();
++    }
++});
++
++test("host menu installs the bridge and broadcast refresh filters only by real blockID", () => {
++    const appRoot = process.cwd();
++    const menus = readFileSync(resolve(appRoot, "src/menus/protyle.ts"), "utf8");
++    assert.match(menus,
++        /import \{installMathConversionBridge\} from "\.\.\/protyle\/render\/mathConversionBridge";/);
++    assert.match(menus, /^installMathConversionBridge\(\);$/m);
++    const transaction = readFileSync(resolve(appRoot, "src/protyle/wysiwyg/transaction.ts"), "utf8");
++    const onTransaction = transaction.slice(transaction.indexOf("export const onTransaction"));
++    assert.doesNotMatch(onTransaction, /isBroadcast|markInitiated|consumeInitiated/);
++    assert.match(onTransaction,
++        /if \(operation\.action === "convertMath"\) \{[\s\S]{0,420}mathConversionBroadcastTargetsProtyle\(protyle, operation\)[\s\S]{0,220}scheduleMathConversionRefresh\(protyle, protyle\.block\?\.rootID \|\| ""\)/);
++    const protyleIndex = readFileSync(resolve(appRoot, "src/protyle/index.ts"), "utf8");
++    assert.doesNotMatch(protyleIndex, /onTransaction\(this\.protyle, operations, false, undefined, true\)/);
++    const en = JSON.parse(readFileSync(resolve(appRoot, "appearance/langs/en.json"), "utf8")) as Record<string, string>;
++    for (const key of ["mathConversionConflict", "mathConversionUnsupported", "mathConversionPermission",
++        "mathConversionChanged", "mathConversionFailed", "mathConversionNoTarget"]) {
++        assert.equal(typeof en[key], "string", key);
++        assert.ok(en[key].length > 0, key);
++    }
++});
+diff --git a/app/src/protyle/render/mathConversionBridge.ts b/app/src/protyle/render/mathConversionBridge.ts
+new file mode 100644
+index 0000000..4c9dca4
+--- /dev/null
++++ b/app/src/protyle/render/mathConversionBridge.ts
+@@ -0,0 +1,872 @@
++/**
++ * 数学公式转换菜单桥。
++ *
++ * 菜单只负责在可写、结构可证明的公式或公式块上追加“转换为”条目；点击后先在事务队列外排空编辑输入，
++ * 再读取内核来源快照，按整段有序签名与公式 ordinal 映射唯一目标，最后入队单笔 convertMath。
++ * 桥本身不预改 DOM、不预加 undo，也不在队列任务内等待自身。
++ */
++
++import {Constants} from "../../constants";
++import {queueTransaction} from "../util/transactionQueue";
++import {scheduleMathConversionRefresh} from "./mathConversionRefresh";
++import {
++    registerMathConversionMenuProvider,
++    type IMathConversionMenuContext,
++    type IMathConversionMenuProvider,
++} from "./mathConversionMenuRegistry";
++
++export const MATH_CONVERSION_PROVIDER_ID = "siyuan/math-conversion";
++
++export type TMathConversionDirection = "inline-to-block" | "block-to-inline";
++
++export const MATH_CONVERSION_DIRECTIONS: Record<TMathConversionDirection, TMathConversionDirection> = {
++    "inline-to-block": "inline-to-block",
++    "block-to-inline": "block-to-inline",
++};
++
++export interface IMathConversionFormula {
++    element: HTMLElement;
++    source: string;
++}
++
++export type TMathConversionSignatureFailure =
++    "content-unavailable" | "missing-source" | "too-large" | "too-deep" | "too-many-formulas";
++
++export interface IMathConversionSignature {
++    ok: boolean;
++    failure?: TMathConversionSignatureFailure;
++    /** 整段有序签名：正文、marks、公式位置与精确源；不剥离用户字符或实体 */
++    value: string;
++    formulas: IMathConversionFormula[];
++    /** 公式块方向使用的块级精确源 */
++    blockSource?: string;
++}
++
++export interface IMathConversionSnapshotTarget {
++    path: number[];
++    type: string;
++    source: string;
++    supported: boolean;
++    reason: string;
++}
++
++export interface IMathConversionSnapshot {
++    notebook: string;
++    rootID: string;
++    path: string;
++    version: string;
++    blockType: string;
++    topLevel: boolean;
++    targets: IMathConversionSnapshotTarget[];
++}
++
++export type TMathConversionMatchFailure =
++    "nested" | "block-mismatch" | "target-count" | "target-source" | "target-path" | "unsupported-target" | "no-formula";
++
++export type TMathConversionMatchResult =
++    {ok: true; targetPath: number[]; expectedSource: string; ordinal: number} |
++    {ok: false; failure: TMathConversionMatchFailure; detail?: string};
++
++/** 线协议只保留业务码、消息与未知数据；具体字段由 readMathConversionSnapshot 校验 */
++export interface IMathConversionWireResponse {
++    code: number;
++    msg: string;
++    data?: unknown;
++}
++
++export type TMathConversionTargetResponse = IMathConversionWireResponse;
++
++export type TMathConversionTransactionResponse = IMathConversionWireResponse;
++
++export interface IMathConversionImeTracker {
++    isActive: () => boolean;
++    dispose: () => void;
++}
++
++export interface IMathConversionRuntime {
++    now: () => number;
++    flush: (protyle: IProtyle) => Promise<void>;
++    requestTarget: (blockID: string) => Promise<TMathConversionTargetResponse>;
++    enqueue: (protyle: IProtyle, task: () => Promise<void>) => void | Promise<void>;
++    submit: (request: import("../../types/api").PerformTransactionsRequestInput) => Promise<TMathConversionTransactionResponse>;
++    refresh: (protyle: IProtyle, rootID: string) => void;
++    notify: (message: string) => void;
++    trackIme: (element: HTMLElement) => IMathConversionImeTracker;
++}
++
++interface IMathConversionFlowState {
++    protyle: IProtyle;
++    element: HTMLElement;
++    blockElement: HTMLElement;
++    blockID: string;
++    rootID: string;
++    editorElement: HTMLElement;
++}
++
++type TMathConversionInvalid = "changed" | "readonly" | "composing";
++
++const NODE_TEXT = 3;
++const NODE_ELEMENT = 1;
++/** 宿主与渲染器插在公式前后的光标边界：ZWSP、FEFF、换行与空白，不属于正文 */
++const BOUNDARY_TEXT = /^[\s\u200B\uFEFF]*$/;
++const MAX_SIGNATURE_NODES = 8192;
++const MAX_SIGNATURE_DEPTH = 64;
++const MAX_SIGNATURE_FORMULAS = 32;
++const SIGNATURE_ATTRIBUTES = [
++    "data-type", "data-subtype", "data-id", "href", "data-href", "data-inline-memo-content", "data-label", "data-content",
++];
++
++const languages = () => (window.siyuan?.languages || {}) as Record<string, string>;
++
++const blockReadonly = (protyle: IProtyle, blockElement: HTMLElement) => {
++    if (protyle.disabled || protyle.lite) {
++        return true;
++    }
++    if (window.siyuan?.config?.readonly || window.siyuan?.config?.editor?.readOnly || window.siyuan?.isPublish) {
++        return true;
++    }
++    const editorElement = protyle.wysiwyg?.element;
++    for (let element: HTMLElement | null = blockElement; element; element = element.parentElement) {
++        if (element.getAttribute(Constants.CUSTOM_SY_READONLY) === "true") {
++            return true;
++        }
++        if (element === editorElement) {
++            return false;
++        }
++    }
++    return false;
++};
++
++const isElement = (node: unknown): node is HTMLElement =>
++    Boolean(node) && (node as HTMLElement).nodeType === NODE_ELEMENT;
++
++const isInlineMathElement = (element: HTMLElement) => {
++    if (!isElement(element)) {
++        return false;
++    }
++    const types = (element.getAttribute("data-type") || "").split(/\s+/);
++    return types.includes("inline-math") && element.getAttribute("data-subtype") === "math";
++};
++
++const RUNTIME_DECORATION_CLASSES = ["protyle-attr", "protyle-icons", "protyle-cursor"];
++
++/** 运行时装饰：属性区、块图标、渲染光标、换行占位与渲染帧都不属于内容容器 */
++const isRuntimeDecoration = (element: HTMLElement) => {
++    const tag = (element.tagName || "").toLowerCase();
++    if (tag === "wbr") {
++        return true;
++    }
++    if (element.hasAttribute("data-render") || element.hasAttribute("spin")) {
++        return true;
++    }
++    const classes = (element.getAttribute("class") || "").split(/\s+/);
++    return RUNTIME_DECORATION_CLASSES.some(name => classes.includes(name));
++};
++
++/**
++ * 内容容器：块自身带 contenteditable 时就是它，否则取第一个带 contenteditable 的非装饰子级；
++ * 渲染块（公式块等）没有可编辑子级时回退块本身，属性区不会被当作内容。
++ */
++const contentElement = (blockElement: HTMLElement): HTMLElement | undefined => {
++    if (!isElement(blockElement)) {
++        return undefined;
++    }
++    // 提交租约会临时把 contenteditable 改成 false，查找只认属性存在，避免租约期间丢失内容容器。
++    if (blockElement.hasAttribute("contenteditable")) {
++        return blockElement;
++    }
++    const children = blockElement.children;
++    if (!children) {
++        return blockElement;
++    }
++    for (let index = 0; index < children.length; index++) {
++        const child = children[index] as HTMLElement;
++        if (!isElement(child) || isRuntimeDecoration(child)) {
++            continue;
++        }
++        if (child.hasAttribute("contenteditable")) {
++            return child;
++        }
++    }
++    return blockElement;
++};
++
++/**
++ * 独占段落：内容容器除空白文本与运行时装饰外只有一个直接子级，且正是当前行内公式。
++ * 混排段落（含可见文字或其他元素）不提供行内转块入口。
++ */
++const isSoleInlineMathParagraph = (blockElement: HTMLElement, element: HTMLElement) => {
++    if (!isElement(element) || !isInlineMathElement(element)) {
++        return false;
++    }
++    const content = contentElement(blockElement);
++    if (!content || element.parentElement !== content) {
++        return false;
++    }
++    let formulas = 0;
++    const children = content.childNodes;
++    if (!children) {
++        return false;
++    }
++    for (let index = 0; index < children.length; index++) {
++        const node = children[index];
++        if (node.nodeType === NODE_TEXT) {
++            // 边界钩子在公式前后插入 ZWSP/FEFF/换行/空白，它们不构成混排正文。
++            if (!BOUNDARY_TEXT.test(node.nodeValue ?? "")) {
++                return false;
++            }
++            continue;
++        }
++        if (node.nodeType !== NODE_ELEMENT) {
++            continue;
++        }
++        const child = node as HTMLElement;
++        if (child === element) {
++            formulas++;
++            continue;
++        }
++        // 另一个行内公式（含已渲染的）或任何其他元素都属于混排，只有属性区等装饰可以跳过。
++        if (isInlineMathElement(child)) {
++            return false;
++        }
++        if (isRuntimeDecoration(child)) {
++            continue;
++        }
++        return false;
++    }
++    return formulas === 1;
++};
++
++const containsElement = (ancestor: HTMLElement, element: HTMLElement | null) => {
++    for (let current: HTMLElement | null = element; current; current = current.parentElement) {
++        if (current === ancestor) {
++            return true;
++        }
++    }
++    return false;
++};
++
++/** 仅可写、顶层、结构可证明的公式或公式块返回转换方向；其他情况返回 undefined，菜单不显示 */
++export const getMathConversionDirection = (context: IMathConversionMenuContext): TMathConversionDirection | undefined => {
++    const protyle = context?.protyle;
++    const blockElement = context?.blockElement;
++    if (!protyle || !isElement(blockElement) || blockReadonly(protyle, blockElement)) {
++        return undefined;
++    }
++    const editorElement = protyle.wysiwyg?.element;
++    if (!isElement(editorElement) || blockElement.parentElement !== editorElement) {
++        return undefined;
++    }
++    const blockType = blockElement.getAttribute("data-type");
++    const element = context.element;
++    if (blockType === "NodeParagraph") {
++        return isSoleInlineMathParagraph(blockElement, element) ? "inline-to-block" : undefined;
++    }
++    if (blockType === "NodeMathBlock") {
++        if (blockElement.getAttribute("data-subtype") !== "math") {
++            return undefined;
++        }
++        return containsElement(blockElement, element) ? "block-to-inline" : undefined;
++    }
++    return undefined;
++};
++
++const signatureElement = (element: HTMLElement) => {
++    const attributes: Record<string, string> = {};
++    for (const name of SIGNATURE_ATTRIBUTES) {
++        const value = element.getAttribute(name);
++        if (value !== null) {
++            attributes[name] = value;
++        }
++    }
++    const tag = (element.tagName || "").toLowerCase();
++    return {tag, attributes};
++};
++
++/**
++ * 构造整段有序签名。正文文本原样保留（含 U+200B/U+2060/实体字符），只排除已证运行时装饰：
++ * `.protyle-attr`、`wbr`、渲染子树和 data-* 渲染标记；公式节点作为终端节点记录精确 data-content。
++ */
++export const buildMathConversionSignature = (blockElement: HTMLElement, direction: TMathConversionDirection):
++    IMathConversionSignature => {
++    const blockID = blockElement.getAttribute("data-node-id") || "";
++    if (direction === "block-to-inline") {
++        const source = blockElement.getAttribute("data-content");
++        if (source === null) {
++            return {ok: false, failure: "missing-source", value: "", formulas: []};
++        }
++        return {
++            ok: true,
++            value: JSON.stringify({id: blockID, direction, source}),
++            formulas: [],
++            blockSource: source,
++        };
++    }
++    const content = contentElement(blockElement);
++    if (!content) {
++        return {ok: false, failure: "content-unavailable", value: "", formulas: []};
++    }
++    const formulas: IMathConversionFormula[] = [];
++    let nodes = 0;
++    let failure: TMathConversionSignatureFailure | undefined;
++    const walk = (parent: Node, depth: number): unknown[] => {
++        const entries: unknown[] = [];
++        const children = parent.childNodes;
++        if (!children) {
++            return entries;
++        }
++        for (let index = 0; index < children.length; index++) {
++            const node = children[index] as Node & {tagName?: string};
++            nodes++;
++            if (nodes > MAX_SIGNATURE_NODES) {
++                failure = "too-large";
++                return entries;
++            }
++            if (node.nodeType === NODE_TEXT) {
++                entries.push({text: node.nodeValue ?? ""});
++                continue;
++            }
++            if (node.nodeType !== NODE_ELEMENT) {
++                continue;
++            }
++            const element = node as HTMLElement;
++            const tag = (element.tagName || "").toLowerCase();
++            if (tag === "wbr") {
++                continue;
++            }
++            if ((element.getAttribute("class") || "").split(/\s+/).includes("protyle-attr")) {
++                continue;
++            }
++            if (isInlineMathElement(element)) {
++                const source = element.getAttribute("data-content");
++                if (source === null) {
++                    failure = "missing-source";
++                    return entries;
++                }
++                formulas.push({element, source});
++                if (formulas.length > MAX_SIGNATURE_FORMULAS) {
++                    failure = "too-many-formulas";
++                    return entries;
++                }
++                entries.push({math: source});
++                continue;
++            }
++            if (element.hasAttribute("data-render")) {
++                continue;
++            }
++            if (depth + 1 > MAX_SIGNATURE_DEPTH) {
++                failure = "too-deep";
++                return entries;
++            }
++            const meta = signatureElement(element);
++            entries.push({element: meta.tag, ...meta.attributes, children: walk(element, depth + 1)});
++            if (failure) {
++                return entries;
++            }
++        }
++        return entries;
++    };
++    const tree = walk(content, 0);
++    if (failure) {
++        return {ok: false, failure, value: "", formulas: []};
++    }
++    return {ok: true, value: JSON.stringify({id: blockID, direction, content: tree}), formulas};
++};
++
++const isSnapshotTarget = (target: unknown): target is IMathConversionSnapshotTarget => {
++    if (!target || typeof target !== "object") {
++        return false;
++    }
++    const value = target as IMathConversionSnapshotTarget;
++    return Array.isArray(value.path) && typeof value.type === "string" && typeof value.source === "string" &&
++        typeof value.supported === "boolean" && typeof value.reason === "string" &&
++        value.path.every(item => Number.isInteger(item) && item >= 0);
++};
++
++/** 把 getTarget 响应转换成受检快照；失败响应返回 undefined，由调用方按业务码提示 */
++export const readMathConversionSnapshot = (response: TMathConversionTargetResponse):
++    IMathConversionSnapshot | undefined => {
++    if (!response || response.code !== 0 || !response.data || typeof response.data !== "object") {
++        return undefined;
++    }
++    const data = response.data as Record<string, unknown>;
++    if (typeof data.notebook !== "string" || typeof data.rootID !== "string" || typeof data.path !== "string" ||
++        typeof data.version !== "string" || typeof data.blockType !== "string" || typeof data.topLevel !== "boolean" ||
++        !Array.isArray(data.targets)) {
++        return undefined;
++    }
++    const targets: IMathConversionSnapshotTarget[] = [];
++    for (const target of data.targets) {
++        if (!isSnapshotTarget(target)) {
++            return undefined;
++        }
++        targets.push({path: [...target.path], type: target.type, source: target.source,
++            supported: target.supported, reason: target.reason});
++    }
++    return {
++        notebook: data.notebook, rootID: data.rootID, path: data.path, version: data.version,
++        blockType: data.blockType, topLevel: data.topLevel, targets,
++    };
++};
++
++/**
++ * 按公式 ordinal（在整段签名中的位置）映射内核候选。候选数量、公式类型、精确源与路径顺序必须
++ * 与 DOM 公式序列一一对应；不能证明唯一时返回失败，调用方不得自行改选目标。
++ */
++export const matchMathConversionTarget = (snapshot: IMathConversionSnapshot, signature: IMathConversionSignature,
++                                          direction: TMathConversionDirection, element: HTMLElement):
++    TMathConversionMatchResult => {
++    const expectedBlock = direction === "inline-to-block" ? "NodeParagraph" : "NodeMathBlock";
++    if (!snapshot.topLevel) {
++        return {ok: false, failure: "nested"};
++    }
++    if (snapshot.blockType !== expectedBlock) {
++        return {ok: false, failure: "block-mismatch"};
++    }
++    if (snapshot.targets.length !== 1 && direction === "block-to-inline") {
++        return {ok: false, failure: "target-count"};
++    }
++    if (direction === "inline-to-block") {
++        if (signature.formulas.length === 0) {
++            return {ok: false, failure: "no-formula"};
++        }
++        if (snapshot.targets.length !== signature.formulas.length) {
++            return {ok: false, failure: "target-count"};
++        }
++        let previousPath = -1;
++        for (let index = 0; index < snapshot.targets.length; index++) {
++            const target = snapshot.targets[index];
++            if (target.type !== "inline-math" || target.path.length !== 1) {
++                return {ok: false, failure: "target-path"};
++            }
++            if (target.source !== signature.formulas[index].source) {
++                return {ok: false, failure: "target-source"};
++            }
++            if (target.path[0] <= previousPath) {
++                return {ok: false, failure: "target-path"};
++            }
++            previousPath = target.path[0];
++        }
++        const ordinal = signature.formulas.findIndex(item => item.element === element);
++        if (ordinal < 0) {
++            return {ok: false, failure: "no-formula"};
++        }
++        const target = snapshot.targets[ordinal];
++        if (!target.supported) {
++            return {ok: false, failure: "unsupported-target", detail: target.reason};
++        }
++        return {ok: true, targetPath: [...target.path], expectedSource: target.source, ordinal};
++    }
++    const target = snapshot.targets[0];
++    if (target.type !== "math-block" || target.path.length !== 0) {
++        return {ok: false, failure: "target-path"};
++    }
++    if (target.source !== signature.blockSource) {
++        return {ok: false, failure: "target-source"};
++    }
++    if (!target.supported) {
++        return {ok: false, failure: "unsupported-target", detail: target.reason};
++    }
++    return {ok: true, targetPath: [], expectedSource: target.source, ordinal: 0};
++};
++
++const checkFlowState = (state: IMathConversionFlowState, imeActive: () => boolean): TMathConversionInvalid | undefined => {
++    const {protyle, element, blockElement} = state;
++    if (!element?.isConnected || !blockElement?.isConnected || !state.editorElement?.isConnected) {
++        return "changed";
++    }
++    if (protyle.wysiwyg?.element !== state.editorElement) {
++        return "changed";
++    }
++    if (!state.editorElement.contains(blockElement) || !state.editorElement.contains(element)) {
++        return "changed";
++    }
++    if (blockElement.getAttribute("data-node-id") !== state.blockID) {
++        return "changed";
++    }
++    if (protyle.block?.rootID !== state.rootID) {
++        return "changed";
++    }
++    if (blockElement.parentElement !== state.editorElement) {
++        return "changed";
++    }
++    if (blockReadonly(protyle, blockElement)) {
++        return "readonly";
++    }
++    if (imeActive()) {
++        return "composing";
++    }
++    return undefined;
++};
++
++const invalidMessage = (invalid: TMathConversionInvalid) => invalid === "readonly" ?
++    languages().mathConversionPermission || "" : languages().mathConversionChanged || "";
++
++const signatureFailureMessage = (failure: TMathConversionSignatureFailure) => failure === "missing-source" ||
++    failure === "content-unavailable" ? languages().mathConversionNoTarget || "" :
++    languages().mathConversionChanged || "";
++
++const matchFailureMessage = (result: TMathConversionMatchResult) => {
++    if (!("failure" in result)) {
++        return languages().mathConversionChanged || "";
++    }
++    if (result.failure === "unsupported-target" && result.detail) {
++        return `${languages().mathConversionUnsupported || ""}: ${result.detail}`;
++    }
++    if (result.failure === "nested" || result.failure === "block-mismatch") {
++        return languages().mathConversionUnsupported || "";
++    }
++    return languages().mathConversionNoTarget || "";
++};
++
++/** 业务码到可读提示：-409 冲突、422 不支持、403 权限，其余按失败提示，并保留内核原因 */
++export const mathConversionFailureMessage = (code: number, msg: string) => {
++    const currentLanguages = languages();
++    let message = currentLanguages.mathConversionFailed || "";
++    if (code === -409) {
++        message = currentLanguages.mathConversionConflict || "";
++    } else if (code === 422) {
++        message = currentLanguages.mathConversionUnsupported || "";
++    } else if (code === 403) {
++        message = currentLanguages.mathConversionPermission || "";
++    }
++    const detail = (msg || "").replace(/^(conflict|unsupported|permission|invalid|io):\s*/, "");
++    return detail ? `${message}: ${detail}` : message;
++};
++
++const createTransactionRequest = (state: IMathConversionFlowState, direction: TMathConversionDirection,
++                                  snapshot: IMathConversionSnapshot, match: Extract<TMathConversionMatchResult, {ok: true}>,
++                                  runtime: IMathConversionRuntime):
++    import("../../types/api").PerformTransactionsRequestInput => ({
++    reqId: runtime.now(),
++    app: Constants.SIYUAN_APPID,
++    session: state.protyle.id,
++    transactions: [{
++        doOperations: [{
++            action: "convertMath",
++            id: state.blockID,
++            blockID: state.blockID,
++            data: {
++                notebook: snapshot.notebook,
++                rootID: snapshot.rootID,
++                path: snapshot.path,
++                blockID: state.blockID,
++                direction,
++                targetPath: match.targetPath,
++                expectedSource: match.expectedSource,
++                expectedVersion: snapshot.version,
++            },
++        }],
++        undoOperations: [],
++    }],
++});
++
++interface IFetchSyncModule {
++    fetchSyncPost: (url: string, data?: unknown, headers?: Record<string, string>, process?: boolean) => Promise<unknown>;
++}
++
++const toWireResponse = (value: unknown): IMathConversionWireResponse => {
++    if (!value || typeof value !== "object") {
++        return {code: -1, msg: "", data: null};
++    }
++    const response = value as {code?: unknown; msg?: unknown; data?: unknown};
++    return {
++        code: typeof response.code === "number" ? response.code : -1,
++        msg: typeof response.msg === "string" ? response.msg : "",
++        data: response.data,
++    };
++};
++
++/** 默认运行时：迟加载 fetch/showMessage，避免菜单注册模块在无宿主环境加载网络与提示依赖 */
++export const createMathConversionRuntime = (): IMathConversionRuntime => ({
++    now: () => Date.now(),
++    flush: (protyle) => protyle.getInstance().flushPendingTransactions(),
++    requestTarget: async (blockID) => toWireResponse(await (require("../../util/fetch") as IFetchSyncModule)
++        .fetchSyncPost("/api/mathConversion/getTarget", {blockID}, undefined, false)),
++    enqueue: (protyle, task) => queueTransaction(protyle, task),
++    submit: async (request) => toWireResponse(await (require("../../util/fetch") as IFetchSyncModule)
++        .fetchSyncPost("/api/transactions", request, undefined, false)),
++    refresh: (protyle, rootID) => {
++        if (protyle.block?.rootID !== rootID || !protyle.element?.isConnected) {
++            return;
++        }
++        protyle.getInstance().reload(false);
++    },
++    notify: (message) => {
++        const {showMessage}: {showMessage: (text: string, timeout?: number, type?: string) => void} =
++            require("../../dialog/message");
++        showMessage(message, 6000, "error");
++    },
++    trackIme: (element) => {
++        let compositions = 0;
++        const onCompositionStart = () => {
++            compositions++;
++        };
++        const onCompositionEnd = () => {
++            if (compositions > 0) {
++                compositions--;
++            }
++        };
++        element.addEventListener("compositionstart", onCompositionStart, true);
++        element.addEventListener("compositionend", onCompositionEnd, true);
++        return {
++            isActive: () => compositions > 0,
++            dispose: () => {
++                element.removeEventListener("compositionstart", onCompositionStart, true);
++                element.removeEventListener("compositionend", onCompositionEnd, true);
++            },
++        };
++    },
++});
++
++/** 同时只允许一个流程持有目标块的内容容器 */
++const mathConversionLeases = new WeakMap<HTMLElement, object>();
++
++/**
++ * 租约只落在内容容器：块自身或带 contenteditable 的非装饰子级；属性区等装饰从不写入。
++ * 同一容器同时只允许一个流程持有，避免第二个流程把租约值当成原值恢复。
++ */
++const acquireMathConversionEditingLease = (blockElement: HTMLElement) => {
++    const content = contentElement(blockElement) || blockElement;
++    // 目标原本就不可编辑时保持原状，不写入也不恢复，避免覆盖其他流程或用户的只读设置。
++    if (content.getAttribute("contenteditable") === "false" || mathConversionLeases.has(content)) {
++        return undefined;
++    }
++    const token = {};
++    const original = content.getAttribute("contenteditable");
++    mathConversionLeases.set(content, token);
++    content.setAttribute("contenteditable", "false");
++    return () => {
++        if (mathConversionLeases.get(content) !== token) {
++            return;
++        }
++        mathConversionLeases.delete(content);
++        if (original === null) {
++            content.removeAttribute("contenteditable");
++        } else {
++            content.setAttribute("contenteditable", original);
++        }
++    };
++};
++
++interface IMathConversionRetry {
++    snapshot: IMathConversionSnapshot;
++    match: Extract<TMathConversionMatchResult, {ok: true}>;
++}
++
++/** -409 只重取一次快照；签名、目标路径与精确源仍须一致，否则按原冲突提示 */
++const retryMathConversionSnapshot = async (state: IMathConversionFlowState, direction: TMathConversionDirection,
++                                          signature: IMathConversionSignature,
++                                          match: Extract<TMathConversionMatchResult, {ok: true}>,
++                                          blockElement: HTMLElement, element: HTMLElement,
++                                          runtime: IMathConversionRuntime, imeActive: () => boolean):
++    Promise<IMathConversionRetry | undefined> => {
++    let response: TMathConversionTargetResponse;
++    try {
++        response = await runtime.requestTarget(state.blockID);
++    } catch {
++        return undefined;
++    }
++    if (checkFlowState(state, imeActive)) {
++        return undefined;
++    }
++    const retrySignature = buildMathConversionSignature(blockElement, direction);
++    if (!retrySignature.ok || retrySignature.value !== signature.value) {
++        return undefined;
++    }
++    const snapshot = readMathConversionSnapshot(response);
++    if (!snapshot || snapshot.rootID !== state.rootID ||
++        snapshot.blockType !== blockElement.getAttribute("data-type") ||
++        !/^[0-9a-f]{64}$/.test(snapshot.version) || !snapshot.notebook || !snapshot.path) {
++        return undefined;
++    }
++    const retryMatch = matchMathConversionTarget(snapshot, retrySignature, direction, element);
++    if (!retryMatch.ok || retryMatch.targetPath.join(",") !== match.targetPath.join(",") ||
++        retryMatch.expectedSource !== match.expectedSource) {
++        return undefined;
++    }
++    return {snapshot, match: retryMatch};
++};
++
++/** 执行一次转换：队列外 flush → 复核 → getTarget → 复核签名 → 队列内单笔 convertMath → 刷新正确 root */
++export const runMathConversion = async (context: IMathConversionMenuContext,
++                                        runtime: IMathConversionRuntime = createMathConversionRuntime()):
++    Promise<void> => {
++    const protyle = context?.protyle;
++    const blockElement = context?.blockElement;
++    const element = context?.element;
++    if (!protyle || !isElement(blockElement) || !isElement(element)) {
++        return;
++    }
++    const direction = getMathConversionDirection(context);
++    if (!direction) {
++        return;
++    }
++    const blockID = blockElement.getAttribute("data-node-id") || "";
++    const rootID = protyle.block?.rootID || "";
++    if (!blockID || !rootID) {
++        runtime.notify(languages().mathConversionChanged || "");
++        return;
++    }
++    const editorElement = protyle.wysiwyg?.element;
++    if (!isElement(editorElement)) {
++        return;
++    }
++    const state: IMathConversionFlowState = {protyle, element, blockElement, blockID, rootID, editorElement};
++    const ime = runtime.trackIme(editorElement);
++    const fail = (invalid: TMathConversionInvalid) => {
++        runtime.notify(invalidMessage(invalid));
++    };
++    try {
++        const initialInvalid = checkFlowState(state, ime.isActive);
++        if (initialInvalid) {
++            fail(initialInvalid);
++            return;
++        }
++        try {
++            await runtime.flush(protyle);
++        } catch {
++            runtime.notify(languages().mathConversionFailed || "");
++            return;
++        }
++        const flushedInvalid = checkFlowState(state, ime.isActive);
++        if (flushedInvalid) {
++            fail(flushedInvalid);
++            return;
++        }
++        const signature = buildMathConversionSignature(blockElement, direction);
++        if (!signature.ok) {
++            runtime.notify(signatureFailureMessage(signature.failure));
++            return;
++        }
++        if (direction === "inline-to-block" && !signature.formulas.some(item => item.element === element)) {
++            runtime.notify(languages().mathConversionNoTarget || "");
++            return;
++        }
++        let targetResponse: TMathConversionTargetResponse;
++        try {
++            targetResponse = await runtime.requestTarget(blockID);
++        } catch {
++            runtime.notify(languages().mathConversionFailed || "");
++            return;
++        }
++        const targetInvalid = checkFlowState(state, ime.isActive);
++        if (targetInvalid) {
++            fail(targetInvalid);
++            return;
++        }
++        const currentSignature = buildMathConversionSignature(blockElement, direction);
++        if (!currentSignature.ok || currentSignature.value !== signature.value) {
++            runtime.notify(languages().mathConversionChanged || "");
++            return;
++        }
++        const snapshot = readMathConversionSnapshot(targetResponse);
++        if (!snapshot) {
++            runtime.notify(targetResponse.code === 0 ? languages().mathConversionNoTarget || "" :
++                mathConversionFailureMessage(targetResponse.code, targetResponse.msg));
++            return;
++        }
++        if (snapshot.rootID !== rootID || snapshot.blockType !== blockElement.getAttribute("data-type") ||
++            !/^[0-9a-f]{64}$/.test(snapshot.version) || !snapshot.notebook || !snapshot.path) {
++            runtime.notify(languages().mathConversionNoTarget || "");
++            return;
++        }
++        const match = matchMathConversionTarget(snapshot, signature, direction, element);
++        if (!match.ok) {
++            runtime.notify(matchFailureMessage(match));
++            return;
++        }
++        const releaseLease = acquireMathConversionEditingLease(blockElement);
++        if (!releaseLease) {
++            // 同块已有流程持有租约，或目标本来不可编辑：拒绝本次转换，不改已有状态。
++            runtime.notify(languages().mathConversionChanged || "");
++            return;
++        }
++        let committedRootID = "";
++        try {
++            await runtime.enqueue(protyle, async () => {
++                const queuedInvalid = checkFlowState(state, ime.isActive);
++                if (queuedInvalid) {
++                    fail(queuedInvalid);
++                    return;
++                }
++                const queuedSignature = buildMathConversionSignature(blockElement, direction);
++                if (!queuedSignature.ok || queuedSignature.value !== signature.value) {
++                    runtime.notify(languages().mathConversionChanged || "");
++                    return;
++                }
++                const queuedMatch = matchMathConversionTarget(snapshot, queuedSignature, direction, element);
++                if (!queuedMatch.ok || queuedMatch.targetPath.join(",") !== match.targetPath.join(",") ||
++                    queuedMatch.expectedSource !== match.expectedSource) {
++                    runtime.notify(queuedMatch.ok ? languages().mathConversionChanged || "" :
++                        matchFailureMessage(queuedMatch));
++                    return;
++                }
++                const request = createTransactionRequest(state, direction, snapshot, match, runtime);
++                let response: TMathConversionTransactionResponse;
++                try {
++                    response = await runtime.submit(request);
++                } catch {
++                    runtime.notify(languages().mathConversionFailed || "");
++                    return;
++                }
++                if (response.code === -409) {
++                    // 同文档其他块刚保存也会让来源版本过期；最多重取一次快照，签名与目标仍须一致。
++                    const retry = await retryMathConversionSnapshot(state, direction, signature, match,
++                        blockElement, element, runtime, ime.isActive);
++                    if (retry) {
++                        try {
++                            response = await runtime.submit(createTransactionRequest(state, direction,
++                                retry.snapshot, retry.match, runtime));
++                        } catch {
++                            runtime.notify(languages().mathConversionFailed || "");
++                            return;
++                        }
++                    }
++                }
++                if (response.code !== 0) {
++                    runtime.notify(mathConversionFailureMessage(response.code, response.msg));
++                    return;
++                }
++                committedRootID = snapshot.rootID;
++            });
++        } catch {
++            runtime.notify(languages().mathConversionFailed || "");
++        } finally {
++            releaseLease();
++        }
++        if (committedRootID) {
++            // 提交成功后队列外 flush 再刷新；同一 protyle 的并发刷新由调度器合并。
++            await scheduleMathConversionRefresh(protyle, committedRootID, {
++                flush: () => runtime.flush(protyle),
++                reload: () => runtime.refresh(protyle, committedRootID),
++            });
++        }
++    } finally {
++        ime.dispose();
++    }
++};
++
++const menuLabel = (direction: TMathConversionDirection) => direction === "inline-to-block" ?
++    languages().math || "" : languages()["inline-math"] || "";
++
++export const createMathConversionMenuProvider = (): IMathConversionMenuProvider => ({
++    items: (context) => {
++        const direction = getMathConversionDirection(context);
++        if (!direction) {
++            return [];
++        }
++        return [{
++            id: direction,
++            icon: "iconMath",
++            label: menuLabel(direction),
++            click: () => {
++                void runMathConversion(context);
++            },
++        }];
++    },
++});
++
++/** 宿主内置提供器；重复安装由 registry 原位覆盖，保持菜单位置稳定 */
++export const installMathConversionBridge = () =>
++    registerMathConversionMenuProvider(MATH_CONVERSION_PROVIDER_ID, createMathConversionMenuProvider());
+diff --git a/app/src/protyle/render/mathConversionRefresh.ts b/app/src/protyle/render/mathConversionRefresh.ts
+new file mode 100644
+index 0000000..9120a3c
+--- /dev/null
++++ b/app/src/protyle/render/mathConversionRefresh.ts
+@@ -0,0 +1,74 @@
++/**
++ * 公式转换后的刷新调度。
++ *
++ * 同一 protyle 的并发刷新合并为一次；每次刷新前先在事务队列外排空输入。
++ * 这里不做“自身回声”去重：内核广播按 session 排除发起窗口，本地标记不会被自身消费，
++ * 却可能吞掉同文档其他窗口后续的合法广播。
++ */
++
++export interface IMathConversionRefreshRuntime {
++    flush: (protyle: IProtyle) => Promise<void>;
++    reload: (protyle: IProtyle) => void;
++}
++
++export const createMathConversionRefreshRuntime = (): IMathConversionRefreshRuntime => ({
++    flush: (protyle) => protyle.getInstance().flushPendingTransactions(),
++    reload: (protyle) => {
++        const {reloadProtyle}: {reloadProtyle: (target: IProtyle, focus: boolean) => void} =
++            require("../util/reload");
++        reloadProtyle(protyle, false);
++    },
++});
++
++const pendingRefreshes = new WeakMap<IProtyle, Promise<void>>();
++
++/**
++ * 合并同一 protyle 的刷新：先 flush 输入与事务队列，再确认仍显示目标 root 后 reload。
++ * flush 失败时保留当前视图，不 reload，避免丢掉未保存输入。
++ */
++export const scheduleMathConversionRefresh = (protyle: IProtyle, rootID: string,
++                                             runtime: IMathConversionRefreshRuntime =
++                                                 createMathConversionRefreshRuntime()): Promise<void> => {
++    const existing = pendingRefreshes.get(protyle);
++    if (existing) {
++        return existing;
++    }
++    const expectedRootID = rootID || protyle.block?.rootID || "";
++    const task = (async () => {
++        try {
++            await runtime.flush(protyle);
++        } catch {
++            return;
++        }
++        if (expectedRootID && protyle.block?.rootID !== expectedRootID) {
++            return;
++        }
++        if (!protyle.wysiwyg?.element?.isConnected) {
++            return;
++        }
++        runtime.reload(protyle);
++    })().finally(() => {
++        if (pendingRefreshes.get(protyle) === task) {
++            pendingRefreshes.delete(protyle);
++        }
++    });
++    pendingRefreshes.set(protyle, task);
++    return task;
++};
++
++/**
++ * convertMath 广播的线协议只保证 action/id/blockID：内核重建操作后 data 为 null，
++ * 撤销重放同样不带 rootID。因此只能按 blockID 是否属于当前编辑器判断，不能假设 metadata 可达。
++ */
++export const mathConversionBroadcastBlockID = (operation: IOperation) =>
++    operation?.id || operation?.blockID || "";
++
++/** 广播目标块不属于当前编辑器时不 reload，保住其他文档的未保存输入 */
++export const mathConversionBroadcastTargetsProtyle = (protyle: IProtyle, operation: IOperation) => {
++    const blockID = mathConversionBroadcastBlockID(operation);
++    if (!blockID) {
++        return false;
++    }
++    const editorElement = protyle.wysiwyg?.element;
++    return Boolean(editorElement?.querySelector?.(`[data-node-id="${blockID}"]`));
++};
+diff --git a/app/src/protyle/wysiwyg/transaction.ts b/app/src/protyle/wysiwyg/transaction.ts
+index db976cb..f907d4b 100644
+--- a/app/src/protyle/wysiwyg/transaction.ts
++++ b/app/src/protyle/wysiwyg/transaction.ts
+@@ -46,6 +46,10 @@ import {removeFoldHeading} from "../util/heading";
+ import {cancelSB, genEmptyElement, genSBElement, refreshSbResize} from "../../block/util";
+ import {hideElements} from "../ui/hideElements";
+ import {reloadProtyle} from "../util/reload";
++import {
++    mathConversionBroadcastTargetsProtyle,
++    scheduleMathConversionRefresh,
++} from "../render/mathConversionRefresh";
+ import {countBlockWord} from "../../layout/status";
+ import {resize} from "../util/resize";
+ import {scrollCenter} from "../../util/highlightById";
+@@ -968,6 +972,15 @@ export const onTransaction = (protyle: IProtyle, operations: IOperation[], isUnd
+             refreshListConversion(protyle, operation.retData, isUndo);
+             return;
+         }
++        if (operation.action === "convertMath") {
++            // 公式转换结果与撤销都由内核生成，前端不重放局部 DOM。广播只带 blockID：
++            // 仅当目标块属于当前编辑器时，在队列外 flush 后刷新，避免无关文档 reload 丢输入。
++            if (!mathConversionBroadcastTargetsProtyle(protyle, operation)) {
++                return;
++            }
++            void scheduleMathConversionRefresh(protyle, protyle.block?.rootID || "");
++            return;
++        }
+         if (operation.action === "swapBlockRef") {
+             if (operation.retData?.includes(protyle.block.rootID)) {
+                 reloadProtyle(protyle, false);

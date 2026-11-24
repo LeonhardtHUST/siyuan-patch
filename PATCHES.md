@@ -212,10 +212,23 @@ pnpm run test:focused src/boot/startupError.test.ts
   镜像按 canonical tag `vX.Y.Z-pN` 发布，见上文「镜像版本与不可变 tag 纪律」。
   `release-pc.yml` / `release-android.yml` / `release-ios.yml` **尚未加入**——需要对应平台
   产物时再逐条添加并验证。
-- GHCR 镜像默认为 private：拉取前需 `docker login ghcr.io`；首次构建后可在
-  Package 设置里改为 public。
+- GHCR 上的 `siyuan` 包**当前是 public**，匿名即可拉取与查询 tag。`deploy-siyuan` 的
+  `tag_version.py pick` 走匿名令牌，因此**不要把包改回 private**，否则部署会在选版本阶段失败。
 - 上游同步：`.github/workflows/sync-upstream.yml` 每日自动快进；出现分叉会推
   `sync/upstream-<date>` 分支并开 issue，**补丁上下文失配是合并时的首要检查项**。
+  注意 `GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml` 的提交，该步骤已降级为告警，
+  issue 正文给出不依赖分支的 `git fetch` + `git merge FETCH_HEAD` 命令。
+
+### 已知待办：staging tag 不回收
+
+`release-docker` 的 publish 只用两个 `vX.Y.Z-pN-<arch>-<run_id>` 合并出 canonical 与
+`latest`，之后再没有删除动作，因此每次构建在 GHCR 上永久留下 2 个中间 tag。当前量级很小
+（每次上游发布才构建一轮），不值得为它单独发一个镜像版本。
+
+清理步骤应加在 publish 与 `latest` **之后**（`latest` 也引用这两个 tag），失败只告警。
+但 `release-docker.yml` 属于镜像相关文件，改它必须递增 `PATCH_REVISION`，会产出一个内容
+与上一版完全相同的 `pN` 并触发一次线上的无意义重启。因此这项**并到下一次真正的补丁内容
+变更里一起做**，不单独发版。
 
 ## 上游跟随 / 自动构建 / 自动部署
 
@@ -243,7 +256,21 @@ pnpm run test:focused src/boot/startupError.test.ts
 > 要么（上游采用的做法，也是本仓库现在的做法）在 `skipNewVerInstallPkg()` 里把该检查补回去并先把
 > 标志位改写为 false——因为 `checkDownloadInstallPkg()` 会先调它再读配置，效果等价。
 > `disable-update` / `default-config` / `docker-build` 三个上游自带补丁跟随上游版本维护，
-> 本 fork 额外维护 `math-renderer-registry.patch` 和 `content-prefetch.patch`。
+> 本 fork 额外维护 `math-renderer-registry.patch`、`content-prefetch.patch`、`startup-slow-loading.patch`。
+
+## 未接入的 WIP：`wip/math-conversion/`
+
+公式形态转换子系统（行内公式 ↔ 块级公式互转，插件可注册转换菜单项），共 7 个补丁，
+与 `math-renderer-registry.patch` 同属一条产品线。**未接入任何 workflow，也没有调用方**：
+`siyuan-typst-plugin` 只用 `registerMathRenderer`，不涉及转换菜单或 `/api/mathConversion/*`。
+
+已完成 v3.8.11 重基线并在该版本上验证按序应用通过，但刻意不放进 `patches/siyuan/`：
+`patches/` 前缀属镜像相关变更，放进去会强制递增 `PATCH_REVISION`，产出一个内容与上一版
+完全相同的新 `pN` 并触发线上无谓重启。细节、依赖、应用顺序与接入清单见
+[`wip/math-conversion/README.md`](wip/math-conversion/README.md)。
+
+接入前需先补做一件事：与 `content-prefetch` 的组合重基线（当前只在 22 个语言包与
+`app/src/protyle/util/destroy.ts` 两处相撞）。
 
 ### deploy-siyuan（私有 config 仓库）
 

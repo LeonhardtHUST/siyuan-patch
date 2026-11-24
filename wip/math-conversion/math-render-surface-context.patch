@@ -1,0 +1,1768 @@
+diff --git a/app/src/layout/dock/agent/AgentMessageRenderer.ts b/app/src/layout/dock/agent/AgentMessageRenderer.ts
+index ce27d81..cae1921 100644
+--- a/app/src/layout/dock/agent/AgentMessageRenderer.ts
++++ b/app/src/layout/dock/agent/AgentMessageRenderer.ts
+@@ -240,7 +240,7 @@ export const postRender = (container: HTMLElement, app?: App, onNavigate?: () =>
+         }
+         highlightRender(item);
+     });
+-    mathRender(container);
++    mathRender(container, undefined, false, {surface: "ai-message", rootID: null, docMode: "preview"});
+     mermaidRender(container);
+     flowchartRender(container);
+     graphvizRender(container);
+diff --git a/app/src/protyle/export/index.ts b/app/src/protyle/export/index.ts
+index aa72d52..15468f4 100644
+--- a/app/src/protyle/export/index.ts
++++ b/app/src/protyle/export/index.ts
+@@ -683,7 +683,7 @@ ${getIconScript(servePath)}
+         previewElement.querySelectorAll('[data-type="NodeCodeBlock"][data-subtype="mermaid"] svg').forEach((item) => {
+             item.style.maxHeight = height + "px";
+         })
+-        await Protyle.mathRender(previewElement, "${servePath}stage/protyle", true);
++        await Protyle.mathRender(previewElement, "${servePath}stage/protyle", true, {surface: "export-window", rootID: null, docMode: "preview"});
+         previewElement.querySelectorAll("table").forEach(item => {
+             if (item.clientWidth > item.parentElement.clientWidth) {
+                 item.style.zoom = (item.parentElement.clientWidth / item.clientWidth).toFixed(2) - 0.01;
+@@ -1335,7 +1335,6 @@ ${getIconScript(servePath)}
+     const previewElement = document.getElementById('preview');
+     Protyle.highlightRender(previewElement, "stage/protyle");
+     Protyle.setAutoDirection(previewElement, ${!!window.siyuan.config.editor.autoDirection});
+-    Protyle.observeTableCorners(previewElement);
+     Protyle.mathRender(previewElement, "stage/protyle", ${exportOption.type === "pdf"});
+     Protyle.mermaidRender(previewElement, "stage/protyle");
+     Protyle.flowchartRender(previewElement, "stage/protyle");
+diff --git a/app/src/protyle/export/util.ts b/app/src/protyle/export/util.ts
+index 72746bb..6f97295 100644
+--- a/app/src/protyle/export/util.ts
++++ b/app/src/protyle/export/util.ts
+@@ -367,7 +367,7 @@ export const exportImage = (id: string, copyOnly = false) => {
+         if (revision !== previewRevision || !document.body.contains(exportDialog.element)) {
+             return;
+         }
+-        processRender(previewElement);
++        processRender(previewElement, {surface: "export-image", rootID: null, docMode: "detached"});
+         highlightRender(previewElement);
+         stopObservingLayout?.();
+         stopObservingLayout = observeExportImageLayout(exportDialog.element.querySelector(".export-img"));
+diff --git a/app/src/protyle/header/documentTitleDOM.ts b/app/src/protyle/header/documentTitleDOM.ts
+index 3a52fee..e54b898 100644
+--- a/app/src/protyle/header/documentTitleDOM.ts
++++ b/app/src/protyle/header/documentTitleDOM.ts
+@@ -1,4 +1,6 @@
+ import {restoreInlineElementBoundaries} from "../util/inlineElementBoundary";
++import {resetMathRenderState} from "../render/mathRendererRegistry";
++import {hasVisibleMathOutput} from "../render/mathRenderSurface";
+ 
+ const paragraphSelector = '[data-type="NodeParagraph"]';
+ 
+@@ -183,7 +185,11 @@ export const getDocumentTitleLute = (lute: Lute, getRenderedTitle?: () => HTMLEl
+                     const previous = rendered.get(element.dataset.content);
+                     if (previous) {
+                         element.replaceChildren(...Array.from(previous.childNodes, node => node.cloneNode(true)));
+-                        element.dataset.render = "true";
++                        // clone 不带 shadow：复位后仍无可视输出的节点不标记已渲染，交给 mathRender 重渲染
++                        resetMathRenderState(element, {keepRendered: true});
++                        if (hasVisibleMathOutput(element, false)) {
++                            element.dataset.render = "true";
++                        }
+                         element.classList.toggle("ft__error", previous.classList.contains("ft__error"));
+                     }
+                 });
+diff --git a/app/src/protyle/header/documentTitleEditor.ts b/app/src/protyle/header/documentTitleEditor.ts
+index 4091b71..3415dec 100644
+--- a/app/src/protyle/header/documentTitleEditor.ts
++++ b/app/src/protyle/header/documentTitleEditor.ts
+@@ -110,7 +110,8 @@ export class DocumentTitleEditor {
+                 transformPasteBlockDOM: flattenDocumentTitlePaste,
+             },
+             afterSetContent: (_protyle, element) => {
+-                mathRender(element);
++                // mount 过程中 rootID 尚未赋值，显式传入（契约：Lite 表面不能等 DOM 属性）
++                mathRender(element, undefined, false, {surface: "doc-title", rootID: owner.block.rootID, docMode: "editable"});
+                 highlightRender(element);
+                 renderImageDisplay(element);
+             },
+@@ -428,7 +429,7 @@ export class DocumentTitleEditor {
+             displayed = response.data;
+             preview.innerHTML = displayed.blockDOM;
+             preview.querySelectorAll("[contenteditable]").forEach(element => element.setAttribute("contenteditable", "false"));
+-            mathRender(preview);
++            mathRender(preview, undefined, false, {surface: "doc-title", rootID: null, docMode: "preview"});
+             renderImageDisplay(preview);
+             local.disabled = this.owner.disabled;
+         };
+diff --git a/app/src/protyle/header/documentTitlePreview.ts b/app/src/protyle/header/documentTitlePreview.ts
+index 3a31c2e..ee9bd30 100644
+--- a/app/src/protyle/header/documentTitlePreview.ts
++++ b/app/src/protyle/header/documentTitlePreview.ts
+@@ -14,7 +14,7 @@ export const copyDocumentTitlePreview = (source: HTMLElement, target: HTMLElemen
+     target.classList.add("b3-typography", "document-title-preview");
+     target.dataset.protyleLiteRender = "safe";
+     target.replaceChildren(...Array.from(source.childNodes, node => node.cloneNode(true)));
+-    void mathRender(target);
++    void mathRender(target, undefined, false, {surface: "doc-title", rootID: null, docMode: "preview"});
+ };
+ 
+ // 同一轮标题更新可直接提供已读取的源；仅在没有后续源投影时补查，避免页签重复读取。
+@@ -66,7 +66,7 @@ export const renderDocumentTitlePreview = (element: HTMLElement, id: string, not
+         element.classList.add("b3-typography", "document-title-preview");
+         element.dataset.protyleLiteRender = "safe";
+         element.replaceChildren(...Array.from(content.childNodes));
+-        void mathRender(element);
++        void mathRender(element, undefined, false, {surface: "doc-title", rootID: null, docMode: "preview"});
+     };
+     if (value) {
+         apply(value);
+diff --git a/app/src/protyle/lite/fragmentEditor.ts b/app/src/protyle/lite/fragmentEditor.ts
+index 478f640..f555602 100644
+--- a/app/src/protyle/lite/fragmentEditor.ts
++++ b/app/src/protyle/lite/fragmentEditor.ts
+@@ -9,6 +9,7 @@ import {invalidateTrackedRanges} from "../util/trackedRange";
+ import {PROTYLE_LITE_FRAGMENT_CLASS} from "../util/liteFragment";
+ import {isMobile} from "../../util/functions";
+ import {bindMobileToolbar} from "./mobileToolbar";
++import {resetMathRenderState} from "../render/mathRendererRegistry";
+ 
+ export {PROTYLE_LITE_FRAGMENT_CLASS};
+ export const PROTYLE_LITE_HINT_OVERLAY_CLASS = "protyle-hint--lite-overlay";
+@@ -152,6 +153,8 @@ export const mountProtyleLiteFragment = (host: HTMLElement,
+ 
+     const cloneContent = (prepareClone?: (element: HTMLElement) => void) => {
+         const clone = wysiwyg.cloneNode(true) as HTMLElement;
++        // clone 不带 shadow root 却带 data-render 与空预览容器：序列化前复位插件认领状态
++        resetMathRenderState(clone, {keepRendered: true});
+         prepareClone?.(clone);
+         return clone;
+     };
+diff --git a/app/src/protyle/preview/index.ts b/app/src/protyle/preview/index.ts
+index 50b43f5..e21d0f7 100644
+--- a/app/src/protyle/preview/index.ts
++++ b/app/src/protyle/preview/index.ts
+@@ -285,10 +285,11 @@ export class Preview {
+                 protyle.preview.previewElement.querySelector(`#${CSS.escape(protyle.block.rootID)}`)
+                     ?.classList.add("protyle-preview__title");
+                 /// #endif
+-                processRender(protyle.preview.previewElement);
++                const mathOptions = {surface: "preview" as const, rootID: protyle.block.rootID || null, docMode: "preview" as const};
++                processRender(protyle.preview.previewElement, mathOptions);
+                 setAutoDirection(protyle.preview.previewElement, window.siyuan.config.editor.autoDirection);
+                 tabsRender(protyle.preview.previewElement, {label: window.siyuan.languages.tabItem,
+-                    shown: item => processRender(item)});
++                    shown: item => processRender(item, mathOptions)});
+                 highlightRender(protyle.preview.previewElement);
+                 void avRender(protyle.preview.previewElement, protyle).then(() => callback?.(), () => onError?.());
+                 speechRender(protyle.preview.previewElement, window.siyuan.config.appearance.lang);
+diff --git a/app/src/protyle/render/av/richText.ts b/app/src/protyle/render/av/richText.ts
+index 28bb43a..8d5891d 100644
+--- a/app/src/protyle/render/av/richText.ts
++++ b/app/src/protyle/render/av/richText.ts
+@@ -520,7 +520,7 @@ export const renderAVRichTextElements = (root: Element) => {
+         element.dataset.richRendered = "true";
+     });
+     elements.forEach((element) => {
+-        mathRender(element);
++        mathRender(element, undefined, false, {surface: "table-cell", rootID: null, docMode: "preview"});
+         highlightRender(element);
+         if (element.querySelector("img")) { renderImageDisplay(element); }
+     });
+diff --git a/app/src/protyle/render/av/richTextEditor.ts b/app/src/protyle/render/av/richTextEditor.ts
+index 6acf91e..5a72197 100644
+--- a/app/src/protyle/render/av/richTextEditor.ts
++++ b/app/src/protyle/render/av/richTextEditor.ts
+@@ -168,7 +168,7 @@ export const openAVRichTextEditor = (options: AVRichTextEditorOptions) => {
+             restoreLuteMarkdownSyntax: configureAVRichTextEditorLute,
+         },
+         afterSetContent: (protyle, element) => {
+-            mathRender(element);
++            mathRender(element, undefined, false, {surface: "table-cell", rootID: null, docMode: "editable"});
+             highlightRender(element);
+             renderImageDisplay(element);
+             protyle.undo.clear();
+diff --git a/app/src/protyle/render/listMindmap/editor.ts b/app/src/protyle/render/listMindmap/editor.ts
+index 02ffc8d..7cb9818 100644
+--- a/app/src/protyle/render/listMindmap/editor.ts
++++ b/app/src/protyle/render/listMindmap/editor.ts
+@@ -235,7 +235,9 @@ export const openListMindmapEditor = (options: ListMindmapEditorOptions) => {
+             setCustomBlockRootReady(element, true);
+             // 聚焦前同步页签可见性，避免光标进入尚未隐藏的非活动页签。
+             initEditorTabs(protyle);
+-            processRender(element);
++            // 这是脑图节点内的 Lite 编辑器：DOM 推断会被外层 .mindmap-view 抢成 mindmap，
++            // 显式标成可编辑编辑器表面并带上刚赋值的 rootID（rootID 不能等 DOM 属性）。
++            processRender(element, {surface: "editor", rootID, docMode: "editable"});
+             highlightRender(element);
+             blockRender(protyle, element, undefined, options.onResize);
+             void avRender(element, owner);
+diff --git a/app/src/protyle/render/listMindmap/view.ts b/app/src/protyle/render/listMindmap/view.ts
+index d8e7741..7d800b1 100644
+--- a/app/src/protyle/render/listMindmap/view.ts
++++ b/app/src/protyle/render/listMindmap/view.ts
+@@ -11,6 +11,8 @@ import {routeMindmapRelation, routeManualMindmapRelation, adjustMindmapRoute, en
+     MindmapRoutePoint, MindmapManualRoute, MindmapRelationAnchor,
+     projectMindmapRelationAnchor, getMindmapRelationAnchorPoint} from "./routing";
+ import {mathRender} from "../mathRender";
++import {resetMathRenderState} from "../mathRendererRegistry";
++import {snapshotDocAttributes} from "../mathRenderSurface";
+ import {getAVRichTextSafeURL} from "../av/richTextValue";
+ import {Constants} from "../../../constants";
+ import {findMindmapDrop} from "./drop";
+@@ -1114,7 +1116,13 @@ export class ListMindmapView {
+                     });
+                 }
+                 // 副本独立渲染公式，避免源节点的异步渲染完成后脑图仍保留未渲染内容。
+-                void mathRender(content, this.options.cdn)?.then(() => this.refreshLayout()).catch(error => console.error(error));
++                // clone 复制 data-render 但不复制 shadow：先复位认领状态再渲染。
++                // 源块仍在编辑器中，文档 custom-* 属性从源块快照，detached/克隆表面不靠 DOM 推断。
++                const docAttributes = node.contentBlocks.length > 0 ?
++                    snapshotDocAttributes(node.contentBlocks[0]) : {};
++                resetMathRenderState(content, {keepRendered: true});
++                void mathRender(content, this.options.cdn, false, {surface: "mindmap", rootID: null,
++                    docMode: "preview", docAttributes})?.then(() => this.refreshLayout()).catch(error => console.error(error));
+             }
+         });
+         if (this.selectedId && !model.nodes.has(this.selectedId)) {
+diff --git a/app/src/protyle/render/mathRender.ts b/app/src/protyle/render/mathRender.ts
+index e492914..5fed8bd 100644
+--- a/app/src/protyle/render/mathRender.ts
++++ b/app/src/protyle/render/mathRender.ts
+@@ -8,7 +8,26 @@ import {getHostCapabilities} from "../../util/hostCapabilities";
+ import {getMathRenderSecurity} from "./mathRenderSecurity";
+ import {isFoldedRenderContent} from "./foldedContent";
+ import {applyInlineMathBoundaries} from "./mathBoundaries";
+-import {findMathRenderer, IMathRenderContext, IMathRenderer} from "./mathRendererRegistry";
++import {
++    claimMathElement,
++    findMathRendererEntry,
++    getMathClaim,
++    hasMathRenderers,
++    IMathClaim,
++    IMathRenderContext,
++    IMathRenderOptions,
++    isMathClaimCurrent,
++    releaseMathElement,
++    setMathRerenderHook,
++} from "./mathRendererRegistry";
++import {
++    canApplyInlineMathBoundaries,
++    hasVisibleMathOutput,
++    inferMathDocMode,
++    inferMathRootID,
++    inferMathSurface,
++    snapshotDocAttributes,
++} from "./mathRenderSurface";
+ 
+ const fitMathWidth = (mathElement: HTMLElement, blockElement: HTMLElement | false, isBlock: boolean) => {
+     return new Promise<void>((resolve) => {
+@@ -26,7 +45,48 @@ const fitMathWidth = (mathElement: HTMLElement, blockElement: HTMLElement | fals
+     });
+ };
+ 
+-export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWidth = false) => {
++const buildMathContext = (mathElement: HTMLElement, maxWidth: boolean, options: IMathRenderOptions | undefined,
++                          controller: AbortController): IMathRenderContext => {
++    const surface = options?.surface ?? inferMathSurface(mathElement);
++    const source = mathElement.getAttribute("data-content") || "";
++    const context: IMathRenderContext = {
++        element: mathElement,
++        source,
++        mathContent: source,
++        isBlock: mathElement.tagName === "DIV",
++        surface,
++        rootID: options?.rootID !== undefined ? options.rootID : inferMathRootID(mathElement),
++        docMode: options?.docMode ?? inferMathDocMode(mathElement, surface),
++        docAttributes: options?.docAttributes ?? snapshotDocAttributes(mathElement),
++        signal: controller.signal,
++        maxWidth,
++        get isConnected() {
++            return mathElement.isConnected;
++        },
++        // host 只暴露、不自动调用；不满足条件时为空操作，避免导出/只读/克隆表面被注入边界字符
++        applyInlineMathBoundaries: () => {
++            if (canApplyInlineMathBoundaries(context.surface, context.docMode, mathElement.isConnected) &&
++                !controller.signal.aborted) {
++                applyInlineMathBoundaries(mathElement);
++            }
++        },
++    };
++    return context;
++};
++
++const isClaimRendered = (claim: IMathClaim, element: HTMLElement) => {
++    try {
++        if (claim.renderer.isRendered) {
++            return Boolean(claim.renderer.isRendered(element, claim.context));
++        }
++    } catch (error) {
++        console.warn(`Math renderer [${claim.id}] isRendered failed:`, error);
++        return false;
++    }
++    return hasVisibleMathOutput(element, claim.context.isBlock);
++};
++
++export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWidth = false, options?: IMathRenderOptions) => {
+     const mathElements = (element.getAttribute("data-subtype") === "math" ?
+         [element] : Array.from(element.querySelectorAll('[data-subtype="math"]')))
+         .filter(item => !isFoldedRenderContent(item));
+@@ -36,23 +96,39 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+ 
+     // 渲染器认领阶段：同步完成，必须早于 KaTeX 的 CSS/JS 加载。
+     // 认领的节点置 data-render="true" 后不会进入 KaTeX 队列，也不会触发任何 KaTeX 资源请求。
+-    const claimedMathElements: { element: HTMLElement, renderer: IMathRenderer, context: IMathRenderContext }[] = [];
++    const claimedMathElements: { element: HTMLElement, claim: IMathClaim }[] = [];
+     const unrenderedMathElements: HTMLElement[] = [];
++    const withRenderers = hasMathRenderers();
+     mathElements.forEach((mathElement: HTMLElement) => {
+         if (mathElement.getAttribute("data-render") === "true") {
++            // 契约 5：data-render 不是唯一证据。无注册渲染器时与上游完全一致（直接跳过）；
++            // 有渲染器时，没有认领记录且没有可视输出的空白认领（克隆/序列化而来）按未渲染处理。
++            if (!withRenderers || getMathClaim(mathElement) ||
++                hasVisibleMathOutput(mathElement, mathElement.tagName === "DIV")) {
++                return;
++            }
++            mathElement.removeAttribute("data-render");
++        }
++        if (!withRenderers) {
++            unrenderedMathElements.push(mathElement);
+             return;
+         }
+-        const context: IMathRenderContext = {
+-            element: mathElement,
+-            mathContent: mathElement.getAttribute("data-content") || "",
+-            isBlock: mathElement.tagName === "DIV",
+-            maxWidth,
+-            applyInlineMathBoundaries: () => applyInlineMathBoundaries(mathElement),
+-        };
+-        const renderer = findMathRenderer(context);
+-        if (renderer) {
++        const controller = new AbortController();
++        if (options?.signal) {
++            if (options.signal.aborted) {
++                controller.abort();
++            } else {
++                options.signal.addEventListener("abort", () => controller.abort(), {once: true});
++            }
++        }
++        const context = buildMathContext(mathElement, maxWidth, options, controller);
++        const entry = findMathRendererEntry(context);
++        if (entry) {
+             mathElement.setAttribute("data-render", "true");
+-            claimedMathElements.push({element: mathElement, renderer, context});
++            const claim = claimMathElement(mathElement, {
++                id: entry.id, renderer: entry.renderer, context, controller, cdn,
++            });
++            claimedMathElements.push({element: mathElement, claim});
+         } else {
+             unrenderedMathElements.push(mathElement);
+         }
+@@ -61,6 +137,10 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+         return;
+     }
+ 
++    // 导出/只读/预览/浮窗表面的 KaTeX 回退同样不注入边界字符（契约 G8）；
++    // 未显式传 surface 的调用点按 DOM 推断后再门控，避免 preview/popover/backlink 等
++    // 只读表面混入 ZWSP/FEFF。上游无选项且处于可编辑编辑器时行为不变。
++
+     const katexPass = (targets: HTMLElement[]) => {
+         if (targets.length === 0) {
+             return Promise.resolve();
+@@ -122,7 +202,13 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+                                 mathElement.style.overflowY = "";
+                                 mathElement.style.display = "";
+                             }
+-                            applyInlineMathBoundaries(mathElement);
++                            if (canApplyInlineMathBoundaries(
++                                options?.surface ?? inferMathSurface(mathElement),
++                                options?.docMode ?? inferMathDocMode(
++                                    mathElement, options?.surface ?? inferMathSurface(mathElement)),
++                                mathElement.isConnected)) {
++                                applyInlineMathBoundaries(mathElement);
++                            }
+                         }
+ 
+                         // 导出 PDF 时等待公式完成宽度适配后再继续
+@@ -146,17 +232,31 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+         });
+     };
+ 
+-    // 渲染器异步执行；声明失败（false）或抛错时撤销认领，交给 KaTeX 兜底（同一次调用内完成）
++    // 渲染器异步执行。render 返回后 host 复核（signal、isRendered）；false/抛错/复核失败时
++    // 在同一次调用内 release 并把元素并入第二批 KaTeX（一次调用最多两批）。
+     const failedMathElements: HTMLElement[] = [];
+-    const claimedPromise = Promise.all(claimedMathElements.map(item =>
+-        Promise.resolve().then(() => item.renderer.render(item.context)).then((rendered) => {
++    const claimedPromise = Promise.all(claimedMathElements.map(({element: mathElement, claim}) =>
++        Promise.resolve().then(() => claim.renderer.render(claim.context)).then((rendered) => {
+             if (rendered === false) {
+                 throw new Error("renderer declined");
+             }
++            if (!isMathClaimCurrent(mathElement, claim)) {
++                return; // 被新调用取代或已被释放：由新的所有者负责，本次不提交、不回退
++            }
++            if (claim.controller.signal.aborted) {
++                throw new Error("renderer aborted");
++            }
++            if (!isClaimRendered(claim, mathElement)) {
++                throw new Error("renderer output not visible");
++            }
+         }).catch((error) => {
++            if (!isMathClaimCurrent(mathElement, claim)) {
++                return;
++            }
+             console.warn("Math renderer failed, fallback to KaTeX:", error);
+-            item.element.removeAttribute("data-render");
+-            failedMathElements.push(item.element);
++            releaseMathElement(mathElement);
++            mathElement.removeAttribute("data-render");
++            failedMathElements.push(mathElement);
+         })
+     )).then(() => failedMathElements.length > 0 ? katexPass(failedMathElements) : undefined);
+ 
+@@ -164,28 +264,50 @@ export const mathRender = (element: Element, cdn = Constants.PROTYLE_CDN, maxWid
+     return Promise.all([katexPass(unrenderedMathElements), claimedPromise]).then((): undefined => undefined);
+ };
+ 
++// 注销渲染器后，已释放的连接节点以原调用的表面信息重渲染（交给 KaTeX 或下一个渲染器）
++setMathRerenderHook((element, claim) => {
++    const {surface, rootID, docMode, docAttributes} = claim.context;
++    void mathRender(element, claim.cdn, claim.context.maxWidth, {surface, rootID, docMode, docAttributes});
++});
++
++export interface IBakeStats {
++    /** 渲染器输出（shadow 展平）成功烘焙的节点 */
++    baked: number;
++    /** 仍然空白、已恢复为原始 HTML 的节点 */
++    restored: number;
++    total: number;
++}
++
+ /**
+  * 导出烘焙：把 HTML 片段中的数学公式渲染为**内联 SVG**（展平 shadow DOM 后写回）。
+  *
+  * 用于导出 HTML 与 Electron PDF 预览：导出端（独立窗口/进程）没有 Typst 运行时，
+  * 在主窗口完成渲染并烘焙，产物自包含、不依赖导出端脚本。
+  * 渲染器由注册表决定（无注册器时即 KaTeX，行为与上游一致）。
++ * 逐节点处理：渲染器失败的节点已在 mathRender 内回退 KaTeX；仍然空白的节点恢复原始 HTML，
++ * 不写回 data-render="true" 空容器。
+  */
+-export const bakeMathInHtml = async (html: string) => {
++export const bakeMathInHtmlWithStats = async (html: string): Promise<{html: string, stats: IBakeStats}> => {
++    const stats: IBakeStats = {baked: 0, restored: 0, total: 0};
+     if (!html || !html.includes('data-subtype="math"')) {
+-        return html;
++        return {html, stats};
+     }
+     try {
+         const container = document.createElement("div");
+         container.className = "protyle-wysiwyg";
+         container.innerHTML = html;
+         const mathElements = Array.from(container.querySelectorAll('[data-subtype="math"]')) as HTMLElement[];
++        stats.total = mathElements.length;
+         if (mathElements.length === 0) {
+-            return html;
++            return {html, stats};
+         }
+-        await mathRender(container, Constants.PROTYLE_CDN, true);
+-        let baked = 0;
+-        mathElements.forEach((el) => {
++        const originals = mathElements.map(el => el.outerHTML);
++        // 烘焙容器没有文档上下文：显式给空 docAttributes，避免渲染器把 detached 容器误判为
++        // 可继承文档覆盖的活文档；rootID 同理显式为 null。
++        await mathRender(container, Constants.PROTYLE_CDN, true, {
++            surface: "export-bake", rootID: null, docMode: "detached", docAttributes: {},
++        });
++        mathElements.forEach((el, index) => {
+             // 两种 DOM 形状：块级 div > spin > container(shadow)；行内 span > container(shadow)
+             const candidates = [el.firstElementChild, el.firstElementChild && el.firstElementChild.firstElementChild];
+             const inner = candidates.find((n) => n && (n as HTMLElement).shadowRoot);
+@@ -193,17 +315,26 @@ export const bakeMathInHtml = async (html: string) => {
+                 const wrapper = document.createElement("span");
+                 wrapper.innerHTML = (inner as HTMLElement).shadowRoot!.innerHTML;
+                 inner.replaceWith(wrapper);
+-                baked++;
++                stats.baked++;
++            } else if (el.getAttribute("data-render") === "true" && !hasVisibleMathOutput(el, el.tagName === "DIV")) {
++                const template = document.createElement("template");
++                template.innerHTML = originals[index];
++                const original = template.content.firstElementChild as HTMLElement;
++                original.removeAttribute("data-render");
++                el.replaceWith(original);
++                stats.restored++;
+             }
+         });
+-        if (baked === 0) {
+-            return html;
++        if (stats.baked === 0) {
++            return {html, stats};
+         }
+-        return container.innerHTML;
++        return {html: container.innerHTML, stats};
+     } catch (e) {
+         console.warn("[export] bake math failed:", e);
+-        return html;
++        return {html, stats};
+     }
+ };
++
++export const bakeMathInHtml = async (html: string) => (await bakeMathInHtmlWithStats(html)).html;
+ // 诊断钩子：供自动化验证/排障（不参与正常流程）
+ (window as any).__siyuanBakeMathForExport = bakeMathInHtml;
+diff --git a/app/src/protyle/render/mathRenderSurface.test.ts b/app/src/protyle/render/mathRenderSurface.test.ts
+new file mode 100644
+index 0000000..dac1a43
+--- /dev/null
++++ b/app/src/protyle/render/mathRenderSurface.test.ts
+@@ -0,0 +1,516 @@
++import * as assert from "node:assert/strict";
++import {readFileSync} from "node:fs";
++import * as path from "node:path";
++import test from "node:test";
++import {ModuleKind, ScriptTarget, transpileModule} from "typescript";
++
++/**
++ * 契约 A 语义单测：不依赖浏览器，使用最小 FakeElement DOM，按需加载真实的
++ * mathRender.ts / mathRendererRegistry.ts / mathRenderSurface.ts（TS 转译后注入桩依赖）。
++ */
++
++class FakeEl {
++    static root = new FakeEl("#doc");
++    attrs = new Map<string, string>();
++    children: FakeEl[] = [];
++    parentElement: FakeEl | null = null;
++    shadowRoot: FakeEl | null = null;
++    style: Record<string, string> = {};
++    nodeType = 1;
++    text = "";
++    private classes = new Set<string>();
++    constructor(public tagName: string, cls = "") {
++        cls.split(/\s+/).filter(Boolean).forEach(c => this.classes.add(c));
++    }
++    get isConnected(): boolean {
++        let n: FakeEl | null = this;
++        while (n) {
++            if (n === FakeEl.root) return true;
++            n = n.parentElement;
++        }
++        return false;
++    }
++    get classList() {
++        const s = this.classes;
++        return {add: (c: string) => s.add(c), remove: (c: string) => s.delete(c), contains: (c: string) => s.has(c)};
++    }
++    get firstElementChild() { return this.children[0] ?? null; }
++    get childNodes() { return this.children; }
++    get childElementCount() { return this.children.length; }
++    get textContent() { return this.text + this.children.map(c => c.textContent).join(""); }
++    set textContent(v: string) { this.text = v; this.children = []; }
++    get innerHTML() { return this.children.map(child => child.outerHTML).join(""); }
++    set innerHTML(v: string) {
++        this.children = [];
++        if (v.startsWith("<katex>")) {
++            // 测试桩：KaTeX 回退产物按既有约定表示成 span.katex，保留 "不可见输出" 语义
++            const k = new FakeEl("SPAN", "katex");
++            k.text = v;
++            this.append(k);
++            return;
++        }
++        parseHTML(v).forEach(child => this.append(child));
++    }
++    get outerHTML() {
++        const cls = this.getAttribute("class");
++        const attributes = (cls ? ` class="${cls}"` : "") +
++            Array.from(this.attrs, ([name, value]) => ` ${name}="${value}"`).join("");
++        return `<${this.tagName.toLowerCase()}${attributes}>${this.text}${this.innerHTML}</${this.tagName.toLowerCase()}>`;
++    }
++    get content() { return {firstElementChild: this.firstElementChild}; }
++    get attributes() { return Array.from(this.attrs, ([name, value]) => ({name, value})); }
++    getAttribute(n: string) { return n === "class" ? [...this.classes].join(" ") || null : this.attrs.get(n) ?? null; }
++    setAttribute(n: string, v: string) { this.attrs.set(n, v); }
++    removeAttribute(n: string) { this.attrs.delete(n); }
++    append(c: FakeEl) { c.parentElement = this; this.children.push(c); return c; }
++    replaceChildren(...cs: FakeEl[]) { this.children = []; cs.forEach(c => this.append(c)); }
++    replaceWith(node: FakeEl) {
++        if (!this.parentElement) return;
++        const siblings = this.parentElement.children;
++        const index = siblings.indexOf(this);
++        if (index > -1) siblings[index] = node;
++        node.parentElement = this.parentElement;
++        this.parentElement = null;
++    }
++    remove() { if (this.parentElement) this.parentElement.children = this.parentElement.children.filter(c => c !== this); this.parentElement = null; }
++    closest(): FakeEl | null { return null; }
++    querySelector(): FakeEl | null { return null; }
++    querySelectorAll(selector: string): FakeEl[] {
++        const out: FakeEl[] = [];
++        const walk = (n: FakeEl) => n.children.forEach(c => {
++            if (selector === '[data-subtype="math"]' && c.attrs.get("data-subtype") === "math") out.push(c);
++            if (selector === "[data-typst-preview]" && c.attrs.has("data-typst-preview")) out.push(c);
++            walk(c);
++        });
++        walk(this);
++        return out;
++    }
++    insertAdjacentText() {}
++    insertAdjacentHTML() {}
++    getBoundingClientRect() { return {width: 0}; }
++}
++
++const parseHTML = (html: string): FakeEl[] => {
++    const out: FakeEl[] = [];
++    const tagRe = /<(\/?)([a-zA-Z][\w-]*)((?:\s+[\w:-]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?)*)\s*(\/?)>/g;
++    let current: FakeEl | null = null;
++    let match: RegExpExecArray | null;
++    while ((match = tagRe.exec(html))) {
++        if (!match[1]) {
++            const element = new FakeEl(match[2].toUpperCase());
++            const attrRe = /\s+([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
++            let attribute: RegExpExecArray | null;
++            while ((attribute = attrRe.exec(match[3]))) {
++                element.setAttribute(attribute[1], attribute[2] ?? attribute[3] ?? attribute[4] ?? "");
++            }
++            if (current) {
++                current.append(element);
++            } else {
++                out.push(element);
++            }
++            if (!match[4]) {
++                current = element;
++            }
++        } else if (current && current.parentElement) {
++            current = current.parentElement;
++        } else {
++            current = null;
++        }
++    }
++    return out;
++};
++
++const render = path.join(__dirname, "mathRender.ts");
++const load = (name: string, extra: Record<string, unknown>, cache: Record<string, any>): any => {
++    const file = path.join(path.dirname(render), name + ".ts");
++    const source = readFileSync(file, "utf8");
++    const js = transpileModule(source, {compilerOptions: {module: ModuleKind.CommonJS, target: ScriptTarget.ES2022}}).outputText;
++    const exports: Record<string, unknown> = {};
++    cache[name] = exports;
++    new Function("exports", "require", js)(exports, (spec: string) => {
++        const base = spec.replace(/^\.\//, "");
++        if (spec.startsWith("./") && ["mathRendererRegistry", "mathRenderSurface"].includes(base)) {
++            return cache[base] ?? load(base, extra, cache);
++        }
++        if (spec in extra) return extra[spec];
++        throw new Error("unexpected import " + spec);
++    });
++    return exports;
++};
++
++const setup = () => {
++    const katexLog: string[] = [];
++    const scripts: string[] = [];
++    const g = globalThis as any;
++    g.window = g;
++    g.siyuan = {config: {editor: {katexMacros: "{}"}}};
++    g.Lute = {UnEscapeHTMLStr: (s: string) => s};
++    g.katex = {renderToString: (s: string) => { katexLog.push(s); return `<katex>${s}</katex>`; }};
++    g.document = {createElement: (t: string) => new FakeEl(t.toUpperCase()), createTextNode: () => new FakeEl("#text")};
++    const boundaries: HTMLElement[] = [];
++    const extra = {
++        "../util/addScript": {addScript: (u: string) => { scripts.push(u); return Promise.resolve(); }},
++        "../util/addStyle": {addStyle: () => {}},
++        "../../constants": {Constants: {PROTYLE_CDN: "cdn"}},
++        "../util/hasClosest": {hasClosestBlock: () => false},
++        "../../util/functions": {looseJsonParse: JSON.parse},
++        "./util": {genRenderFrame: (el: FakeEl) => { if (!el.children[0]) el.append(new FakeEl("DIV")); el.children[0].replaceChildren(new FakeEl("DIV")); }},
++        "../../util/hostCapabilities": {getHostCapabilities: () => ({remoteKernel: false})},
++        "./mathRenderSecurity": {getMathRenderSecurity: () => ({trust: true, sanitize: false})},
++        "./foldedContent": {isFoldedRenderContent: () => false},
++        "./mathBoundaries": {applyInlineMathBoundaries: (el: HTMLElement) => { boundaries.push(el); }},
++    };
++    const cache: Record<string, any> = {};
++    const reg = load("mathRendererRegistry", extra, cache);
++    const surf = load("mathRenderSurface", extra, cache);
++    const mr = load("mathRender", extra, cache);
++    return {reg, surf, mr, katexLog, scripts, boundaries};
++};
++
++const inline = (content = "x", attached = true) => {
++    const el = new FakeEl("SPAN");
++    el.setAttribute("data-subtype", "math");
++    el.setAttribute("data-content", content);
++    const host = new FakeEl("DIV", "protyle-wysiwyg");
++    host.append(el);
++    if (attached) FakeEl.root.append(host);
++    return {el: el as unknown as HTMLElement, host};
++};
++
++const svgOutput = (el: FakeEl) => { el.replaceChildren(new FakeEl("svg")); };
++const okRenderer = (log: string[] = []) => ({
++    canRender: () => true,
++    render: async (ctx: any) => { log.push(ctx.source); svgOutput(ctx.element); return true; },
++});
++
++test("no renderer behaves like upstream: KaTeX only, no claim bookkeeping", async () => {
++    const {mr, katexLog, scripts} = setup();
++    const {el} = inline("a");
++    await mr.mathRender(el);
++    assert.deepEqual(katexLog, ["a"]);
++    assert.equal(el.getAttribute("data-render"), "true");
++    assert.equal(scripts.length, 2);
++    await mr.mathRender(el); // already rendered -> skipped
++    assert.deepEqual(katexLog, ["a"]);
++});
++
++test("claim is synchronous and context carries source/surface/rootID/docMode/signal; options pass through", async () => {
++    const {reg, mr, scripts} = setup();
++    const seen: any[] = [];
++    reg.registerMathRenderer("p/t", {canRender: (c: any) => { seen.push(c); return true; }, render: async (c: any) => { svgOutput(c.element); return true; }});
++    const {el} = inline("\\frac{1}{2} &amp;");
++    const ac = new AbortController();
++    const p = mr.mathRender(el, "cdn", true, {surface: "popover", rootID: "R1", docMode: "preview", docAttributes: {"custom-typstmath": "1"}, signal: ac.signal});
++    assert.equal(el.getAttribute("data-render"), "true", "claimed before any await");
++    assert.equal(scripts.length, 0, "no KaTeX resources for claimed nodes");
++    await p;
++    const c = seen[0];
++    assert.equal(c.source, "\\frac{1}{2} &amp;");
++    assert.equal(c.mathContent, c.source);
++    assert.equal(c.surface, "popover");
++    assert.equal(c.rootID, "R1");
++    assert.equal(c.docMode, "preview");
++    assert.deepEqual({...c.docAttributes}, {"custom-typstmath": "1"});
++    assert.equal(c.maxWidth, true);
++    assert.equal(c.isConnected, true);
++    assert.equal(c.signal.aborted, false);
++});
++
++test("same-call fallback: false / throw → KaTeX, at most two batches, no blank claim", async () => {
++    const {reg, mr, katexLog, scripts} = setup();
++    reg.registerMathRenderer("a", {
++        canRender: (c: any) => c.source !== "plain",
++        render: async (c: any) => {
++            if (c.source === "no") return false;
++            if (c.source === "boom") throw new Error("x");
++            svgOutput(c.element);
++            return true;
++        },
++    });
++    const host = new FakeEl("DIV", "protyle-wysiwyg");
++    FakeEl.root.append(host);
++    const els = ["plain", "no", "boom", "ok"].map(s => {
++        const e = new FakeEl("SPAN"); e.setAttribute("data-subtype", "math"); e.setAttribute("data-content", s); host.append(e); return e;
++    });
++    await mr.mathRender(host);
++    assert.deepEqual(katexLog.sort(), ["boom", "no", "plain"]);
++    assert.equal(scripts.length / 2, 2, "exactly two KaTeX batches (addScript pair per batch)");
++    assert.equal(els[3].children[0].tagName, "svg");
++    els.forEach(e => assert.equal(e.getAttribute("data-render"), "true"));
++    assert.ok(els.slice(0, 3).every(e => e.children[0].classList.contains("katex")));
++});
++
++test("isRendered failure and isRendered throw are treated as false", async () => {
++    const {reg, mr, katexLog} = setup();
++    let mode = "false";
++    reg.registerMathRenderer("a", {
++        canRender: () => true,
++        render: async (c: any) => { svgOutput(c.element); return true; },
++        isRendered: () => { if (mode === "throw") throw new Error("t"); return false; },
++    });
++    const a = inline("one").el;
++    await mr.mathRender(a);
++    mode = "throw";
++    const b = inline("two").el;
++    await mr.mathRender(b);
++    assert.deepEqual(katexLog, ["one", "two"]);
++});
++
++test("default isRendered requires visible output (empty claim falls back)", async () => {
++    const {reg, mr, katexLog} = setup();
++    reg.registerMathRenderer("a", {canRender: () => true, render: async () => true});
++    const {el} = inline("blank");
++    await mr.mathRender(el);
++    assert.deepEqual(katexLog, ["blank"]);
++});
++
++test("signal abort after render resolves → fallback; stale call superseded by newer call", async () => {
++    const {reg, mr, katexLog} = setup();
++    let release!: () => void;
++    reg.registerMathRenderer("a", {
++        canRender: () => true,
++        render: (c: any) => new Promise<boolean>(resolve => { release = () => { svgOutput(c.element); resolve(true); }; }),
++    });
++    const {el} = inline("abort");
++    const ac = new AbortController();
++    const p = mr.mathRender(el, "cdn", false, {signal: ac.signal});
++    await new Promise(r => setTimeout(r, 0)); // render() 在微任务里启动
++    ac.abort();
++    release();
++    await p;
++    assert.deepEqual(katexLog, ["abort"], "aborted result is not committed");
++    assert.equal(el.getAttribute("data-render"), "true");
++});
++
++test("older call superseded by a newer call on the same element does not fall back or commit", async () => {
++    const {reg, mr, katexLog} = setup();
++    const releases: Array<() => void> = [];
++    const signals: AbortSignal[] = [];
++    reg.registerMathRenderer("a", {
++        canRender: () => true,
++        render: (c: any) => new Promise<boolean>(resolve => {
++            signals.push(c.signal);
++            releases.push(() => { svgOutput(c.element); resolve(true); });
++        }),
++    });
++    const {el} = inline("same");
++    const p1 = mr.mathRender(el);
++    await new Promise(r => setTimeout(r, 0));
++    el.removeAttribute("data-render"); // 内容变化路径会清标记再重渲染；仍有 data-render 的调用按上游幂等跳过
++    const p2 = mr.mathRender(el, "cdn", false);
++    await new Promise(r => setTimeout(r, 0));
++    assert.equal(signals[0].aborted, true, "old signal aborted by newer call");
++    assert.equal(signals[1].aborted, false);
++    releases[0]();
++    releases[1]();
++    await Promise.all([p1, p2]);
++    assert.deepEqual(katexLog, [], "no KaTeX fallback, new owner committed");
++    assert.equal(el.children[0].tagName, "svg");
++});
++
++test("unregister aborts, releases and re-renders connected claimed nodes", async () => {
++    const {reg, mr, katexLog} = setup();
++    const events: string[] = [];
++    let signal: AbortSignal | undefined;
++    reg.registerMathRenderer("p/a", {
++        canRender: () => true,
++        render: async (c: any) => { signal = c.signal; svgOutput(c.element); return true; },
++        release: (el: any) => { events.push("release"); el.replaceChildren(); },
++    });
++    const live = inline("live").el;
++    const gone = inline("gone", false).el;
++    await mr.mathRender(live);
++    await mr.mathRender(gone);
++    reg.unregisterMathRenderer("p/a");
++    assert.equal(signal!.aborted, true);
++    assert.deepEqual(events, ["release", "release"]);
++    assert.equal(gone.getAttribute("data-render"), null, "detached node released, not re-rendered");
++    await new Promise(r => setTimeout(r, 0));
++    assert.deepEqual(katexLog, ["live"], "connected node re-rendered via KaTeX");
++    assert.equal(live.getAttribute("data-render"), "true");
++});
++
++test("applyInlineMathBoundaries: exposed, never auto-called, gated by docMode/surface", async () => {
++    const {reg, mr, boundaries} = setup();
++    const calls: Record<string, () => void> = {};
++    reg.registerMathRenderer("a", {canRender: () => true, render: async (c: any) => { calls[c.surface + c.docMode] = c.applyInlineMathBoundaries; svgOutput(c.element); return true; }});
++    await mr.mathRender(inline("e").el, "cdn", false, {surface: "editor", docMode: "editable"});
++    assert.equal(boundaries.length, 0, "host does not call it");
++    calls["editoreditable"]();
++    assert.equal(boundaries.length, 1);
++    await mr.mathRender(inline("r").el, "cdn", false, {surface: "editor-readonly", docMode: "readonly"});
++    calls["editor-readonlyreadonly"]();
++    await mr.mathRender(inline("x").el, "cdn", false, {surface: "export-bake", docMode: "detached"});
++    calls["export-bakedetached"]();
++    assert.equal(boundaries.length, 1, "readonly/export-bake no-op");
++});
++
++test("export-bake detached: per-node fallback, no empty data-render written back", async () => {
++    const {reg, mr, katexLog} = setup();
++    const surfaces: string[] = [];
++    reg.registerMathRenderer("a", {
++        canRender: () => true,
++        render: async (c: any) => {
++            surfaces.push(`${c.surface}/${c.docMode}/${c.rootID}/${c.isConnected}`);
++            if (c.source === "bad") return false;
++            const wrap = new FakeEl("SPAN"); wrap.shadowRoot = new FakeEl("#shadow"); wrap.shadowRoot.append(new FakeEl("svg"));
++            c.element.replaceChildren(wrap);
++            return true;
++        },
++        isRendered: (el: any) => el.children[0]?.shadowRoot != null,
++    });
++    const container = new FakeEl("DIV", "protyle-wysiwyg");
++    ["good", "bad"].forEach(s => { const e = new FakeEl("SPAN"); e.setAttribute("data-subtype", "math"); e.setAttribute("data-content", s); container.append(e); });
++    await mr.mathRender(container as any, "cdn", true, {surface: "export-bake", rootID: null, docMode: "detached"});
++    assert.deepEqual(surfaces, ["export-bake/detached/null/false", "export-bake/detached/null/false"]);
++    assert.deepEqual(katexLog, ["bad"]);
++    const [good, bad] = container.children;
++    assert.ok(good.children[0].shadowRoot);
++    assert.ok(bad.children[0].classList.contains("katex"), "failed node carries KaTeX output, not empty container");
++});
++
++test("bakeMathInHtml exposes stats and keeps source when nothing baked", async () => {
++    const {mr} = setup();
++    const h = '<div data-subtype="math" data-content="x"></div>';
++    assert.equal((await mr.bakeMathInHtmlWithStats("<p>no math</p>")).html, "<p>no math</p>");
++    assert.equal(typeof mr.bakeMathInHtmlWithStats, "function");
++    assert.ok(h.length > 0);
++});
++
++test("bakeMathInHtmlWithStats bakes one node, restores the failed node, and counts both", async () => {
++    const {reg, mr} = setup();
++    const contexts: any[] = [];
++    reg.registerMathRenderer("a", {
++        canRender: () => true,
++        render: async (c: any) => {
++            contexts.push(c);
++            if (c.source === "bad") {
++                return false; // 失败节点：同次调用回退 KaTeX（该桩输出不可见）
++            }
++            const wrap = new FakeEl("SPAN");
++            wrap.shadowRoot = new FakeEl("#shadow");
++            wrap.shadowRoot.append(new FakeEl("svg"));
++            c.element.replaceChildren(wrap);
++            return true;
++        },
++        isRendered: (el: any) => el.children[0]?.shadowRoot != null,
++    });
++    const html = '<div data-subtype="math" data-content="good"></div>' +
++        '<span data-subtype="math" data-content="bad"></span>';
++    const result = await mr.bakeMathInHtmlWithStats(html);
++    assert.deepEqual(result.stats, {baked: 1, restored: 1, total: 2});
++    assert.deepEqual(contexts.map(c => `${c.surface}/${c.docMode}/${c.rootID}/${JSON.stringify(c.docAttributes)}`),
++        ["export-bake/detached/null/{}", "export-bake/detached/null/{}"]);
++    assert.ok(result.html.includes("<svg></svg>"), "baked node keeps inline SVG");
++    assert.ok(result.html.includes('<span data-subtype="math" data-content="bad"></span>'),
++        "failed node restored to its original HTML without data-render");
++    assert.ok(!result.html.includes('data-content="bad" data-render'), "no blank data-render container written back");
++});
++
++test("KaTeX fallback suppresses boundary chars on preview/popover/readonly/detached surfaces", async () => {
++    const {mr, boundaries} = setup();
++    const attached = (parentClass = "", readonly = false) => {
++        const host = new FakeEl("DIV", "protyle-wysiwyg");
++        if (readonly) {
++            host.setAttribute("data-readonly", "true");
++        }
++        if (parentClass) {
++            const parent = new FakeEl("DIV", parentClass);
++            FakeEl.root.append(parent);
++            parent.append(host);
++        } else {
++            FakeEl.root.append(host);
++        }
++        const element = new FakeEl("SPAN");
++        element.setAttribute("data-subtype", "math");
++        element.setAttribute("data-content", "x");
++        host.append(element);
++        return element as unknown as HTMLElement;
++    };
++
++    await mr.mathRender(attached());
++    assert.equal(boundaries.length, 1, "editable editor keeps upstream boundary chars");
++    await mr.mathRender(attached("block__popover"));
++    assert.equal(boundaries.length, 1, "popover inferred from DOM: no boundary chars");
++    await mr.mathRender(attached("", true));
++    assert.equal(boundaries.length, 1, "readonly editor inferred from DOM: no boundary chars");
++    await mr.mathRender(attached(), "cdn", false, {surface: "preview", docMode: "preview"});
++    assert.equal(boundaries.length, 1, "explicit preview surface: no boundary chars");
++    await mr.mathRender(attached(), "cdn", false, {surface: "ai-message", docMode: "preview"});
++    assert.equal(boundaries.length, 1, "read-only AI message surface: no boundary chars");
++    const detached = new FakeEl("SPAN");
++    detached.setAttribute("data-subtype", "math");
++    detached.setAttribute("data-content", "x");
++    await mr.mathRender(detached as unknown as HTMLElement);
++    assert.equal(boundaries.length, 1, "detached surface: no boundary chars");
++});
++
++test("snapshotDocAttributes reads custom-* from the .protyle root, not .protyle-wysiwyg", () => {
++    const {surf} = setup();
++    const protyle = new FakeEl("DIV", "protyle");
++    protyle.setAttribute("custom-typstmath", "1");
++    protyle.setAttribute("data-node-id", "R3");
++    const wysiwyg = new FakeEl("DIV", "protyle-wysiwyg");
++    wysiwyg.setAttribute("custom-other", "2");
++    const element = new FakeEl("SPAN");
++    element.setAttribute("data-subtype", "math");
++    protyle.append(wysiwyg);
++    wysiwyg.append(element);
++    FakeEl.root.append(protyle);
++    assert.deepEqual({...surf.snapshotDocAttributes(element)}, {"custom-typstmath": "1"});
++});
++
++test("resetMathRenderState clears data-render/typst state, keeps visible KaTeX output when asked", () => {
++    const {reg} = setup();
++    const blank = inline("blank").el as unknown as FakeEl;
++    blank.setAttribute("data-render", "true");
++    blank.setAttribute("data-render-typst", "k");
++    const preview = new FakeEl("SPAN"); preview.setAttribute("data-typst-preview", "inline"); blank.append(preview);
++    const kept = inline("kept").el as unknown as FakeEl;
++    kept.setAttribute("data-render", "true");
++    kept.append(new FakeEl("SPAN", "katex"));
++    kept.children[0].append(new FakeEl("SPAN"));
++    const root = new FakeEl("DIV"); root.append(blank); root.append(kept);
++    const n = reg.resetMathRenderState(root, {keepRendered: true});
++    assert.equal(n, 1);
++    assert.equal(blank.getAttribute("data-render"), null);
++    assert.equal(blank.getAttribute("data-render-typst"), null);
++    assert.equal(blank.children.length, 0);
++    assert.equal(kept.getAttribute("data-render"), "true");
++});
++
++test("blank data-render clone (no claim, no output) is re-rendered when renderers exist", async () => {
++    const {reg, mr, katexLog} = setup();
++    reg.registerMathRenderer("a", {canRender: () => false, render: async () => false});
++    const {el} = inline("cloned");
++    el.setAttribute("data-render", "true");
++    await mr.mathRender(el);
++    assert.deepEqual(katexLog, ["cloned"]);
++});
++
++test("multiple renderers: first claimant in registration order wins; re-register keeps position", async () => {
++    const {reg, mr} = setup();
++    const log: string[] = [];
++    reg.registerMathRenderer("one", {canRender: (c: any) => c.source === "1", render: async (c: any) => { log.push("one"); svgOutput(c.element); return true; }});
++    reg.registerMathRenderer("two", {canRender: () => true, render: async (c: any) => { log.push("two"); svgOutput(c.element); return true; }});
++    reg.registerMathRenderer("one", {canRender: (c: any) => c.source === "1", render: async (c: any) => { log.push("one'"); svgOutput(c.element); return true; }});
++    await mr.mathRender(inline("1").el);
++    await mr.mathRender(inline("2").el);
++    assert.deepEqual(log, ["one'", "two"]);
++});
++
++test("surface inference follows contract order", () => {
++    const {surf} = setup();
++    const mk = (cls: string, parentCls?: string) => {
++        const e = new FakeEl("SPAN"); e.setAttribute("data-subtype", "math");
++        const p = new FakeEl("DIV", cls); p.append(e); if (parentCls !== "detached") FakeEl.root.append(p);
++        return e;
++    };
++    assert.equal(surf.inferMathSurface(mk("block__popover protyle-wysiwyg")), "popover");
++    assert.equal(surf.inferMathSurface(mk("document-title-preview")), "doc-title");
++    assert.equal(surf.inferMathSurface(mk("table__cell-rich")), "table-cell");
++    assert.equal(surf.inferMathSurface(mk("agent-chat")), "ai-message");
++    assert.equal(surf.inferMathSurface(mk("protyle-wysiwyg", "detached")), "export-bake");
++    assert.equal(surf.inferMathSurface(mk("protyle-wysiwyg")), "editor");
++    assert.equal(surf.inferMathSurface(mk("plain")), "unknown");
++});
+diff --git a/app/src/protyle/render/mathRenderSurface.ts b/app/src/protyle/render/mathRenderSurface.ts
+new file mode 100644
+index 0000000..6c39ed4
+--- /dev/null
++++ b/app/src/protyle/render/mathRenderSurface.ts
+@@ -0,0 +1,148 @@
++import type {TMathRenderDocMode, TMathRenderSurface} from "./mathRendererRegistry";
++
++/**
++ * 公式渲染表面推断与可视输出判定（只读，不改 DOM）。
++ * 仅在调用点没有显式传入 surface/docMode/rootID 时使用，规则见 R4 契约“registry context 契约”。
++ */
++
++export const MATH_RENDER_SURFACES: readonly TMathRenderSurface[] = [
++    "editor", "editor-readonly", "doc-title", "table-cell", "ai-message", "popover",
++    "preview", "mindmap", "export-bake", "export-image", "export-window", "unknown",
++];
++
++export const MATH_RENDER_DOC_MODES: readonly TMathRenderDocMode[] = ["editable", "readonly", "preview", "detached"];
++
++const DETACHED_SURFACES: readonly TMathRenderSurface[] = ["export-bake", "export-image", "export-window"];
++
++/**
++ * 可以注入行内边界字符（ZWSP/FEFF）的表面：只有真正可编辑、且公式参与编辑器光标的表面。
++ * 与插件 render-surface.ts 的 editableRenderSurfaces 保持一致。
++ * preview/popover/ai-message/mindmap 克隆、导出与只读表面都不注入。
++ */
++export const BOUNDARY_ALLOWED_SURFACES: readonly TMathRenderSurface[] = [
++    "editor", "doc-title", "table-cell",
++];
++
++/** 边界的完整门控：可编辑档位 + 可编辑表面 + 元素仍连接。 */
++export const canApplyInlineMathBoundaries = (surface: TMathRenderSurface, docMode: TMathRenderDocMode,
++                                             isConnected: boolean) =>
++    docMode === "editable" && isConnected && BOUNDARY_ALLOWED_SURFACES.includes(surface);
++
++export const normalizeMathSurface = (value: unknown): TMathRenderSurface | null =>
++    typeof value === "string" && (MATH_RENDER_SURFACES as readonly string[]).includes(value) ?
++        value as TMathRenderSurface : null;
++
++export const normalizeMathDocMode = (value: unknown): TMathRenderDocMode | null =>
++    typeof value === "string" && (MATH_RENDER_DOC_MODES as readonly string[]).includes(value) ?
++        value as TMathRenderDocMode : null;
++
++const classTokens = (element: Element): string[] =>
++    (element.getAttribute("class") || "").split(/\s+/).filter(token => token.length > 0);
++
++const hasClass = (element: Element, token: string) => classTokens(element).includes(token);
++
++const closestWhere = (element: Element | null, predicate: (candidate: Element) => boolean): Element | null => {
++    let candidate = element;
++    // 异常父链保护：最多上溯 64 层
++    for (let depth = 0; candidate && depth < 64; depth++) {
++        if (predicate(candidate)) {
++            return candidate;
++        }
++        candidate = candidate.parentElement;
++    }
++    return null;
++};
++
++export const inferMathSurface = (element: Element): TMathRenderSurface => {
++    if (closestWhere(element, c => hasClass(c, "block__popover") || hasClass(c, "block__panel"))) {
++        return "popover";
++    }
++    if (closestWhere(element, c => classTokens(c).some(token => token.startsWith("document-title")))) {
++        return "doc-title";
++    }
++    if (closestWhere(element, c => hasClass(c, "table__cell-rich") ||
++        (c.tagName === "TD" && c.getAttribute("data-table-cell-rich") !== null))) {
++        return "table-cell";
++    }
++    if (closestWhere(element, c => hasClass(c, "agent-chat"))) {
++        return "ai-message";
++    }
++    if (closestWhere(element, c => hasClass(c, "mindmap-view"))) {
++        return "mindmap";
++    }
++    if (!element.isConnected) {
++        return "export-bake";
++    }
++    const wysiwyg = closestWhere(element, c => hasClass(c, "protyle-wysiwyg"));
++    if (wysiwyg) {
++        return wysiwyg.getAttribute("data-readonly") === "true" ? "editor-readonly" : "editor";
++    }
++    return closestWhere(element, c => hasClass(c, "protyle")) ? "editor" : "unknown";
++};
++
++export const inferMathDocMode = (element: Element, surface: TMathRenderSurface): TMathRenderDocMode => {
++    if (DETACHED_SURFACES.includes(surface)) {
++        return "detached";
++    }
++    if (surface === "preview") {
++        return "preview";
++    }
++    if (surface === "editor-readonly") {
++        return "readonly";
++    }
++    if (!element.isConnected) {
++        return "detached";
++    }
++    const wysiwyg = closestWhere(element, c => hasClass(c, "protyle-wysiwyg"));
++    return wysiwyg && wysiwyg.getAttribute("data-readonly") === "true" ? "readonly" : "editable";
++};
++
++export const inferMathRootID = (element: Element): string | null => {
++    const protyle = closestWhere(element, c => hasClass(c, "protyle"));
++    return protyle ? protyle.getAttribute("data-node-id") || null : null;
++};
++
++const EMPTY_ATTRIBUTES: Readonly<Record<string, string>> = Object.freeze({});
++
++/**
++ * 文档 custom-* 属性快照：取最近的 `.protyle`（含自身）。
++ * 文档 IAL 由 syncRootAttributes 写到 protyle.element（wysiwyg/index.ts:654），不是
++ * `.protyle-wysiwyg`；detached 容器没有 `.protyle`，退化为 {}。
++ */
++export const snapshotDocAttributes = (element: Element): Readonly<Record<string, string>> => {
++    const protyle = closestWhere(element, c => hasClass(c, "protyle"));
++    if (!protyle) {
++        return EMPTY_ATTRIBUTES;
++    }
++    const result: Record<string, string> = {};
++    Array.from(protyle.attributes || []).forEach(attribute => {
++        if (attribute.name.startsWith("custom-")) {
++            result[attribute.name] = attribute.value;
++        }
++    });
++    return Object.freeze(result);
++};
++
++/**
++ * 默认的“已渲染”判定：块级看 firstElementChild 下、行内看元素下，存在非光标占位的
++ * 可视输出（svg、shadow 宿主或有内容的子元素）。
++ */
++export const hasVisibleMathOutput = (element: Element, isBlock: boolean): boolean => {
++    const target = isBlock ? element.firstElementChild : element;
++    if (!target) {
++        return false;
++    }
++    return Array.from(target.childNodes).some(node => {
++        if (node.nodeType !== 1) {
++            return false;
++        }
++        const child = node as Element;
++        if (hasClass(child, "protyle-cursor")) {
++            return false;
++        }
++        if (child.tagName.toLowerCase() === "svg" || child.shadowRoot) {
++            return true;
++        }
++        return child.childNodes.length > 0 && (child.childElementCount > 0 || (child.textContent || "").trim() !== "");
++    });
++};
+diff --git a/app/src/protyle/render/mathRendererRegistry.ts b/app/src/protyle/render/mathRendererRegistry.ts
+index 9e04c83..e48bf34 100644
+--- a/app/src/protyle/render/mathRendererRegistry.ts
++++ b/app/src/protyle/render/mathRendererRegistry.ts
+@@ -12,18 +12,45 @@
+  *   的场景会等待渲染器完成（例如 PDF 导出等待 Typst 画完再打印）。
+  */
+ 
++import {hasVisibleMathOutput} from "./mathRenderSurface";
++
++export type TMathRenderSurface = "editor" | "editor-readonly" | "doc-title" | "table-cell" | "ai-message" | "popover" |
++    "preview" | "mindmap" | "export-bake" | "export-image" | "export-window" | "unknown";
++
++export type TMathRenderDocMode = "editable" | "readonly" | "preview" | "detached";
++
++/** `mathRender` 第四参：调用点显式给出的表面信息；缺省字段由 host 推断。 */
++export interface IMathRenderOptions {
++    surface?: TMathRenderSurface;
++    rootID?: string | null;
++    docMode?: TMathRenderDocMode;
++    docAttributes?: Readonly<Record<string, string>>;
++    signal?: AbortSignal;
++}
++
+ export interface IMathRenderContext {
+-    /** 目标节点：块级为 div[data-subtype="math"]，行内为 span[data-subtype="math"] */
++    /** 目标节点：块级为 div[data-subtype="math"]，行内为 span[data-subtype="math"]；允许 detached */
+     element: HTMLElement;
+-    /** 原始 data-content（未反转义；与 KaTeX 路径一致，由渲染器自行处理转义） */
++    /** `data-content` 原值，逐字节原样（未反转义） */
++    source: string;
++    /** @deprecated 等同 source，仅为旧渲染器兼容保留 */
+     mathContent: string;
+     /** 是否块级公式 */
+     isBlock: boolean;
+-    /** 导出等场景要求渲染器自行完成宽度适配 */
++    surface: TMathRenderSurface;
++    rootID: string | null;
++    docMode: TMathRenderDocMode;
++    /** 文档 custom-* 属性快照；无文档时为 {} */
++    docAttributes: Readonly<Record<string, string>>;
++    /** 元素被新调用取代、渲染器注销、调用方 signal abort 时 abort */
++    signal: AbortSignal;
++    /** 导出等场景要求渲染器自行完成宽度适配（提示） */
+     maxWidth: boolean;
++    /** 实时反映 element.isConnected */
++    readonly isConnected: boolean;
+     /**
+-     * 行内公式的光标边界处理（思源原生行为：零宽字符/换行占位）。
+-     * 渲染器在替换行内公式内容后应调用一次，保持与 KaTeX 渲染一致的光标行为。
++     * 行内公式的光标边界处理。host 只暴露、不自动调用；仅当 docMode === "editable"、
++     * surface 不是导出/只读、元素仍连接且 signal 未 abort 时才会真正执行，否则为空操作。
+      */
+     applyInlineMathBoundaries: () => void;
+ }
+@@ -33,9 +60,33 @@ export interface IMathRenderer {
+     canRender: (context: IMathRenderContext) => boolean;
+     /** 异步渲染；返回 false 表示放弃并由 KaTeX 兜底 */
+     render: (context: IMathRenderContext) => Promise<boolean>;
++    /** host 判断 data-render 是否仍然有效；未提供时退化为存在非空可视输出 */
++    isRendered?: (element: HTMLElement, context: IMathRenderContext) => boolean;
++    /** 撤销接管：移除渲染输出与自身标记，供 host 重渲染 */
++    release?: (element: HTMLElement, context: IMathRenderContext) => void;
++}
++
++/** 一次认领的所有权记录 */
++export interface IMathClaim {
++    id: string;
++    renderer: IMathRenderer;
++    context: IMathRenderContext;
++    controller: AbortController;
++    cdn: string;
++    ref: WeakRef<HTMLElement>;
+ }
+ 
+ const renderers: { id: string, renderer: IMathRenderer }[] = [];
++const claims = new WeakMap<HTMLElement, IMathClaim>();
++const claimsById = new Map<string, Set<WeakRef<HTMLElement>>>();
++let rerenderHook: ((element: HTMLElement, claim: IMathClaim) => void) | undefined;
++
++/** mathRender 模块加载时登记，供注销渲染器后的重渲染使用（避免循环依赖） */
++export const setMathRerenderHook = (hook: ((element: HTMLElement, claim: IMathClaim) => void) | undefined) => {
++    rerenderHook = hook;
++};
++
++export const hasMathRenderers = () => renderers.length > 0;
+ 
+ /** 注册渲染器；同一 id 重复注册会覆盖旧实现 */
+ export const registerMathRenderer = (id: string, renderer: IMathRenderer) => {
+@@ -47,20 +98,21 @@ export const registerMathRenderer = (id: string, renderer: IMathRenderer) => {
+     }
+ };
+ 
+-/** 注销渲染器 */
++/** 注销渲染器：abort 在途 signal，释放其认领并重渲染仍连接的节点 */
+ export const unregisterMathRenderer = (id: string) => {
+     const index = renderers.findIndex(item => item.id === id);
+     if (index > -1) {
+         renderers.splice(index, 1);
+     }
++    releaseClaim(id);
+ };
+ 
+-/** 按注册顺序寻找第一个认领该节点的渲染器 */
+-export const findMathRenderer = (context: IMathRenderContext) => {
++/** 按注册顺序寻找第一个认领该节点的渲染器（含 id） */
++export const findMathRendererEntry = (context: IMathRenderContext) => {
+     for (const item of renderers) {
+         try {
+             if (item.renderer.canRender(context)) {
+-                return item.renderer;
++                return item;
+             }
+         } catch (error) {
+             console.warn(`Math renderer [${item.id}] canRender failed:`, error);
+@@ -68,3 +120,124 @@ export const findMathRenderer = (context: IMathRenderContext) => {
+     }
+     return undefined;
+ };
++
++export const findMathRenderer = (context: IMathRenderContext) => findMathRendererEntry(context)?.renderer;
++
++export const getMathClaim = (element: HTMLElement) => claims.get(element);
++
++/** 登记认领；元素上已有旧认领（被新调用取代）时先 abort 旧的 */
++export const claimMathElement = (element: HTMLElement, claim: Omit<IMathClaim, "ref">) => {
++    const previous = claims.get(element);
++    if (previous) {
++        dropMathClaim(element, previous);
++        previous.controller.abort();
++    }
++    const record: IMathClaim = {...claim, ref: new WeakRef(element)};
++    claims.set(element, record);
++    let set = claimsById.get(claim.id);
++    if (!set) {
++        set = new Set();
++        claimsById.set(claim.id, set);
++    }
++    set.add(record.ref);
++    return record;
++};
++
++/** 仅忘记认领记录，不 abort、不动 DOM */
++export const dropMathClaim = (element: HTMLElement, claim: IMathClaim) => {
++    if (claims.get(element) === claim) {
++        claims.delete(element);
++    }
++    claimsById.get(claim.id)?.delete(claim.ref);
++};
++
++export const isMathClaimCurrent = (element: HTMLElement, claim: IMathClaim) => claims.get(element) === claim;
++
++const safeRelease = (element: HTMLElement, claim: IMathClaim) => {
++    try {
++        claim.renderer.release?.(element, claim.context);
++    } catch (error) {
++        console.warn(`Math renderer [${claim.id}] release failed:`, error);
++    }
++};
++
++/** 释放认领：abort + release + 移除 data-render（不重渲染） */
++export const releaseMathElement = (element: HTMLElement) => {
++    const claim = claims.get(element);
++    if (!claim) {
++        return undefined;
++    }
++    dropMathClaim(element, claim);
++    claim.controller.abort();
++    safeRelease(element, claim);
++    element.removeAttribute("data-render");
++    return claim;
++};
++
++/** 释放某渲染器的全部认领；仍连接的节点交回 mathRender 重渲染 */
++export const releaseClaim = (id: string) => {
++    const set = claimsById.get(id);
++    claimsById.delete(id);
++    if (!set) {
++        return;
++    }
++    const rerender: { element: HTMLElement, claim: IMathClaim }[] = [];
++    set.forEach(ref => {
++        const element = ref.deref();
++        const claim = element && claims.get(element);
++        if (!element || !claim || claim.id !== id) {
++            return;
++        }
++        claims.delete(element);
++        claim.controller.abort();
++        safeRelease(element, claim);
++        element.removeAttribute("data-render");
++        if (element.isConnected) {
++            rerender.push({element, claim});
++        }
++    });
++    rerender.forEach(({element, claim}) => {
++        try {
++            rerenderHook?.(element, claim);
++        } catch (error) {
++            console.warn("Math re-render after release failed:", error);
++        }
++    });
++};
++
++/** abort 某元素当前认领的 signal（destroy-protyle 等），保留认领记录由渲染流程收尾 */
++export const abortMathElement = (element: HTMLElement) => {
++    claims.get(element)?.controller.abort();
++};
++
++const MATH_SELECTOR = '[data-subtype="math"]';
++
++/**
++ * 克隆/序列化复位：释放认领并移除 data-render、data-render-typst、data-typst-layout 与预览容器。
++ * keepRendered 为真时，仍有可视输出的节点（如 KaTeX 渲染结果）保持原样，只清空白认领。
++ */
++export const resetMathRenderState = (root: Element, options: { keepRendered?: boolean } = {}) => {
++    const targets: HTMLElement[] = [];
++    if (root.getAttribute("data-subtype") === "math") {
++        targets.push(root as HTMLElement);
++    }
++    root.querySelectorAll<HTMLElement>(MATH_SELECTOR).forEach(item => targets.push(item));
++    let reset = 0;
++    targets.forEach(element => {
++        const isBlock = element.tagName === "DIV";
++        const claim = claims.get(element);
++        element.querySelectorAll("[data-typst-preview]").forEach(item => item.remove());
++        if (options.keepRendered && !claim && hasVisibleMathOutput(element, isBlock)) {
++            element.removeAttribute("data-render-typst");
++            return;
++        }
++        if (claim) {
++            dropMathClaim(element, claim);
++            claim.controller.abort();
++            safeRelease(element, claim);
++        }
++        ["data-render", "data-render-typst", "data-typst-layout"].forEach(name => element.removeAttribute(name));
++        reset++;
++    });
++    return reset;
++};
+\ No newline at end of file
+diff --git a/app/src/protyle/render/tableCellRich.ts b/app/src/protyle/render/tableCellRich.ts
+index f949a2d..7009c55 100644
+--- a/app/src/protyle/render/tableCellRich.ts
++++ b/app/src/protyle/render/tableCellRich.ts
+@@ -35,7 +35,7 @@ export const renderTableCellRichElements = (root: Element) => {
+         renderBlockDirection(element);
+         element.classList.remove("b3-typography");
+         element.dataset.protyleLiteRender = "safe";
+-        mathRender(element);
++        mathRender(element, undefined, false, {surface: "table-cell", rootID: null, docMode: "preview"});
+         highlightRender(element);
+     });
+ };
+diff --git a/app/src/protyle/render/tableCellRichEditor.ts b/app/src/protyle/render/tableCellRichEditor.ts
+index 5316564..d78936d 100644
+--- a/app/src/protyle/render/tableCellRichEditor.ts
++++ b/app/src/protyle/render/tableCellRichEditor.ts
+@@ -266,7 +266,7 @@ const mountTableCellRichEditor = async (request: object, previousEditor: typeof
+         afterSetContent: (protyle, element) => {
+             updateTableCellContentLayout(host, element.innerHTML);
+             highlightRender(element);
+-            mathRender(element);
++            mathRender(element, undefined, false, {surface: "table-cell", rootID: owner.block.rootID, docMode: "editable"});
+             protyle.undo.clear();
+         },
+         onChange: () => {
+@@ -371,7 +371,7 @@ const mountTableCellRichEditor = async (request: object, previousEditor: typeof
+             if (cell.hasAttribute(TABLE_CELL_RICH_ATTRIBUTE)) {
+                 renderTableCellRichElements(cell);
+             } else {
+-                mathRender(cell);
++                mathRender(cell, undefined, false, {surface: "table-cell", rootID: null, docMode: "preview"});
+             }
+         }
+         if (activeEditor?.cell === cell) {
+diff --git a/app/src/protyle/util/destroy.ts b/app/src/protyle/util/destroy.ts
+index 4bc51e6..003f938 100644
+--- a/app/src/protyle/util/destroy.ts
++++ b/app/src/protyle/util/destroy.ts
+@@ -17,11 +17,18 @@ import {destroyAutoDirection} from "../render/autoDirection";
+ import {destroyTableCorners} from "../render/tableCorners";
+ import {disposeSyncEditorSave} from "./editorSave";
+ import {destroyRelatedAVViews} from "../render/av/relatedView";
++import {abortMathElement} from "../render/mathRendererRegistry";
+ 
+ export const destroy = (protyle: IProtyle) => {
+     if (!protyle) {
+         return;
+     }
++    // 契约“禁用、卸载与档位切换”第 3 条：destroy-protyle 只 abort 该 protyle 范围内元素的
++    // signal（不反注册渲染器、不释放认领），在途渲染由 mathRender 的收尾逻辑处理。
++    if (protyle.element) {
++        [protyle.element, ...Array.from(protyle.element.querySelectorAll<HTMLElement>('[data-subtype="math"]'))]
++            .forEach(abortMathElement);
++    }
+     protyle.title?.cancelPendingInput();
+     destroyRelatedAVViews(protyle.id);
+     protyle.title?.destroy?.();
+diff --git a/app/src/protyle/util/processCode.ts b/app/src/protyle/util/processCode.ts
+index 6b46ba6..215c640 100644
+--- a/app/src/protyle/util/processCode.ts
++++ b/app/src/protyle/util/processCode.ts
+@@ -2,6 +2,7 @@ import {abcRender} from "../render/abcRender";
+ import {chartRender} from "../render/chartRender";
+ import {graphvizRender} from "../render/graphvizRender";
+ import {mathRender} from "../render/mathRender";
++import type {IMathRenderOptions} from "../render/mathRendererRegistry";
+ import {mermaidRender} from "../render/mermaidRender";
+ import {mindmapRender} from "../render/mindmapRender";
+ import {flowchartRender} from "../render/flowchartRender";
+@@ -18,6 +19,7 @@ import {renderImageActions} from "../render/imageActions";
+ import {renderImageDisplay} from "../render/imageDisplay";
+ import {renderMediaResize} from "../render/mediaResize";
+ import {renderBlockDirection} from "../render/blockDirection";
++import {Constants} from "../../constants";
+ import {renderTableCorners} from "../render/tableCorners";
+ 
+ export const processPasteCode = (html: string, text: string, originalTextHTML: string, protyle: IProtyle) => {
+@@ -71,17 +73,25 @@ export const processPasteCode = (html: string, text: string, originalTextHTML: s
+     return false;
+ };
+ 
+-const RENDER_MAP: Record<string, (previewPanel: Element) => void> = {
++/**
++ * RENDER_MAP 第二参固定为 cdn（与各渲染器签名一致），只有 math 条目通过闭包额外接收
++ * IMathRenderOptions。不能把 mathOptions 直接传给其它渲染器：mermaid/chart/abc 等会把
++ * 它当成 cdn 拼出 `[object Object]/js/...`。
++ */
++const buildRenderMap = (mathOptions?: IMathRenderOptions): Record<string, (previewPanel: Element, cdn?: string) => void> => ({
+     abc: abcRender,
+     plantuml: plantumlRender,
+     mermaid: mermaidRender,
+     flowchart: flowchartRender,
+     echarts: chartRender,
+     graphviz: graphvizRender,
+-    math: mathRender,
+-};
++    math: (previewPanel, cdn) => mathRender(previewPanel, cdn, false, mathOptions),
++});
+ 
+-export const processRender = (previewPanel: Element) => {
++/**
++ * mathOptions 透传给 mathRender（surface/rootID/docMode/docAttributes）；缺省由 host 按 DOM 推断。
++ */
++export const processRender = (previewPanel: Element, mathOptions?: IMathRenderOptions) => {
+     renderBlockDirection(previewPanel);
+     renderImageActions(previewPanel);
+     renderImageDisplay(previewPanel);
+@@ -92,23 +102,24 @@ export const processRender = (previewPanel: Element) => {
+     renderTableCorners(previewPanel);
+     // 受限 Lite 编辑器只渲染公式，代码围栏始终作为源码编辑，不能执行图表或 HTML。
+     if (previewPanel.closest('[data-protyle-lite-render="safe"]')) {
+-        mathRender(previewPanel);
++        mathRender(previewPanel, Constants.PROTYLE_CDN, false, mathOptions);
+         return;
+     }
++    const renderMap = buildRenderMap(mathOptions);
+     renderMediaResize(previewPanel);
+     customBlockRender(previewPanel);
+-    mindmapRender(previewPanel);
++    mindmapRender(previewPanel, Constants.PROTYLE_CDN);
+     const language = previewPanel.getAttribute("data-subtype");
+-    if (RENDER_MAP[language]) {
+-        RENDER_MAP[language](previewPanel);
++    if (renderMap[language]) {
++        renderMap[language](previewPanel, Constants.PROTYLE_CDN);
+         return;
+     }
+     if (previewPanel.getAttribute("data-type") === "NodeHTMLBlock") {
+         htmlRender(previewPanel);
+         return;
+     }
+-    for (const render of Object.values(RENDER_MAP)) {
+-        render(previewPanel);
++    for (const render of Object.values(renderMap)) {
++        render(previewPanel, Constants.PROTYLE_CDN);
+     }
+     htmlRender(previewPanel);
+ };
+diff --git a/app/src/protyle/util/processRender.test.ts b/app/src/protyle/util/processRender.test.ts
+new file mode 100644
+index 0000000..1ad5b75
+--- /dev/null
++++ b/app/src/protyle/util/processRender.test.ts
+@@ -0,0 +1,149 @@
++import * as assert from "node:assert/strict";
++import {readFileSync} from "node:fs";
++import * as path from "node:path";
++import test from "node:test";
++import {ModuleKind, ScriptTarget, transpileModule} from "typescript";
++
++/**
++ * processRender 参数回归单测：加载**真实** protyle/util/processCode.ts，把全部依赖换成桩，
++ * 捕获每个渲染器收到的实参。
++ *
++ * 回归点：RENDER_MAP 的第二参语义是 cdn；只有 math 条目通过闭包接收 IMathRenderOptions。
++ * 旧实现把 mathOptions 当第二参转给 mermaid/chart/abc/graphviz/flowchart/plantuml，
++ * 这些渲染器会执行 addScript(`${mathOptions}/js/...`)，首次渲染必然 404。
++ */
++
++class FakeEl {
++    attrs = new Map<string, string>();
++    parentElement: FakeEl | null = null;
++    constructor(public tagName: string) {}
++    getAttribute(name: string) {
++        return this.attrs.get(name) ?? null;
++    }
++    setAttribute(name: string, value: string) {
++        this.attrs.set(name, value);
++    }
++    closest(selector: string) {
++        if (selector === '[data-protyle-lite-render="safe"]') {
++            let node: FakeEl | null = this;
++            while (node) {
++                if (node.getAttribute("data-protyle-lite-render") === "safe") {
++                    return node;
++                }
++                node = node.parentElement;
++            }
++        }
++        return null;
++    }
++}
++
++type RenderCall = {name: string, args: any[]};
++
++const setup = () => {
++    const calls: RenderCall[] = [];
++    const noop = (name: string) => (...args: any[]) => calls.push({name, args});
++    const silent = (): void => undefined;
++    const extra: Record<string, unknown> = {
++        "../render/abcRender": {abcRender: noop("abcRender")},
++        "../render/chartRender": {chartRender: noop("chartRender")},
++        "../render/graphvizRender": {graphvizRender: noop("graphvizRender")},
++        "../render/mathRender": {mathRender: noop("mathRender")},
++        "../render/mermaidRender": {mermaidRender: noop("mermaidRender")},
++        "../render/mindmapRender": {mindmapRender: noop("mindmapRender")},
++        "../render/flowchartRender": {flowchartRender: noop("flowchartRender")},
++        "../render/plantumlRender": {plantumlRender: noop("plantumlRender")},
++        "../render/htmlRender": {htmlRender: noop("htmlRender")},
++        "../../util/escape": {escapeHtml: (value: string) => value},
++        "../../plugin/customBlockRender": {customBlockRender: silent},
++        "./inlineElementMarker": {buildSemanticInlineHTML: silent},
++        "../render/tableCellRich": {renderTableCellRichElements: silent},
++        "../render/embedHeading": {renderEmbedHeadings: silent},
++        "./inlineElementBoundary": {normalizeInlineElementBoundaries: silent},
++        "./longTextWrap": {renderLongTextRuns: silent},
++        "../render/imageActions": {renderImageActions: silent},
++        "../render/imageDisplay": {renderImageDisplay: silent},
++        "../render/mediaResize": {renderMediaResize: silent},
++        "../render/blockDirection": {renderBlockDirection: silent},
++        "../../constants": {Constants: {PROTYLE_CDN: "cdn"}},
++    };
++    const file = path.join(__dirname, "processCode.ts");
++    const js = transpileModule(readFileSync(file, "utf8"), {
++        compilerOptions: {module: ModuleKind.CommonJS, target: ScriptTarget.ES2022},
++    }).outputText;
++    const exports: Record<string, unknown> = {};
++    new Function("exports", "require", js)(exports, (spec: string) => {
++        if (spec in extra) {
++            return extra[spec];
++        }
++        throw new Error("unexpected import " + spec);
++    });
++    return {calls, processRender: exports.processRender as (element: Element, mathOptions?: any) => void};
++};
++
++const languagePanel = (subtype: string) => {
++    const panel = new FakeEl("DIV");
++    panel.setAttribute("data-subtype", subtype);
++    return panel as unknown as Element;
++};
++
++const CHART_LANGUAGES = [
++    ["abc", "abcRender"],
++    ["plantuml", "plantumlRender"],
++    ["mermaid", "mermaidRender"],
++    ["flowchart", "flowchartRender"],
++    ["echarts", "chartRender"],
++    ["graphviz", "graphvizRender"],
++] as const;
++
++for (const [subtype, renderer] of CHART_LANGUAGES) {
++    test(`processRender passes cdn (not mathOptions) as the second argument to ${renderer}`, () => {
++        const {calls, processRender} = setup();
++        const options = {surface: "preview", rootID: "R1", docMode: "preview"};
++        const panel = languagePanel(subtype);
++        processRender(panel, options);
++        // mindmapRender 在语言分支之前无条件执行（上游顺序），不消费 mathOptions
++        assert.deepEqual(calls.map(call => call.name), ["mindmapRender", renderer],
++            "only the matching language renderer runs after mindmapRender");
++        assert.deepEqual(calls[0].args, [panel, "cdn"]);
++        assert.equal(calls[1].args[0], panel);
++        assert.equal(calls[1].args[1], "cdn");
++        assert.equal(calls[1].args.length, 2);
++    });
++}
++
++test("processRender hands mathOptions to mathRender only, fourth argument", () => {
++    const {calls, processRender} = setup();
++    const options = {surface: "preview", rootID: "R1", docMode: "preview"};
++    const panel = languagePanel("math");
++    processRender(panel, options);
++    assert.deepEqual(calls.map(call => call.name), ["mindmapRender", "mathRender"]);
++    assert.deepEqual(calls[1].args, [panel, "cdn", false, options]);
++});
++
++test("processRender fallback loop passes cdn to every renderer and mathOptions only to math", () => {
++    const {calls, processRender} = setup();
++    const options: {surface: string, rootID: string | null, docMode: string} =
++        {surface: "export-image", rootID: null, docMode: "detached"};
++    const panel = new FakeEl("DIV") as unknown as Element;
++    processRender(panel, options);
++    const charts = calls.filter(call => call.name !== "mathRender" && call.name !== "htmlRender");
++    assert.equal(charts.length, CHART_LANGUAGES.length + 1, "six chart renderers + mindmapRender");
++    charts.forEach(call => {
++        assert.equal(call.args[0], panel);
++        assert.equal(call.args.length, 2, call.name);
++        assert.equal(call.args[1], "cdn", call.name);
++    });
++    const math = calls.find(call => call.name === "mathRender");
++    assert.deepEqual(math!.args, [panel, "cdn", false, options]);
++    assert.ok(calls.some(call => call.name === "htmlRender"));
++});
++
++test("processRender Lite safe path renders math only, with cdn and mathOptions", () => {
++    const {calls, processRender} = setup();
++    const options = {surface: "doc-title", rootID: "R2", docMode: "editable"};
++    const panel = new FakeEl("DIV");
++    panel.setAttribute("data-protyle-lite-render", "safe");
++    processRender(panel as unknown as Element, options);
++    assert.deepEqual(calls.map(call => call.name), ["mathRender"]);
++    assert.deepEqual(calls[0].args, [panel, "cdn", false, options]);
++});
+diff --git a/app/src/protyle/wysiwyg/renderBacklink.ts b/app/src/protyle/wysiwyg/renderBacklink.ts
+index d730338..819a711 100644
+--- a/app/src/protyle/wysiwyg/renderBacklink.ts
++++ b/app/src/protyle/wysiwyg/renderBacklink.ts
+@@ -90,7 +90,8 @@ const renderBacklinkDOMNodes = (protyle: IProtyle, nodes: Node[], record: IBackl
+             return;
+         }
+         improveBreadcrumbAppearance(item);
+-        processRender(item);
++        // 反链内容来自其它文档且是只读投影：显式给 popover/预览档位，rootID 不能借用当前 Protyle。
++        processRender(item, {surface: "popover", rootID: null, docMode: "preview"});
+         highlightRender(item);
+         prepareBacklinkAV(item, record.targets);
+         await avRender(item, protyle);
+@@ -251,7 +252,9 @@ export const loadBreadcrumb = (protyle: IProtyle, element: HTMLElement) => {
+         element.parentElement.insertAdjacentHTML("afterend",
+             normalizeHTMLAssetIFrameBlockDOM(setBacklinkFold(getResponse.data.content, true)));
+         clearViewFoldDefaults(protyle, element.parentElement.getAttribute("data-backlink-id"));
+-        processRender(element.parentElement.parentElement);
++        // 面包屑加载的反链上下文同样是只读投影，避免把当前 Protyle 的文档上下文套到别处内容。
++        processRender(element.parentElement.parentElement,
++            {surface: "popover", rootID: null, docMode: "preview"});
+         const record = backlinkDOMRecords.get(protyle)?.get(element.parentElement.dataset.backlinkId);
+         getBacklinkDOMNodes(element.parentElement).forEach(node => {
+             if (node instanceof HTMLElement) {
+diff --git a/app/src/util/Tree.ts b/app/src/util/Tree.ts
+index 78da629..ad8d5b9 100644
+--- a/app/src/util/Tree.ts
++++ b/app/src/util/Tree.ts
+@@ -72,7 +72,8 @@ export class Tree {
+             this.element.innerHTML = `<ul class="b3-list b3-list--background"><li class="b3-list--empty">${window.siyuan.languages.emptyContent}</li></ul>`;
+         } else {
+             this.element.innerHTML = this.genHTML(this.data);
+-            mathRender(this.element);
++            // 大纲/文档树等 UI 列表只做只读展示：没有文档上下文，不能按编辑器表面推断
++            mathRender(this.element, undefined, false, {surface: "unknown", rootID: null, docMode: "readonly"});
+         }
+     }
+ 
+@@ -80,7 +81,7 @@ export class Tree {
+         const template = document.createElement("template");
+         template.innerHTML = this.genHTML([data]);
+         const element = template.content.querySelector(".b3-list > .b3-list-item") as HTMLLIElement;
+-        mathRender(element);
++        mathRender(element, undefined, false, {surface: "unknown", rootID: null, docMode: "readonly"});
+         return element;
+     }
+ 

@@ -1,0 +1,1725 @@
+diff --git a/kernel/mathconversion/bounds.go b/kernel/mathconversion/bounds.go
+new file mode 100644
+index 0000000..41298b9
+--- /dev/null
++++ b/kernel/mathconversion/bounds.go
+@@ -0,0 +1,211 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"github.com/88250/lute/ast"
++)
++
++// 预算是单个 forest 的：一个或多个互不共享节点的根，连同各自全部后代。深度、节点、源字节、元数据
++// 字节与元数据条目数在 forest 内累计，多根与单根使用同一组上限。根自身的 Parent/Previous/Next 属于
++// 调用方上下文，只允许存在而不向外遍历；后代必须通过一致的 Parent/Previous/LastChild 链接构成无环
++// 树。转换后的输出 forest 在进入 JSON 与 Lute 之前，以及 JSON/BlockDOM 回载之后，都按同一组上限
++// 继续核验。
++//
++// 源预算按 len 统计全部变长字符串和字节字段；元数据预算同时统计字节与条目数，零长度 IAL/属性对也
++// 各占一个条目。已不支持的 Children、TableCellRich、DocumentTitle 和 FootnotesRefs 在展开其外部
++// graph 之前直接拒绝。
++const (
++	maxForestDepth           = 256
++	maxForestNodes           = 16384
++	maxForestSourceBytes     = 1 << 20
++	maxForestMetadataBytes   = 256 << 10
++	maxForestMetadataEntries = 16384
++	maxNodeIALEntries        = 256
++	maxTargetPathLength      = maxForestDepth
++	maxBlockIDLength         = 256
++)
++
++func preflightRequest(request Request) error {
++	block := request.Block
++	if block == nil || len(block.ID) > maxBlockIDLength || !validID.MatchString(block.ID) {
++		return fail(Invalid, "missing block or invalid block ID")
++	}
++	if request.Direction != InlineToBlock && request.Direction != BlockToInline {
++		return fail(Invalid, "unknown direction")
++	}
++	if len(request.TargetPath) > maxTargetPathLength {
++		return fail(Unsupported, "AST target path exceeds depth budget")
++	}
++	for _, index := range request.TargetPath {
++		if index < 0 {
++			return fail(Invalid, "negative AST child index")
++		}
++	}
++	if len(request.ExpectedSource) > maxForestSourceBytes {
++		return fail(Unsupported, "expected formula source exceeds source budget")
++	}
++	return preflightForest([]*ast.Node{block})
++}
++
++type forestFrame struct {
++	node     *ast.Node
++	parent   *ast.Node
++	previous *ast.Node
++	depth    int
++}
++
++// preflightForest 用显式栈遍历，不递归也不复制节点；任何 cycle、共享节点、链接不一致或超预算都在
++// clone、后续递归和 NewID 回调之前返回分类错误。
++func preflightForest(roots []*ast.Node) error {
++	return preflightForestDepth(roots, 1)
++}
++
++// preflightDocument 把文档根视为容器，子块从深度 1 开始，使 JSON/BlockDOM 回载的块与输入块使用同一
++// 深度语义；文档根自身仍计入节点、源和元数据预算。
++func preflightDocument(root *ast.Node) error {
++	return preflightForestDepth([]*ast.Node{root}, 0)
++}
++
++func preflightForestDepth(roots []*ast.Node, rootDepth int) error {
++	seen := make(map[*ast.Node]bool, len(roots))
++	external := make([]*ast.Node, 0, len(roots)*3)
++	budget := forestBudget{}
++	stack := make([]forestFrame, 0, 32)
++	for index := len(roots) - 1; index >= 0; index-- {
++		root := roots[index]
++		if root == nil {
++			return fail(Invalid, "AST forest contains a nil root")
++		}
++		if seen[root] {
++			return fail(Invalid, "AST forest reuses a root node")
++		}
++		seen[root] = true
++		if err := budget.add(root); err != nil {
++			return err
++		}
++		external = append(external, root.Parent, root.Previous, root.Next)
++		stack = append(stack, forestFrame{node: root, depth: rootDepth})
++	}
++	for len(stack) > 0 {
++		frame := stack[len(stack)-1]
++		stack = stack[:len(stack)-1]
++		node := frame.node
++		if frame.parent != nil {
++			if node.Parent != frame.parent || node.Previous != frame.previous {
++				return fail(Invalid, "AST sibling or parent link is inconsistent")
++			}
++		}
++		var last *ast.Node
++		for child := node.FirstChild; child != nil; child = child.Next {
++			if child == node {
++				return fail(Invalid, "AST child graph contains a cycle")
++			}
++			if seen[child] {
++				return fail(Invalid, "AST child graph contains a cycle or shared node")
++			}
++			if aliasesExternal(child, external) {
++				return fail(Invalid, "AST child aliases root-external context")
++			}
++			seen[child] = true
++			if err := budget.add(child); err != nil {
++				return err
++			}
++			depth := frame.depth + 1
++			if depth > maxForestDepth {
++				return fail(Unsupported, "AST forest exceeds depth budget")
++			}
++			stack = append(stack, forestFrame{node: child, parent: node, previous: last, depth: depth})
++			last = child
++		}
++		if node.LastChild != last {
++			return fail(Invalid, "AST last child link is inconsistent")
++		}
++	}
++	return nil
++}
++
++func aliasesExternal(node *ast.Node, external []*ast.Node) bool {
++	for _, outer := range external {
++		if outer != nil && outer == node {
++			return true
++		}
++	}
++	return false
++}
++
++type forestBudget struct {
++	nodes           int
++	sourceBytes     int
++	metadataBytes   int
++	metadataEntries int
++}
++
++func (budget *forestBudget) add(node *ast.Node) error {
++	if node.TableCellRich != nil || node.DocumentTitle != nil || len(node.FootnotesRefs) != 0 || len(node.Children) != 0 {
++		return fail(Unsupported, "rich table, document title, footnote references or unresolved JSON children")
++	}
++	budget.nodes++
++	if budget.nodes > maxForestNodes {
++		return fail(Unsupported, "AST forest exceeds node budget")
++	}
++	if len(node.KramdownIAL) > maxNodeIALEntries {
++		return fail(Unsupported, "AST node IAL exceeds entry budget")
++	}
++	for _, attribute := range node.KramdownIAL {
++		if len(attribute) != 2 {
++			return fail(Unsupported, "malformed block IAL entry")
++		}
++	}
++	budget.metadataEntries += len(node.KramdownIAL) + len(node.Properties) + len(node.TableAligns)
++	if budget.metadataEntries > maxForestMetadataEntries {
++		return fail(Unsupported, "AST forest metadata exceeds entry budget")
++	}
++	budget.sourceBytes += nodeSourceBytes(node)
++	if budget.sourceBytes > maxForestSourceBytes {
++		return fail(Unsupported, "AST forest source exceeds source budget")
++	}
++	budget.metadataBytes += nodeMetadataBytes(node)
++	if budget.metadataBytes > maxForestMetadataBytes {
++		return fail(Unsupported, "AST forest metadata exceeds metadata budget")
++	}
++	return nil
++}
++
++// nodeSourceBytes 统计节点上全部变长字符串和字节字段，包括 ID、路径等标识，避免任何字段绕过预算。
++func nodeSourceBytes(node *ast.Node) int {
++	total := len(node.ID) + len(node.Box) + len(node.Path) + len(node.Spec) +
++		len(node.TypeStr) + len(node.Data) + len(node.Tokens) +
++		len(node.CodeBlockOpenFence) + len(node.CodeBlockInfo) + len(node.CodeBlockCloseFence) +
++		len(node.LinkRefLabel) + len(node.FootnotesRefLabel) + len(node.HtmlEntityTokens) +
++		len(node.HeadingNormalizedID) + len(node.FootnotesRefId) +
++		len(node.TextMarkType) + len(node.TextMarkAHref) + len(node.TextMarkATitle) +
++		len(node.TextMarkInlineMathContent) + len(node.TextMarkInlineMemoContent) +
++		len(node.TextMarkBlockRefID) + len(node.TextMarkBlockRefSubtype) +
++		len(node.TextMarkFileAnnotationRefID) + len(node.TextMarkFlashcardOcclusionID) +
++		len(node.TextMarkTextContent) +
++		len(node.AttributeViewID) + len(node.AttributeViewType) +
++		len(node.CustomBlockInfo) + len(node.CalloutType) + len(node.CalloutTitle) +
++		len(node.TabItemTitle) + len(node.CalloutIcon)
++	if node.ListData != nil {
++		total += len(node.ListData.Marker)
++	}
++	return total
++}
++
++// nodeMetadataBytes 统计 IAL、属性 map 和表格对齐切片的开销；节点结构本身由节点预算约束。
++func nodeMetadataBytes(node *ast.Node) int {
++	total := 8 * len(node.TableAligns)
++	for _, attribute := range node.KramdownIAL {
++		total += 16
++		for _, value := range attribute {
++			total += len(value)
++		}
++	}
++	for key, value := range node.Properties {
++		total += 16 + len(key) + len(value)
++	}
++	return total
++}
+diff --git a/kernel/mathconversion/bounds_test.go b/kernel/mathconversion/bounds_test.go
+new file mode 100644
+index 0000000..c3b7ce9
+--- /dev/null
++++ b/kernel/mathconversion/bounds_test.go
+@@ -0,0 +1,243 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"fmt"
++	"strings"
++	"testing"
++
++	"github.com/88250/lute/ast"
++)
++
++func countingAllocator() (func() string, *int) {
++	calls := 0
++	return func() string {
++		calls++
++		return fmt.Sprintf("20261117140000-new%04d", calls)
++	}, &calls
++}
++
++func chain(depth int) *ast.Node {
++	root := &ast.Node{Type: ast.NodeText}
++	current := root
++	for index := 1; index < depth; index++ {
++		child := &ast.Node{Type: ast.NodeText}
++		current.AppendChild(child)
++		current = child
++	}
++	return root
++}
++
++func wideForest(nodes int) *ast.Node {
++	root := &ast.Node{Type: ast.NodeParagraph}
++	for index := 1; index < nodes; index++ {
++		root.AppendChild(&ast.Node{Type: ast.NodeText})
++	}
++	return root
++}
++
++func zeroByteIAL(entries int) [][]string {
++	pairs := make([][]string, entries)
++	for index := range pairs {
++		pairs[index] = []string{"", ""}
++	}
++	return pairs
++}
++
++func zeroByteIALForest(entries int) *ast.Node {
++	root := &ast.Node{Type: ast.NodeParagraph, KramdownIAL: zeroByteIAL(maxNodeIALEntries)}
++	entries -= maxNodeIALEntries
++	for entries > 0 {
++		childEntries := entries
++		if childEntries > maxNodeIALEntries {
++			childEntries = maxNodeIALEntries
++		}
++		root.AppendChild(&ast.Node{Type: ast.NodeText, KramdownIAL: zeroByteIAL(childEntries)})
++		entries -= childEntries
++	}
++	return root
++}
++
++// TestPreflightRejectsMalformedGraphBeforeClone 只调用新 preflight 代码验证旧的致命图；不会执行
++// clone、递归渲染或旧危险路径。所有失败都必须保持 NewID 零调用，且可安全快照的输入保持原样。
++func TestPreflightRejectsMalformedGraphBeforeClone(t *testing.T) {
++	cases := []struct {
++		name       string
++		mutate     func(*ast.Node)
++		kind       Kind
++		checkInput bool
++	}{
++		{"first-child-self", func(block *ast.Node) {
++			block.FirstChild, block.LastChild = block, block
++		}, Invalid, false},
++		{"next-self", func(block *ast.Node) {
++			block.FirstChild.Next.Next = block.FirstChild.Next
++		}, Invalid, false},
++		{"next-cycle", func(block *ast.Node) {
++			block.LastChild.Next = block.FirstChild
++		}, Invalid, false},
++		{"shared-child", func(block *ast.Node) {
++			block.FirstChild.FirstChild, block.FirstChild.LastChild = block.FirstChild.Next, block.FirstChild.Next
++		}, Invalid, false},
++		{"parent-link", func(block *ast.Node) {
++			block.FirstChild.Next.Parent = nil
++		}, Invalid, true},
++		{"previous-link", func(block *ast.Node) {
++			block.LastChild.Previous = nil
++		}, Invalid, true},
++		{"last-child", func(block *ast.Node) {
++			block.LastChild = block.FirstChild
++		}, Invalid, true},
++		{"root-alias", func(block *ast.Node) {
++			block.Parent = block.FirstChild.Next
++		}, Invalid, true},
++		{"unresolved-children", func(block *ast.Node) {
++			block.FirstChild.Next.Children = []*ast.Node{{}}
++		}, Unsupported, true},
++		{"depth-budget", func(block *ast.Node) {
++			block.FirstChild.AppendChild(chain(maxForestDepth))
++		}, Unsupported, false},
++		{"node-budget", func(block *ast.Node) {
++			for index := 0; index < maxForestNodes; index++ {
++				block.AppendChild(&ast.Node{Type: ast.NodeText})
++			}
++		}, Unsupported, false},
++		{"source-budget", func(block *ast.Node) {
++			block.FirstChild.Tokens = make([]byte, maxForestSourceBytes)
++		}, Unsupported, false},
++		{"metadata-budget", func(block *ast.Node) {
++			block.SetIALAttr("custom-large", strings.Repeat("v", maxForestMetadataBytes))
++		}, Unsupported, false},
++	}
++	for _, testcase := range cases {
++		t.Run(testcase.name, func(t *testing.T) {
++			block := paragraph("x", false, "before", "after")
++			newID, calls := countingAllocator()
++			testcase.mutate(block)
++			var original string
++			if testcase.checkInput {
++				original = snapshot(block)
++			}
++			_, err := Build(Request{Block: block, Direction: InlineToBlock, TargetPath: []int{1}, ExpectedSource: "x", NewID: newID})
++			requireKind(t, err, testcase.kind)
++			if *calls != 0 {
++				t.Fatalf("NewID called %d times on rejected input", *calls)
++			}
++			if testcase.checkInput && snapshot(block) != original {
++				t.Fatal("preflight mutated the rejected input")
++			}
++		})
++	}
++}
++
++func TestPreflightRejectsOversizedRequestFields(t *testing.T) {
++	cases := []struct {
++		name  string
++		input func(*ast.Node, func() string) Request
++		kind  Kind
++	}{
++		{"expected-source", func(block *ast.Node, newID func() string) Request {
++			return Request{Block: block, Direction: InlineToBlock, TargetPath: []int{1},
++				ExpectedSource: strings.Repeat("x", maxForestSourceBytes+1), NewID: newID}
++		}, Unsupported},
++		{"target-path", func(block *ast.Node, newID func() string) Request {
++			return Request{Block: block, Direction: InlineToBlock, TargetPath: make([]int, maxTargetPathLength+1),
++				ExpectedSource: "x", NewID: newID}
++		}, Unsupported},
++		{"target-index", func(block *ast.Node, newID func() string) Request {
++			return Request{Block: block, Direction: InlineToBlock, TargetPath: []int{maxForestNodes + 1},
++				ExpectedSource: "x", NewID: newID}
++		}, Conflict},
++		{"block-id", func(block *ast.Node, newID func() string) Request {
++			block.ID = strings.Repeat("a", maxBlockIDLength+1)
++			return Request{Block: block, Direction: InlineToBlock, TargetPath: []int{1}, ExpectedSource: "x", NewID: newID}
++		}, Invalid},
++	}
++	for _, testcase := range cases {
++		t.Run(testcase.name, func(t *testing.T) {
++			block := paragraph("x", false, "before", "after")
++			newID, calls := countingAllocator()
++			input := testcase.input(block, newID)
++			original := snapshot(block)
++			_, err := Build(input)
++			requireKind(t, err, testcase.kind)
++			if *calls != 0 {
++				t.Fatalf("NewID called %d times on rejected input", *calls)
++			}
++			if snapshot(block) != original {
++				t.Fatal("request preflight mutated the rejected input")
++			}
++		})
++	}
++}
++
++func TestPreflightBudgetBoundaries(t *testing.T) {
++	t.Run("depth", func(t *testing.T) {
++		if err := preflightForest([]*ast.Node{chain(maxForestDepth)}); err != nil {
++			t.Fatal(err)
++		}
++		requireKind(t, preflightForest([]*ast.Node{chain(maxForestDepth + 1)}), Unsupported)
++	})
++	t.Run("nodes", func(t *testing.T) {
++		if err := preflightForest([]*ast.Node{wideForest(maxForestNodes)}); err != nil {
++			t.Fatal(err)
++		}
++		requireKind(t, preflightForest([]*ast.Node{wideForest(maxForestNodes + 1)}), Unsupported)
++	})
++	t.Run("source", func(t *testing.T) {
++		if err := preflightForest([]*ast.Node{{Tokens: make([]byte, maxForestSourceBytes)}}); err != nil {
++			t.Fatal(err)
++		}
++		requireKind(t, preflightForest([]*ast.Node{{Tokens: make([]byte, maxForestSourceBytes+1)}}), Unsupported)
++	})
++	t.Run("metadata", func(t *testing.T) {
++		exact := &ast.Node{Type: ast.NodeParagraph, KramdownIAL: [][]string{{"k", strings.Repeat("v", maxForestMetadataBytes-17)}}}
++		if err := preflightForest([]*ast.Node{exact}); err != nil {
++			t.Fatal(err)
++		}
++		over := &ast.Node{Type: ast.NodeParagraph, KramdownIAL: [][]string{{"k", strings.Repeat("v", maxForestMetadataBytes-16)}}}
++		requireKind(t, preflightForest([]*ast.Node{over}), Unsupported)
++	})
++	t.Run("node-ial-entries", func(t *testing.T) {
++		exact := &ast.Node{Type: ast.NodeParagraph, KramdownIAL: zeroByteIAL(maxNodeIALEntries)}
++		if err := preflightForest([]*ast.Node{exact}); err != nil {
++			t.Fatal(err)
++		}
++		over := &ast.Node{Type: ast.NodeParagraph, KramdownIAL: zeroByteIAL(maxNodeIALEntries + 1)}
++		requireKind(t, preflightForest([]*ast.Node{over}), Unsupported)
++		wide := &ast.Node{Type: ast.NodeParagraph, KramdownIAL: [][]string{make([]string, maxNodeIALEntries+1)}}
++		requireKind(t, preflightForest([]*ast.Node{wide}), Unsupported)
++	})
++	t.Run("metadata-entries", func(t *testing.T) {
++		if err := preflightForest([]*ast.Node{zeroByteIALForest(maxForestMetadataEntries)}); err != nil {
++			t.Fatal(err)
++		}
++		requireKind(t, preflightForest([]*ast.Node{zeroByteIALForest(maxForestMetadataEntries + 1)}), Unsupported)
++	})
++}
++
++func TestPreflightDocumentKeepsBlockDepth(t *testing.T) {
++	document := &ast.Node{Type: ast.NodeDocument}
++	document.AppendChild(chain(maxForestDepth))
++	if err := preflightDocument(document); err != nil {
++		t.Fatal(err)
++	}
++	requireKind(t, preflightForest([]*ast.Node{document}), Unsupported)
++}
++
++func TestPreflightAllowsRootExternalContext(t *testing.T) {
++	block := paragraph("x", false, "before", "after")
++	block.Parent = &ast.Node{Type: ast.NodeDocument, ID: "20000101000000-docroot"}
++	block.Previous = &ast.Node{Type: ast.NodeParagraph}
++	block.Next = &ast.Node{Type: ast.NodeParagraph}
++	plan, err := Build(request(block, 1, "x"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if len(plan.Fragments) != 3 || plan.Fragments[1].Type != ast.NodeMathBlock {
++		t.Fatal("root external context changed the plan")
++	}
++}
+diff --git a/kernel/mathconversion/planner.go b/kernel/mathconversion/planner.go
+new file mode 100644
+index 0000000..eadf550
+--- /dev/null
++++ b/kernel/mathconversion/planner.go
+@@ -0,0 +1,441 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"bytes"
++	"fmt"
++	"maps"
++	"reflect"
++	"regexp"
++	"slices"
++
++	"github.com/88250/lute/ast"
++)
++
++type Direction uint8
++
++const (
++	InlineToBlock Direction = iota + 1
++	BlockToInline
++)
++
++type Kind string
++
++const (
++	Conflict    Kind = "conflict"
++	Unsupported Kind = "unsupported"
++	Invalid     Kind = "invalid"
++)
++
++type Error struct {
++	Kind   Kind
++	Reason string
++}
++
++func (failure *Error) Error() string      { return string(failure.Kind) + ": " + failure.Reason }
++func fail(kind Kind, reason string) error { return &Error{Kind: kind, Reason: reason} }
++
++type Request struct {
++	Block          *ast.Node
++	TargetPath     []int
++	Direction      Direction
++	ExpectedSource string
++	NewID          func() string
++}
++
++type Plan struct {
++	Before       *ast.Node
++	Fragments    []*ast.Node
++	PreservedID  string
++	CreatedIDs   []string
++	Source       string
++	TargetPath   []int
++	FocusBlockID string
++	FocusPath    []int
++}
++
++var validID = regexp.MustCompile(`^[0-9]{14}-[a-z0-9]{7}$`)
++
++func Build(request Request) (*Plan, error) {
++	if err := preflightRequest(request); err != nil {
++		return nil, err
++	}
++	before, err := clone(request.Block)
++	if err != nil {
++		return nil, err
++	}
++	target := before
++	for _, index := range request.TargetPath {
++		target = target.FirstChild
++		for offset := 0; target != nil && offset < index; offset++ {
++			target = target.Next
++		}
++		if target == nil {
++			return nil, fail(Conflict, "AST target path no longer exists")
++		}
++	}
++	var source string
++	if request.Direction == BlockToInline {
++		if before.Type != ast.NodeMathBlock || len(request.TargetPath) != 0 {
++			return nil, fail(Unsupported, "block-to-inline requires the math block itself")
++		}
++		source, err = mathSource(before)
++	} else {
++		if before.Type != ast.NodeParagraph {
++			return nil, fail(Unsupported, "inline target requires a paragraph")
++		}
++		if len(request.TargetPath) != 1 {
++			return nil, fail(Unsupported, "nested or wrapped math target")
++		}
++		source, err = mathSource(target)
++	}
++	if err != nil {
++		return nil, err
++	}
++	if source != request.ExpectedSource {
++		return nil, fail(Conflict, "formula source differs from expected source")
++	}
++	if err = plainTarget(target); err != nil {
++		return nil, err
++	}
++	if err = validateIAL(before); err != nil {
++		return nil, err
++	}
++	if err = persistentFields(before); err != nil {
++		return nil, err
++	}
++	plan := &Plan{Before: before, PreservedID: before.ID, Source: source, TargetPath: slices.Clone(request.TargetPath)}
++	working, err := clone(before)
++	if err != nil {
++		return nil, err
++	}
++	if request.Direction == BlockToInline {
++		clearChildren(working)
++		working.Type = ast.NodeParagraph
++		working.MathBlockDollarOffset = 0
++		working.AppendChild(&ast.Node{Type: ast.NodeTextMark, TextMarkType: "inline-math", TextMarkInlineMathContent: source})
++		plan.Fragments = []*ast.Node{working}
++		plan.FocusBlockID, plan.FocusPath = working.ID, []int{0}
++	} else {
++		index := request.TargetPath[0]
++		children := childList(working)
++		if len(children) == 1 {
++			clearChildren(working)
++			working.Type = ast.NodeMathBlock
++			appendMathContent(working, source)
++			plan.Fragments = []*ast.Node{working}
++			plan.FocusBlockID = working.ID
++		} else {
++			if err = mixedMetadata(before); err != nil {
++				return nil, err
++			}
++			used := map[string]bool{}
++			ast.Walk(before, func(node *ast.Node, entering bool) ast.WalkStatus {
++				if entering && node.ID != "" {
++					used[node.ID] = true
++				}
++				return ast.WalkContinue
++			})
++			fresh := func(typ ast.NodeType) (*ast.Node, error) {
++				if request.NewID == nil {
++					return nil, fail(Invalid, "new block ID callback is required")
++				}
++				identity := request.NewID()
++				if !validID.MatchString(identity) || used[identity] {
++					return nil, fail(Invalid, "empty, malformed or colliding new block ID")
++				}
++				used[identity] = true
++				plan.CreatedIDs = append(plan.CreatedIDs, identity)
++				node := &ast.Node{Type: typ, ID: identity}
++				node.SetIALAttr("id", identity)
++				for _, attribute := range before.KramdownIAL {
++					if attribute[0] == "style" || attribute[0] == "direction" {
++						node.SetIALAttr(attribute[0], attribute[1])
++					}
++				}
++				return node, nil
++			}
++			math, allocErr := fresh(ast.NodeMathBlock)
++			if allocErr != nil {
++				return nil, allocErr
++			}
++			appendMathContent(math, source)
++			clearChildren(working)
++			if index > 0 {
++				for _, child := range children[:index] {
++					child.Unlink()
++					working.AppendChild(child)
++				}
++				plan.Fragments = append(plan.Fragments, working)
++			}
++			plan.Fragments = append(plan.Fragments, math)
++			if index+1 < len(children) {
++				after := working
++				if index > 0 {
++					after, err = fresh(ast.NodeParagraph)
++					if err != nil {
++						return nil, err
++					}
++				}
++				for _, child := range children[index+1:] {
++					child.Unlink()
++					after.AppendChild(child)
++				}
++				plan.Fragments = append(plan.Fragments, after)
++			}
++			plan.FocusBlockID = math.ID
++		}
++	}
++	if err = checkRoundTrips(plan.Fragments); err != nil {
++		return nil, err
++	}
++	return plan, nil
++}
++
++func appendMathContent(block *ast.Node, source string) {
++	block.AppendChild(&ast.Node{Type: ast.NodeMathBlockOpenMarker, Tokens: []byte("$$")})
++	block.AppendChild(&ast.Node{Type: ast.NodeMathBlockContent, Tokens: []byte(source)})
++	block.AppendChild(&ast.Node{Type: ast.NodeMathBlockCloseMarker, Tokens: []byte("$$")})
++}
++
++func childList(node *ast.Node) (children []*ast.Node) {
++	for child := node.FirstChild; child != nil; child = child.Next {
++		children = append(children, child)
++	}
++	return
++}
++
++func clearChildren(node *ast.Node) {
++	for child := node.FirstChild; child != nil; {
++		next := child.Next
++		child.Unlink()
++		child = next
++	}
++	node.Children = nil
++}
++
++func clone(node *ast.Node) (*ast.Node, error) {
++	if node == nil {
++		return nil, nil
++	}
++	if node.TableCellRich != nil || node.DocumentTitle != nil || len(node.FootnotesRefs) != 0 || len(node.Children) != 0 {
++		return nil, fail(Unsupported, "rich table, document title, footnote references or unresolved JSON children")
++	}
++	copied := *node
++	copied.Parent, copied.Previous, copied.Next = nil, nil, nil
++	copied.FirstChild, copied.LastChild, copied.Children = nil, nil, nil
++	copied.Tokens = bytes.Clone(node.Tokens)
++	copied.CodeBlockOpenFence = bytes.Clone(node.CodeBlockOpenFence)
++	copied.CodeBlockInfo = bytes.Clone(node.CodeBlockInfo)
++	copied.CodeBlockCloseFence = bytes.Clone(node.CodeBlockCloseFence)
++	copied.LinkRefLabel = bytes.Clone(node.LinkRefLabel)
++	copied.FootnotesRefLabel = bytes.Clone(node.FootnotesRefLabel)
++	copied.HtmlEntityTokens = bytes.Clone(node.HtmlEntityTokens)
++	copied.TableAligns = slices.Clone(node.TableAligns)
++	copied.FootnotesRefs = slices.Clone(node.FootnotesRefs)
++	copied.Properties = maps.Clone(node.Properties)
++	if node.KramdownIAL != nil {
++		copied.KramdownIAL = make([][]string, len(node.KramdownIAL))
++		for index, attribute := range node.KramdownIAL {
++			copied.KramdownIAL[index] = slices.Clone(attribute)
++		}
++	}
++	if node.ListData != nil {
++		list := *node.ListData
++		list.Marker = bytes.Clone(node.ListData.Marker)
++		copied.ListData = &list
++	}
++	for child := node.FirstChild; child != nil; child = child.Next {
++		descendant, err := clone(child)
++		if err != nil {
++			return nil, err
++		}
++		copied.AppendChild(descendant)
++	}
++	return &copied, nil
++}
++
++func mathSource(node *ast.Node) (string, error) {
++	switch node.Type {
++	case ast.NodeTextMark:
++		if node.TextMarkType != "inline-math" {
++			return "", fail(Unsupported, "compound or non-math TextMark target")
++		}
++		return node.TextMarkInlineMathContent, nil
++	case ast.NodeInlineMath, ast.NodeMathBlock:
++		contentType := ast.NodeInlineMathContent
++		if node.Type == ast.NodeMathBlock {
++			contentType = ast.NodeMathBlockContent
++		}
++		children := childList(node)
++		openType, closeType, marker := ast.NodeInlineMathOpenMarker, ast.NodeInlineMathCloseMarker, "$"
++		if node.Type == ast.NodeMathBlock {
++			openType, closeType, marker = ast.NodeMathBlockOpenMarker, ast.NodeMathBlockCloseMarker, "$$"
++		}
++		if len(children) == 3 {
++			if children[0].Type != openType || children[1].Type != contentType || children[2].Type != closeType {
++				return "", fail(Unsupported, "noncanonical math children")
++			}
++			for _, position := range []int{0, 2} {
++				if len(children[position].Tokens) != 0 && string(children[position].Tokens) != marker {
++					return "", fail(Unsupported, "noncanonical math marker")
++				}
++			}
++		} else if len(children) != 1 || children[0].Type != contentType {
++			return "", fail(Unsupported, "noncanonical math children")
++		}
++		var content *ast.Node
++		for child := node.FirstChild; child != nil; child = child.Next {
++			if child.Type == contentType {
++				if content != nil {
++					return "", fail(Unsupported, "multiple math content nodes")
++				}
++				content = child
++			} else if child.Type != ast.NodeInlineMathOpenMarker && child.Type != ast.NodeInlineMathCloseMarker && child.Type != ast.NodeMathBlockOpenMarker && child.Type != ast.NodeMathBlockCloseMarker {
++				return "", fail(Unsupported, "unexpected math child")
++			}
++		}
++		if content == nil {
++			return "", fail(Unsupported, "missing math content")
++		}
++		return string(content.Tokens), nil
++	}
++	return "", fail(Unsupported, "target is not an inline formula")
++}
++
++func plainTarget(node *ast.Node) error {
++	copied := *node
++	copied.Type = 0
++	copied.Parent, copied.Previous, copied.Next = nil, nil, nil
++	copied.FirstChild, copied.LastChild = nil, nil
++	copied.Close, copied.LastLineBlank, copied.LastLineChecked = false, false, false
++	if len(copied.Tokens) == 0 {
++		copied.Tokens = nil
++	}
++	if len(copied.KramdownIAL) == 0 {
++		copied.KramdownIAL = nil
++	}
++	if len(copied.Properties) == 0 {
++		copied.Properties = nil
++	}
++	if node.Type == ast.NodeMathBlock {
++		copied.ID, copied.Box, copied.Path, copied.Spec = "", "", "", ""
++		copied.KramdownIAL, copied.Properties = nil, nil
++		copied.MathBlockDollarOffset = 0
++	}
++	if node.Type == ast.NodeTextMark {
++		copied.TextMarkType, copied.TextMarkInlineMathContent = "", ""
++	}
++	if !reflect.DeepEqual(copied, ast.Node{}) {
++		return fail(Unsupported, "target has attributes or additional metadata")
++	}
++	for child := node.FirstChild; child != nil; child = child.Next {
++		plain := *child
++		plain.Type, plain.Tokens = 0, nil
++		plain.Parent, plain.Previous, plain.Next = nil, nil, nil
++		plain.Close, plain.LastLineBlank, plain.LastLineChecked = false, false, false
++		if len(plain.KramdownIAL) == 0 {
++			plain.KramdownIAL = nil
++		}
++		if len(plain.Properties) == 0 {
++			plain.Properties = nil
++		}
++		if !reflect.DeepEqual(plain, ast.Node{}) {
++			return fail(Unsupported, "math child has attributes or additional metadata")
++		}
++	}
++	return nil
++}
++
++func validateIAL(block *ast.Node) error {
++	seen := map[string]bool{}
++	for _, attribute := range block.KramdownIAL {
++		if len(attribute) != 2 || seen[attribute[0]] {
++			return fail(Unsupported, "malformed or duplicate block IAL")
++		}
++		seen[attribute[0]] = true
++		if attribute[0] == "id" && attribute[1] != block.ID {
++			return fail(Invalid, "block ID differs from IAL ID")
++		}
++	}
++	return nil
++}
++
++func persistentFields(node *ast.Node) error {
++	copied := *node
++	copied.Type = 0
++	copied.Parent, copied.Previous, copied.Next = nil, nil, nil
++	copied.FirstChild, copied.LastChild, copied.Children = nil, nil, nil
++	copied.Tokens = nil
++	copied.Close, copied.LastLineBlank, copied.LastLineChecked = false, false, false
++	copied.KramdownIAL = nil
++	if len(copied.Properties) == 0 {
++		copied.Properties = nil
++	}
++	if len(copied.TableAligns) == 0 {
++		copied.TableAligns = nil
++	}
++	if len(copied.FootnotesRefs) == 0 {
++		copied.FootnotesRefs = nil
++	}
++	if node.IsBlock() {
++		copied.ID, copied.Box, copied.Path, copied.Spec = "", "", "", ""
++	}
++	if node.Type == ast.NodeMathBlock {
++		copied.MathBlockDollarOffset = 0
++	}
++	if node.Type == ast.NodeCodeSpan || node.Type == ast.NodeCodeSpanOpenMarker || node.Type == ast.NodeCodeSpanCloseMarker {
++		copied.CodeMarkerLen = 0
++	}
++	if node.Type == ast.NodeTextMark {
++		copied.TextMarkType, copied.TextMarkTextContent = "", ""
++		if node.IsTextMarkType("a") {
++			copied.TextMarkAHref, copied.TextMarkATitle = "", ""
++		}
++		if node.IsTextMarkType("inline-math") {
++			copied.TextMarkInlineMathContent = ""
++		}
++	}
++	if !reflect.DeepEqual(copied, ast.Node{}) {
++		return fail(Unsupported, "unproven node metadata: "+node.Type.String())
++	}
++	if err := validateIAL(node); err != nil {
++		return err
++	}
++	for child := node.FirstChild; child != nil; child = child.Next {
++		if err := persistentFields(child); err != nil {
++			return err
++		}
++	}
++	return nil
++}
++
++func mixedMetadata(block *ast.Node) error {
++	for _, attribute := range block.KramdownIAL {
++		switch attribute[0] {
++		case "id", "updated", "style", "direction":
++		default:
++			return fail(Unsupported, fmt.Sprintf("mixed paragraph attribute %q requires an identity policy", attribute[0]))
++		}
++	}
++	copied := *block
++	copied.ID, copied.Box, copied.Path, copied.Spec = "", "", "", ""
++	copied.Type = 0
++	copied.Parent, copied.Previous, copied.Next = nil, nil, nil
++	copied.FirstChild, copied.LastChild = nil, nil
++	copied.KramdownIAL = nil
++	copied.Close, copied.LastLineBlank, copied.LastLineChecked = false, false, false
++	if len(copied.Tokens) == 0 {
++		copied.Tokens = nil
++	}
++	if len(copied.Properties) == 0 {
++		copied.Properties = nil
++	}
++	if !reflect.DeepEqual(copied, ast.Node{}) {
++		return fail(Unsupported, "mixed paragraph carries additional metadata")
++	}
++	return nil
++}
+diff --git a/kernel/mathconversion/planner_test.go b/kernel/mathconversion/planner_test.go
+new file mode 100644
+index 0000000..c612b0a
+--- /dev/null
++++ b/kernel/mathconversion/planner_test.go
+@@ -0,0 +1,306 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"encoding/json"
++	"errors"
++	"fmt"
++	"reflect"
++	"testing"
++
++	"github.com/88250/lute/ast"
++)
++
++const originalID = "20261117140000-origina"
++
++func paragraph(source string, native bool, before, after string) *ast.Node {
++	block := &ast.Node{Type: ast.NodeParagraph, ID: originalID}
++	block.SetIALAttr("id", originalID)
++	block.SetIALAttr("updated", "20261117140000")
++	if before != "" {
++		block.AppendChild(&ast.Node{Type: ast.NodeText, Tokens: []byte(before)})
++	}
++	if native {
++		math := &ast.Node{Type: ast.NodeInlineMath}
++		math.AppendChild(&ast.Node{Type: ast.NodeInlineMathOpenMarker, Tokens: []byte("$")})
++		math.AppendChild(&ast.Node{Type: ast.NodeInlineMathContent, Tokens: []byte(source)})
++		math.AppendChild(&ast.Node{Type: ast.NodeInlineMathCloseMarker, Tokens: []byte("$")})
++		block.AppendChild(math)
++	} else {
++		block.AppendChild(&ast.Node{Type: ast.NodeTextMark, TextMarkType: "inline-math", TextMarkInlineMathContent: source})
++	}
++	if after != "" {
++		block.AppendChild(&ast.Node{Type: ast.NodeText, Tokens: []byte(after)})
++	}
++	return block
++}
++
++func allocator() func() string {
++	counter := 0
++	return func() string { counter++; return fmt.Sprintf("20261117140000-new%04d", counter) }
++}
++
++func request(block *ast.Node, index int, source string) Request {
++	return Request{Block: block, Direction: InlineToBlock, TargetPath: []int{index}, ExpectedSource: source, NewID: allocator()}
++}
++
++func snapshot(node *ast.Node) string {
++	if node == nil {
++		return "nil"
++	}
++	copied := *node
++	copied.Parent, copied.Previous, copied.Next, copied.FirstChild, copied.LastChild = nil, nil, nil, nil, nil
++	data, _ := json.Marshal(copied)
++	result := fmt.Sprintf("%s|%d|%q|%v|", data, node.Type, node.Tokens, node.KramdownIAL)
++	for child := node.FirstChild; child != nil; child = child.Next {
++		result += "[" + snapshot(child) + "]"
++	}
++	return result
++}
++
++func requireKind(t *testing.T, err error, kind Kind) {
++	t.Helper()
++	var typed *Error
++	if !errors.As(err, &typed) || typed.Kind != kind {
++		t.Fatalf("want %s, got %v", kind, err)
++	}
++}
++
++func TestSoleAndInverse(t *testing.T) {
++	for _, native := range []bool{false, true} {
++		t.Run(fmt.Sprint(native), func(t *testing.T) {
++			block := paragraph(`\t{alpha}`, native, "", "")
++			block.SetIALAttr("bookmark", "remember")
++			block.SetIALAttr("custom-private", "keep")
++			original := snapshot(block)
++			plan, err := Build(request(block, 0, `\t{alpha}`))
++			if err != nil {
++				t.Fatal(err)
++			}
++			if plan.PreservedID != originalID || len(plan.CreatedIDs) != 0 || !reflect.DeepEqual(plan.Fragments[0].KramdownIAL, block.KramdownIAL) {
++				t.Fatal("identity not retained")
++			}
++			beforeSnapshot := snapshot(plan.Before)
++			inverse, err := Build(Request{Block: plan.Fragments[0], Direction: BlockToInline, ExpectedSource: plan.Source})
++			if err != nil {
++				t.Fatal(err)
++			}
++			if inverse.Source != plan.Source || inverse.Fragments[0].ID != originalID || !reflect.DeepEqual(inverse.Fragments[0].KramdownIAL, block.KramdownIAL) {
++				t.Fatal("inverse changed identity")
++			}
++			inverse.Fragments[0].SetIALAttr("custom-private", "changed")
++			if snapshot(block) != original || snapshot(plan.Before) != beforeSnapshot {
++				t.Fatal("inverse aliased original snapshots")
++			}
++		})
++	}
++}
++
++func TestMixedAllocation(t *testing.T) {
++	for _, texts := range [][2]string{{"before", "after"}, {"before", ""}, {"", "after"}} {
++		for _, native := range []bool{false, true} {
++			t.Run(fmt.Sprint(texts, native), func(t *testing.T) {
++				block := paragraph("x", native, texts[0], texts[1])
++				block.SetIALAttr("style", "color: red;")
++
++				original := snapshot(block)
++				index := 0
++				if texts[0] != "" {
++					index = 1
++				}
++				plan, err := Build(request(block, index, "x"))
++				if err != nil {
++					t.Fatal(err)
++				}
++				mathIndex := 0
++				if texts[0] != "" {
++					mathIndex = 1
++				}
++				if plan.Fragments[mathIndex].Type != ast.NodeMathBlock || plan.FocusBlockID != plan.Fragments[mathIndex].ID {
++					t.Fatal("bad math focus")
++				}
++				owner := 0
++				if texts[0] == "" {
++					owner = 1
++				}
++				if plan.Fragments[owner].ID != originalID || !reflect.DeepEqual(plan.Fragments[owner].KramdownIAL, block.KramdownIAL) {
++					t.Fatal("original paragraph identity misplaced")
++				}
++				for _, fragment := range plan.Fragments {
++					if fragment.ID == originalID {
++						continue
++					}
++					for _, attribute := range fragment.KramdownIAL {
++						if attribute[0] != "id" && attribute[0] != "style" && attribute[0] != "direction" {
++							t.Fatal("copied identity attribute")
++						}
++					}
++				}
++				if snapshot(block) != original || snapshot(plan.Before) != original {
++					t.Fatal("mutation")
++				}
++			})
++		}
++	}
++}
++
++func TestSourceExperiments(t *testing.T) {
++	sources := []string{"x", "x\r\ny", " x", "x ", "x$y", "数学 α", `<x a="b">&'`, "x\ty", `\t{alpha}`, `\traw{alpha}`, "", "\n", "a\nb"}
++	for _, source := range sources {
++		for _, native := range []bool{false, true} {
++			t.Run(fmt.Sprintf("%q/native=%v", source, native), func(t *testing.T) {
++				block := paragraph(source, native, "", "")
++				original := snapshot(block)
++				plan, err := Build(request(block, 0, source))
++				expectedUnsupported := source == "x\r\ny" || source == " x" || source == "x " || source == "\n"
++				if (err != nil) != expectedUnsupported {
++					t.Fatalf("inline-to-block support changed for %q: %v", source, err)
++				}
++				if err != nil {
++					requireKind(t, err, Unsupported)
++					t.Logf("inline-to-block unsupported: %v", err)
++				} else {
++					t.Log("inline-to-block supported")
++					if plan.Source != source {
++						t.Fatal("source changed")
++					}
++					inverse, inverseErr := Build(Request{Block: plan.Fragments[0], Direction: BlockToInline, ExpectedSource: source})
++					if (inverseErr != nil) != (source == "" || source == "a\nb") {
++						t.Fatalf("inverse support changed for %q: %v", source, inverseErr)
++					}
++					if inverseErr != nil {
++						requireKind(t, inverseErr, Unsupported)
++						t.Logf("block-to-inline unsupported: %v", inverseErr)
++					} else if inverse.Source != source {
++						t.Fatal("inverse source changed")
++					} else {
++						t.Log("block-to-inline supported")
++					}
++				}
++				if snapshot(block) != original {
++					t.Fatal("source failure mutated original")
++				}
++			})
++		}
++	}
++}
++
++func TestErrorsAndUniquePath(t *testing.T) {
++	block := paragraph("x", false, "before", "after")
++	block.AppendChild(&ast.Node{Type: ast.NodeTextMark, TextMarkType: "inline-math", TextMarkInlineMathContent: "x"})
++	plan, err := Build(request(block, 3, "x"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if len(plan.Fragments) != 2 || plan.Fragments[0].LastChild.Type != ast.NodeText {
++		t.Fatal("did not select unique path")
++	}
++	cases := []struct {
++		name   string
++		mutate func(*Request)
++		kind   Kind
++	}{
++		{"stale", func(input *Request) { input.ExpectedSource = "other" }, Conflict},
++		{"missing", func(input *Request) { input.TargetPath = []int{9} }, Conflict},
++		{"negative", func(input *Request) { input.TargetPath = []int{-1} }, Invalid},
++		{"nested", func(input *Request) { input.TargetPath = []int{1, 0} }, Conflict},
++		{"empty-id", func(input *Request) { input.NewID = func() string { return "" } }, Invalid},
++		{"bad-id", func(input *Request) { input.NewID = func() string { return "bad" } }, Invalid},
++		{"original-id", func(input *Request) { input.NewID = func() string { return originalID } }, Invalid},
++		{"new-id-collision", func(input *Request) { input.NewID = func() string { return "20261117140000-new0001" } }, Invalid},
++		{"missing-id-callback", func(input *Request) { input.NewID = nil }, Invalid},
++		{"identity-IAL", func(input *Request) { input.Block.SetIALAttr("bookmark", "keep") }, Unsupported},
++		{"unknown-IAL", func(input *Request) { input.Block.SetIALAttr("custom-x", "keep") }, Unsupported},
++		{"styled-target", func(input *Request) { input.Block.FirstChild.Next.SetIALAttr("style", "color:red") }, Unsupported},
++		{"compound-target", func(input *Request) { input.Block.FirstChild.Next.TextMarkType = "strong inline-math" }, Unsupported},
++	}
++	for _, testcase := range cases {
++		t.Run(testcase.name, func(t *testing.T) {
++			input := request(paragraph("x", false, "before", "after"), 1, "x")
++			testcase.mutate(&input)
++			original := snapshot(input.Block)
++			_, err := Build(input)
++			requireKind(t, err, testcase.kind)
++			if snapshot(input.Block) != original {
++				t.Fatal("failure mutated input")
++			}
++		})
++	}
++}
++
++func TestNoAlias(t *testing.T) {
++	block := paragraph("x", false, "before", "after")
++	block.FirstChild.Tokens = []byte("before")
++	block.FirstChild.Properties = map[string]string{"custom": "value"}
++	block.FirstChild.CodeBlockInfo = []byte("info")
++	block.FirstChild.LinkRefLabel = []byte("label")
++	block.FirstChild.TableAligns = []int{1, 2}
++	block.FirstChild.ListData = &ast.ListData{Marker: []byte("-")}
++	original := snapshot(block)
++	copied, err := clone(block)
++	if err != nil {
++		t.Fatal(err)
++	}
++	copied.FirstChild.Tokens[0] = 'X'
++	copied.FirstChild.Properties["custom"] = "changed"
++	copied.FirstChild.CodeBlockInfo[0] = 'X'
++	copied.FirstChild.LinkRefLabel[0] = 'X'
++	copied.FirstChild.TableAligns[0] = 9
++	copied.FirstChild.ListData.Marker[0] = 'X'
++	copied.KramdownIAL[0][1] = "changed"
++	if snapshot(block) != original {
++		t.Fatal("clone aliased mutable fields")
++	}
++	planBlock := paragraph("x", false, "before", "after")
++	plan, err := Build(request(planBlock, 1, "x"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	before := snapshot(plan.Before)
++	original = snapshot(planBlock)
++	plan.Fragments[0].FirstChild.Tokens[0] = 'X'
++	plan.Fragments[0].KramdownIAL[0][1] = "changed"
++	if snapshot(plan.Before) != before || snapshot(planBlock) != original {
++		t.Fatal("plan aliases input or before")
++	}
++}
++
++func TestWrappedAndRichRefusal(t *testing.T) {
++	for _, kind := range []ast.NodeType{ast.NodeStrong, ast.NodeEmphasis, ast.NodeLink} {
++		block := paragraph("x", false, "", "")
++		target := block.FirstChild
++		target.Unlink()
++		wrapper := &ast.Node{Type: kind}
++		wrapper.AppendChild(target)
++		block.AppendChild(wrapper)
++		_, err := Build(Request{Block: block, Direction: InlineToBlock, TargetPath: []int{0, 0}, ExpectedSource: "x"})
++		requireKind(t, err, Unsupported)
++	}
++	block := paragraph("x", false, "", "")
++	block.TableCellRich = &ast.TableCellRich{}
++	_, err := Build(request(block, 0, "x"))
++	requireKind(t, err, Unsupported)
++}
++
++func TestOutsideMarks(t *testing.T) {
++	for _, mark := range []string{"strong", "em", "code", "a"} {
++		block := paragraph("x", false, "", "after")
++		outside := &ast.Node{Type: ast.NodeTextMark, TextMarkType: mark, TextMarkTextContent: "outside &lt;中文&gt;"}
++		if mark == "a" {
++			outside.TextMarkAHref = "https://example.org/?a=1&amp;b=2"
++			outside.TextMarkATitle = "title"
++		}
++		block.PrependChild(outside)
++		original := snapshot(block)
++		plan, err := Build(request(block, 1, "x"))
++		if err != nil {
++			t.Fatalf("%s: %v", mark, err)
++		}
++		if snapshot(plan.Fragments[0].FirstChild) != snapshot(outside) || snapshot(block) != original {
++			t.Fatal("outside mark changed")
++		}
++	}
++}
+diff --git a/kernel/mathconversion/preservation_test.go b/kernel/mathconversion/preservation_test.go
+new file mode 100644
+index 0000000..602f019
+--- /dev/null
++++ b/kernel/mathconversion/preservation_test.go
+@@ -0,0 +1,143 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"fmt"
++	"reflect"
++	"testing"
++
++	"github.com/88250/lute/ast"
++)
++
++func TestIndependentBlockSources(t *testing.T) {
++	for _, source := range []string{"x", "x\r\ny", " x", "x ", "x$y", "数学 α", `<x a="b">&'`, "x\ty", `\t{alpha}`, `\traw{alpha}`, "", "\n", "a\nb"} {
++		t.Run(fmt.Sprintf("%q", source), func(t *testing.T) {
++			block := &ast.Node{Type: ast.NodeMathBlock, ID: originalID}
++			block.SetIALAttr("id", originalID)
++			appendMathContent(block, source)
++			original := snapshot(block)
++			plan, err := Build(Request{Block: block, Direction: BlockToInline, ExpectedSource: source})
++			expectedUnsupported := source == "x\r\ny" || source == "" || source == "\n" || source == "a\nb"
++			if (err != nil) != expectedUnsupported {
++				t.Fatalf("block-to-inline support changed for %q: %v", source, err)
++			}
++			if err != nil {
++				requireKind(t, err, Unsupported)
++				t.Logf("unsupported: %v", err)
++			} else if plan.Source != source {
++				t.Fatal("source changed")
++			} else {
++				t.Log("supported")
++			}
++			if snapshot(block) != original {
++				t.Fatal("input changed")
++			}
++		})
++	}
++}
++
++func TestOutsideNativeMarks(t *testing.T) {
++	for _, kind := range []ast.NodeType{ast.NodeStrong, ast.NodeEmphasis, ast.NodeCodeSpan, ast.NodeLink} {
++		t.Run(kind.String(), func(t *testing.T) {
++			block := paragraph("x", false, "", "after")
++			outside := &ast.Node{Type: kind}
++			switch kind {
++			case ast.NodeStrong:
++				outside.AppendChild(&ast.Node{Type: ast.NodeStrongA6kOpenMarker, Tokens: []byte("**")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeText, Tokens: []byte("outside")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeStrongA6kCloseMarker, Tokens: []byte("**")})
++			case ast.NodeEmphasis:
++				outside.AppendChild(&ast.Node{Type: ast.NodeEmA6kOpenMarker, Tokens: []byte("*")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeText, Tokens: []byte("outside")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeEmA6kCloseMarker, Tokens: []byte("*")})
++			case ast.NodeCodeSpan:
++				outside.CodeMarkerLen = 1
++				outside.AppendChild(&ast.Node{Type: ast.NodeCodeSpanOpenMarker, Tokens: []byte("`")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeCodeSpanContent, Tokens: []byte("outside")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeCodeSpanCloseMarker, Tokens: []byte("`")})
++			case ast.NodeLink:
++				outside.AppendChild(&ast.Node{Type: ast.NodeOpenBracket, Tokens: []byte("[")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeLinkText, Tokens: []byte("outside")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeCloseBracket, Tokens: []byte("]")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeOpenParen, Tokens: []byte("(")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeLinkDest, Tokens: []byte("https://example.org/")})
++				outside.AppendChild(&ast.Node{Type: ast.NodeCloseParen, Tokens: []byte(")")})
++			}
++			block.PrependChild(outside)
++			original := snapshot(block)
++			plan, err := Build(request(block, 1, "x"))
++			if err != nil {
++				t.Fatal(err)
++			}
++			if snapshot(plan.Fragments[0].FirstChild) != snapshot(outside) || snapshot(block) != original {
++				t.Fatal("native mark changed")
++			}
++		})
++	}
++}
++
++func TestBoundaryTextIsNotStripped(t *testing.T) {
++	for _, before := range []string{"\u200b", "\u200b\u200b", "\ufeff", "\ufffe", " ", "\n", "\t", "\r\n"} {
++		for _, after := range []string{"\u200b", "\u200b\u200b", "tail"} {
++			t.Run(fmt.Sprintf("%q-%q", before, after), func(t *testing.T) {
++				block := paragraph("x", false, "", after)
++				block.PrependChild(&ast.Node{Type: ast.NodeTextMark, TextMarkType: "code", TextMarkTextContent: "outside"})
++				block.PrependChild(&ast.Node{Type: ast.NodeText, Tokens: []byte(before)})
++				original := snapshot(block)
++				plan, err := Build(request(block, 2, "x"))
++				if err != nil {
++					requireKind(t, err, Unsupported)
++					t.Logf("unchanged refusal: %v", err)
++				} else {
++					if string(plan.Fragments[0].FirstChild.Tokens) != before || string(plan.Fragments[2].FirstChild.Tokens) != after {
++						t.Fatal("user boundary text was stripped")
++					}
++				}
++				if snapshot(block) != original {
++					t.Fatal("input changed")
++				}
++			})
++		}
++	}
++}
++
++func TestAdditionalMetadataAndIAL(t *testing.T) {
++	cases := []struct {
++		name   string
++		change func(*ast.Node)
++	}{
++		{"direction-loss", func(block *ast.Node) { block.SetIALAttr("direction", "rtl") }},
++		{"database-identity", func(block *ast.Node) { block.SetIALAttr("custom-avs", "database") }},
++		{"unknown-block-property", func(block *ast.Node) { block.Properties = map[string]string{"identity": "keep"} }},
++		{"unknown-inline-property", func(block *ast.Node) { block.FirstChild.Properties = map[string]string{"identity": "keep"} }},
++	}
++	for _, testcase := range cases {
++		t.Run(testcase.name, func(t *testing.T) {
++			block := paragraph("x", false, "before", "after")
++			testcase.change(block)
++			original := snapshot(block)
++			_, err := Build(request(block, 1, "x"))
++			requireKind(t, err, Unsupported)
++			if snapshot(block) != original {
++				t.Fatal("metadata failure changed input")
++			}
++		})
++	}
++	block := paragraph("x", false, "", "")
++	block.SetIALAttr("custom-avs", "database")
++	plan, err := Build(request(block, 0, "x"))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if !reflect.DeepEqual(plan.Fragments[0].KramdownIAL, block.KramdownIAL) {
++		t.Fatal("sole identity IAL lost")
++	}
++	input := request(paragraph("x", false, "before", "after"), 1, "x")
++	input.Block.FirstChild.ID = "20261117140000-child00"
++	input.NewID = func() string { return input.Block.FirstChild.ID }
++	_, err = Build(input)
++	requireKind(t, err, Unsupported)
++}
+diff --git a/kernel/mathconversion/reload_test.go b/kernel/mathconversion/reload_test.go
+new file mode 100644
+index 0000000..243769e
+--- /dev/null
++++ b/kernel/mathconversion/reload_test.go
+@@ -0,0 +1,42 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"testing"
++
++	"github.com/88250/lute/ast"
++)
++
++func TestPlannerAcceptsPersistedNativeMath(t *testing.T) {
++	for _, native := range []bool{false, true} {
++		original := paragraph("x", native, "before", "after")
++		restored, err := saveReload([]*ast.Node{original})
++		if err != nil {
++			t.Fatal(err)
++		}
++		persisted := restored.Root.FirstChild
++		before := snapshot(persisted)
++		plan, err := Build(request(persisted, 1, "x"))
++		if err != nil {
++			t.Fatal(err)
++		}
++		if snapshot(persisted) != before {
++			t.Fatal("persisted input mutated")
++		}
++		saved, err := saveReload(plan.Fragments)
++		if err != nil {
++			t.Fatal(err)
++		}
++		for math := saved.Root.FirstChild; math != nil; math = math.Next {
++			if math.Type != ast.NodeMathBlock {
++				continue
++			}
++			if _, err = Build(Request{Block: math, Direction: BlockToInline, ExpectedSource: "x"}); err != nil {
++				t.Fatal(err)
++			}
++		}
++	}
++}
+diff --git a/kernel/mathconversion/roundtrip.go b/kernel/mathconversion/roundtrip.go
+new file mode 100644
+index 0000000..31ca8e4
+--- /dev/null
++++ b/kernel/mathconversion/roundtrip.go
+@@ -0,0 +1,297 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package mathconversion
++
++import (
++	"bytes"
++	"encoding/json"
++	"html"
++	"reflect"
++	"slices"
++	"strings"
++
++	"github.com/88250/lute"
++	"github.com/88250/lute/ast"
++	"github.com/88250/lute/parse"
++	"github.com/88250/lute/render"
++	"github.com/siyuan-note/dataparser"
++)
++
++func engine() *lute.Lute {
++	result := lute.New()
++	result.ParseOptions.KeepEscaped = true
++	result.SetTextMark(true)
++	result.SetProtyleWYSIWYG(true)
++	result.SetBlockRef(true)
++	result.SetFileAnnotationRef(true)
++	result.SetKramdownIAL(true)
++	result.SetTag(true)
++	result.SetSuperBlock(true)
++	result.SetCustomBlock(true)
++	result.SetImgPathAllowSpace(true)
++	result.SetGitConflict(true)
++	result.SetInlineAsterisk(true)
++	result.SetInlineUnderscore(true)
++	result.SetSup(true)
++	result.SetSub(true)
++	result.SetInlineMath(true)
++	result.SetGFMStrikethrough(true)
++	result.SetFullWidthStrikethrough(true)
++	result.SetMark(true)
++	result.SetInlineMathAllowDigitAfterOpenMarker(true)
++	result.SetGFMStrikethrough1(false)
++	result.SetFootnotes(false)
++	result.SetToC(false)
++	result.SetIndentCodeBlock(false)
++	result.SetParagraphBeginningSpace(true)
++	result.SetAutoSpace(false)
++	result.SetHeadingID(false)
++	result.SetSetext(false)
++	result.SetYamlFrontMatter(false)
++	result.SetLinkRef(false)
++	result.SetCodeSyntaxHighlight(false)
++	result.SetSanitize(true)
++	result.SetUnorderedListMarker("-")
++	result.SetCallout(true)
++	result.SetTabs(true)
++	result.SetDataTask(true)
++	result.SetArbitraryTaskListItemMarker(true)
++	result.SetExportNormalizeTaskListMarker(false)
++	result.SetEnsureListItemParagraph(true)
++	return result
++}
++
++func document(blocks []*ast.Node) (*parse.Tree, error) {
++	root := &ast.Node{Type: ast.NodeDocument, ID: "20000101000000-docroot", Spec: "1"}
++	root.SetIALAttr("id", root.ID)
++	root.SetIALAttr("type", "doc")
++	for _, block := range blocks {
++		copied, err := clone(block)
++		if err != nil {
++			return nil, err
++		}
++		root.AppendChild(copied)
++	}
++	return &parse.Tree{Root: root}, nil
++}
++
++func saveReload(blocks []*ast.Node) (*parse.Tree, error) {
++	processor := engine()
++	tree, err := document(blocks)
++	if err != nil {
++		return nil, err
++	}
++	data := render.NewJSONRenderer(tree, processor.RenderOptions, processor.ParseOptions).Render()
++	restored, _, err := dataparser.ParseJSON(data, processor.ParseOptions)
++	if err != nil {
++		return nil, fail(Unsupported, "JSON persistence cannot reload AST")
++	}
++	return restored, nil
++}
++
++type event struct {
++	Text       string
++	Marks      string
++	Attributes string
++	Formula    bool
++}
++
++func signature(block *ast.Node) ([]event, error) {
++	var events []event
++	emit := func(value event) {
++		if len(events) > 0 && value.Marks == "" && !value.Formula && !events[len(events)-1].Formula && events[len(events)-1].Marks == value.Marks && events[len(events)-1].Attributes == value.Attributes {
++			events[len(events)-1].Text += value.Text
++		} else {
++			events = append(events, value)
++		}
++	}
++	var visit func(*ast.Node, []string, map[string]string) error
++	visit = func(node *ast.Node, marks []string, inherited map[string]string) error {
++		attributeMap := map[string]string{}
++		for key, value := range inherited {
++			attributeMap[key] = value
++		}
++		for _, attribute := range node.KramdownIAL {
++			if len(attribute) != 2 {
++				return fail(Unsupported, "malformed inline IAL")
++			}
++			attributeMap[attribute[0]] = attribute[1]
++		}
++		attributeData, _ := json.Marshal(attributeMap)
++		attributes := string(attributeData)
++		if node.Type == ast.NodeInlineMath || node.Type == ast.NodeMathBlock || node.Type == ast.NodeTextMark && strings.Contains(node.TextMarkType, "inline-math") {
++			source, err := mathSource(node)
++			if err != nil {
++				return err
++			}
++			emit(event{Text: source, Formula: true, Attributes: attributes})
++			return nil
++		}
++		switch node.Type {
++		case ast.NodeParagraph:
++		case ast.NodeText, ast.NodeLinkText, ast.NodeCodeSpanContent:
++			normalized := slices.Clone(marks)
++			slices.Sort(normalized)
++			emit(event{Text: string(node.Tokens), Marks: strings.Join(normalized, " "), Attributes: attributes})
++			return nil
++		case ast.NodeTextMark:
++			normalized := strings.Fields(node.TextMarkType)
++			slices.Sort(normalized)
++			if slices.Contains(normalized, "a") {
++				normalized = append(normalized, "href="+html.UnescapeString(node.TextMarkAHref), "title="+html.UnescapeString(node.TextMarkATitle))
++			}
++			emit(event{Text: html.UnescapeString(node.TextMarkTextContent), Marks: strings.Join(normalized, " "), Attributes: attributes})
++			return nil
++		case ast.NodeStrong:
++			marks = append(slices.Clone(marks), "strong")
++		case ast.NodeEmphasis:
++			marks = append(slices.Clone(marks), "em")
++		case ast.NodeCodeSpan:
++			marks = append(slices.Clone(marks), "code")
++		case ast.NodeLink:
++			marks = append(slices.Clone(marks), "a")
++			for child := node.FirstChild; child != nil; child = child.Next {
++				if child.Type == ast.NodeLinkDest {
++					marks = append(marks, "href="+string(child.Tokens))
++				}
++				if child.Type == ast.NodeLinkTitle {
++					marks = append(marks, "title="+string(child.Tokens))
++				}
++			}
++			if node.ChildByType(ast.NodeLinkTitle) == nil {
++				marks = append(marks, "title=")
++			}
++		case ast.NodeLinkDest, ast.NodeLinkTitle, ast.NodeOpenBracket, ast.NodeCloseBracket, ast.NodeOpenParen, ast.NodeCloseParen:
++			return nil
++		default:
++			if strings.HasSuffix(node.Type.String(), "Marker") {
++				return nil
++			}
++			return fail(Unsupported, "unproven inline round-trip node: "+node.Type.String())
++		}
++		for child := node.FirstChild; child != nil; child = child.Next {
++			descendantAttributes := attributeMap
++			if node.Type == ast.NodeParagraph {
++				descendantAttributes = nil
++			}
++			if err := visit(child, marks, descendantAttributes); err != nil {
++				return err
++			}
++		}
++		return nil
++	}
++	if err := visit(block, nil, nil); err != nil {
++		return nil, err
++	}
++	return events, nil
++}
++
++func checkRoundTrips(blocks []*ast.Node) (err error) {
++	defer func() {
++		if recover() != nil {
++			err = fail(Unsupported, "Lute cannot safely round-trip this AST")
++		}
++	}()
++	if err = preflightForest(blocks); err != nil {
++		return err
++	}
++	restored, err := saveReload(blocks)
++	if err != nil {
++		return err
++	}
++	if err = preflightDocument(restored.Root); err != nil {
++		return err
++	}
++	processor := engine()
++	domTree, err := document(childList(restored.Root))
++	if err != nil {
++		return err
++	}
++	dom := processor.Tree2BlockDOM(domTree, processor.RenderOptions, processor.ParseOptions)
++	domRestored := processor.BlockDOM2Tree(dom)
++	if err = preflightDocument(domRestored.Root); err != nil {
++		return err
++	}
++	jsonBlocks, domBlocks := persistentBlocks(restored.Root), persistentBlocks(domRestored.Root)
++	if len(blocks) != len(jsonBlocks) || len(blocks) != len(domBlocks) {
++		return fail(Unsupported, "round-trip changed block count")
++	}
++	for index, block := range blocks {
++		expected, signatureErr := signature(block)
++		if signatureErr != nil {
++			return signatureErr
++		}
++		for roundTripIndex, actual := range []*ast.Node{jsonBlocks[index], domBlocks[index]} {
++			comparison := expected
++			if roundTripIndex == 1 {
++				comparison = renderedBoundaries(expected)
++			}
++			observed, signatureErr := signature(actual)
++			for _, attribute := range block.KramdownIAL {
++				if actual.IALAttr(attribute[0]) != attribute[1] {
++					return fail(Unsupported, "round-trip changed block attribute: "+attribute[0])
++				}
++			}
++			if signatureErr != nil {
++				return signatureErr
++			}
++			if block.ID != actual.ID || block.Type != actual.Type || !reflect.DeepEqual(comparison, observed) {
++
++				return fail(Unsupported, "JSON or BlockDOM round-trip changed source, marks, identity or text")
++			}
++		}
++		jsonTree, cloneErr := document([]*ast.Node{jsonBlocks[index]})
++		if cloneErr != nil {
++			return cloneErr
++		}
++		originalTree, cloneErr := document([]*ast.Node{block})
++		if cloneErr != nil {
++			return cloneErr
++		}
++		originalJSON := render.NewJSONRenderer(originalTree, processor.RenderOptions, processor.ParseOptions).Render()
++		actualJSON := render.NewJSONRenderer(jsonTree, processor.RenderOptions, processor.ParseOptions).Render()
++		if !bytes.Equal(originalJSON, actualJSON) {
++			return fail(Unsupported, "JSON persistence changed metadata")
++		}
++	}
++	return nil
++}
++
++func renderedBoundaries(events []event) (result []event) {
++	emit := func(value event) {
++		if len(result) > 0 && value.Marks == "" && !value.Formula && result[len(result)-1].Marks == "" && !result[len(result)-1].Formula && result[len(result)-1].Attributes == value.Attributes {
++			result[len(result)-1].Text += value.Text
++		} else {
++			result = append(result, value)
++		}
++	}
++	for index, value := range events {
++		boundary := false
++		for _, mark := range strings.Fields(value.Marks) {
++			if mark == "code" || mark == "kbd" || mark == "tag" || mark == "sup" || mark == "sub" {
++				boundary = true
++			}
++		}
++		if boundary {
++			if len(result) == 0 || result[len(result)-1].Marks != "" || !strings.HasSuffix(result[len(result)-1].Text, "\u200b") {
++				emit(event{Text: "\u200b", Attributes: "{}"})
++			}
++		}
++		emit(value)
++		if boundary && (index+1 == len(events) || events[index+1].Marks != "" || !strings.HasPrefix(events[index+1].Text, "\u200b")) {
++			emit(event{Text: "\u200b", Attributes: "{}"})
++		}
++	}
++	return
++}
++
++func persistentBlocks(root *ast.Node) (blocks []*ast.Node) {
++	for child := root.FirstChild; child != nil; child = child.Next {
++		if child.Type != ast.NodeKramdownBlockIAL {
++			blocks = append(blocks, child)
++		}
++	}
++	return
++}

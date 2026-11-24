@@ -1,0 +1,764 @@
+diff --git a/app/src/config/entryVisibility/catalog.test.ts b/app/src/config/entryVisibility/catalog.test.ts
+index 97f02d7..8c2ca16 100644
+--- a/app/src/config/entryVisibility/catalog.test.ts
++++ b/app/src/config/entryVisibility/catalog.test.ts
+@@ -1084,6 +1084,18 @@ test("code block actions follow the code block menu order", () => {
+     ]);
+ });
+ 
++test("inline math conversion submenu keeps a configurable native parent", () => {
++    assert.deepEqual(getEntryCatalogChildren("inline.math").map(item => item.key),
++        ["copy", "cut", "remove", "turnInto"]);
++    const turnInto = getEntryCatalogNode("inline.math.turnInto");
++    assert.equal(turnInto.type, "entry");
++    assert.equal(turnInto.simple, true);
++    assert.equal(turnInto.sortable, false);
++    assert.equal(getEntryParentPath("inline.math.turnInto"), "inline.math");
++    // 插件提供器条目在运行时注册，静态目录只登记原生父条目。
++    assert.equal(getEntryCatalogChildren("inline.math.turnInto"), undefined);
++});
++
+ test("multiple block heading transform follows the regular transform menu", () => {
+     const children = getEntryCatalogChildren("gutter.multi");
+ 
+diff --git a/app/src/config/entryVisibility/catalog.ts b/app/src/config/entryVisibility/catalog.ts
+index 9485d30..e023ac8 100644
+--- a/app/src/config/entryVisibility/catalog.ts
++++ b/app/src/config/entryVisibility/catalog.ts
+@@ -1159,7 +1159,12 @@ export const entryCatalog: IEntryCatalogSection[] = [
+     {
+         key: "inline.math",
+         label: location(lang("editor"), lang("entryInlineMenu"), lang("math")),
+-        children: [node("copy", lang("copy")), node("cut", lang("cut")), node("remove", lang("remove"))],
++        children: [
++            node("copy", lang("copy")),
++            node("cut", lang("cut")),
++            node("remove", lang("remove")),
++            node("turnInto", lang("turnInto"), true, undefined, false),
++        ],
+     },
+ ];
+ 
+diff --git a/app/src/menus/protyle.ts b/app/src/menus/protyle.ts
+index 206fa5d..3b50afb 100644
+--- a/app/src/menus/protyle.ts
++++ b/app/src/menus/protyle.ts
+@@ -36,6 +36,7 @@ import {
+     updateTableTitle
+ } from "../protyle/util/table";
+ import {mathRender} from "../protyle/render/mathRender";
++import {createMathConversionMenu} from "../protyle/render/mathConversionMenuRegistry";
+ import {transaction, updateTransaction} from "../protyle/wysiwyg/transaction";
+ import {openMenu} from "./commonMenuItem";
+ import {fetchPost, fetchSyncPost} from "../util/fetch";
+@@ -2205,6 +2206,15 @@ export const inlineMathMenu = (protyle: IProtyle, element: Element) => {
+             }
+         }).element);
+     }
++    const mathConversionMenu = createMathConversionMenu({
++        element: element as HTMLElement,
++        blockElement: nodeElement as HTMLElement,
++        protyle,
++        surface: "inline-context",
++    });
++    if (mathConversionMenu) {
++        window.siyuan.menus.menu.append(new MenuItem(mathConversionMenu).element);
++    }
+     const rect = element.getBoundingClientRect();
+     window.siyuan.menus.menu.popup({
+         x: rect.left,
+diff --git a/app/src/plugin/index.ts b/app/src/plugin/index.ts
+index 8139682..12a26fd 100644
+--- a/app/src/plugin/index.ts
++++ b/app/src/plugin/index.ts
+@@ -33,6 +33,11 @@ import {
+ import type {TCustomBlockRender} from "./customBlockRender";
+ import type {IMathRenderer} from "../protyle/render/mathRendererRegistry";
+ import {registerMathRenderer as registerMathRendererRegistry, unregisterMathRenderer as unregisterMathRendererRegistry} from "../protyle/render/mathRendererRegistry";
++import type {IMathConversionMenuProvider} from "../protyle/render/mathConversionMenuRegistry";
++import {
++    registerMathConversionMenuProvider as registerMathConversionMenuProviderRegistry,
++    unregisterMathConversionMenuProvider as unregisterMathConversionMenuProviderRegistry,
++} from "../protyle/render/mathConversionMenuRegistry";
+ import {registerPluginCommand} from "./commandAdapter";
+ import {updatePluginKeymap} from "./keymap";
+ import {
+@@ -189,6 +194,25 @@ export class Plugin {
+         unregisterMathRendererRegistry(`${this.name}/${id}`);
+     }
+ 
++    /**
++     * 注册数学公式转换菜单提供器：条目追加到公式原生“转换为”子菜单。
++     * @param id 提供器标识（按插件名自动命名空间化，避免插件间冲突）
++     * @param provider 提供器实现
++     * @returns 注销函数
++     */
++    public registerMathConversionMenuProvider(id: string, provider: IMathConversionMenuProvider) {
++        const namespacedID = `${encodeURIComponent(this.name)}/${encodeURIComponent(id)}`;
++        return registerMathConversionMenuProviderRegistry(namespacedID, provider);
++    }
++
++    /**
++     * 注销数学公式转换菜单提供器
++     * @param id 注册时使用的标识
++     */
++    public unregisterMathConversionMenuProvider(id: string) {
++        unregisterMathConversionMenuProviderRegistry(`${encodeURIComponent(this.name)}/${encodeURIComponent(id)}`);
++    }
++
+     /**
+      * 插件实例就绪后存储数据发生变化时运行，思源会等待返回的 Promise；
+      * 未覆盖该方法时则重载整个插件。
+diff --git a/app/src/protyle/gutter/index.ts b/app/src/protyle/gutter/index.ts
+index 5395f4d..4fd65fc 100644
+--- a/app/src/protyle/gutter/index.ts
++++ b/app/src/protyle/gutter/index.ts
+@@ -79,6 +79,7 @@ import {countBlockWord} from "../../layout/status";
+ import {Constants} from "../../constants";
+ import {createSuperBlockColumn, insertSuperBlockChild} from "../../block/insertSuperBlock";
+ import {mathRender} from "../render/mathRender";
++import {appendMathConversionMenuItems, getMathConversionMenuElement} from "../render/mathConversionMenuRegistry";
+ import {duplicateBlock} from "../wysiwyg/commonHotkey";
+ import {isEncryptedBox, movePathTo, useShell} from "../../util/pathName";
+ import {hintMoveBlock} from "../hint/extend";
+@@ -2028,6 +2029,14 @@ export class Gutter {
+             turnIntoSubmenu.push(...this.calloutTypeMenus(protyle, [nodeElement as HTMLElement]));
+         }
+         turnIntoSubmenu.push(...this.emptyParagraphTurnIntoMenu(protyle, [nodeElement]));
++        if (allowStructuralMutation && !hasMultipleBlockSelection(Array.from(selectsElement))) {
++            appendMathConversionMenuItems(turnIntoSubmenu, {
++                element: getMathConversionMenuElement(nodeElement as HTMLElement),
++                blockElement: nodeElement as HTMLElement,
++                protyle,
++                surface: "block-convert",
++            });
++        }
+         if (turnIntoSubmenu.length > 0 && allowStructuralMutation) {
+             window.siyuan.menus.menu.append(new MenuItem({
+                 id: "turnInto",
+diff --git a/app/src/protyle/render/mathConversionMenuRegistry.test.ts b/app/src/protyle/render/mathConversionMenuRegistry.test.ts
+new file mode 100644
+index 0000000..1b8ed2e
+--- /dev/null
++++ b/app/src/protyle/render/mathConversionMenuRegistry.test.ts
+@@ -0,0 +1,426 @@
++import * as assert from "node:assert/strict";
++import {readFileSync} from "node:fs";
++import {resolve} from "node:path";
++import test from "node:test";
++import type {IMathConversionMenuContext, IMathConversionMenuProvider} from "./mathConversionMenuRegistry";
++import {
++    appendMathConversionMenuItems,
++    createMathConversionMenu,
++    getMathConversionMenuElement,
++    getMathConversionMenuItems,
++    isMathConversionMenuReadOnly,
++    registerMathConversionMenuProvider,
++    unregisterMathConversionMenuProvider,
++} from "./mathConversionMenuRegistry";
++
++const mockWindow = (readonly = false) => {
++    const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
++    Object.defineProperty(globalThis, "window", {
++        configurable: true,
++        value: {siyuan: {config: {readonly}, languages: {turnInto: "Turn into"}}},
++    });
++    return () => {
++        if (previous) {
++            Object.defineProperty(globalThis, "window", previous);
++        } else {
++            Reflect.deleteProperty(globalThis, "window");
++        }
++    };
++};
++
++const target = (overrides: Partial<{
++    element: HTMLElement,
++    blockElement: HTMLElement,
++    protyle: IProtyle,
++    surface: "inline-context" | "block-convert",
++}> = {}) => ({
++    element: {} as HTMLElement,
++    blockElement: {} as HTMLElement,
++    protyle: {disabled: false} as IProtyle,
++    surface: "inline-context" as const,
++    ...overrides,
++});
++
++const mathContext = (overrides: Partial<IMathConversionMenuContext> = {}): IMathConversionMenuContext => ({
++    ...target(),
++    isReadOnly: false,
++    ...overrides,
++});
++
++const fakeBlock = (type: string, inlineMath: HTMLElement[] = [], mathChild?: HTMLElement) =>
++    ({
++        getAttribute: (name: string) => name === "data-type" ? type : null,
++        querySelector: () => mathChild ?? null,
++        querySelectorAll: () => inlineMath,
++    }) as unknown as HTMLElement;
++
++test("no provider keeps the native math menu unchanged", () => {
++    const restore = mockWindow(false);
++    try {
++        assert.deepEqual(getMathConversionMenuItems(mathContext()), []);
++        assert.equal(createMathConversionMenu(target()), undefined);
++        assert.equal(appendMathConversionMenuItems([{id: "copy", label: "Copy"}], target()), false);
++    } finally {
++        restore();
++    }
++});
++
++test("provider receives the menu context and entries get namespaced ids", () => {
++    const seen: IMathConversionMenuContext[] = [];
++    const context = mathContext({surface: "block-convert", isReadOnly: true});
++    registerMathConversionMenuProvider("typst/formula", {
++        items: (current) => {
++            seen.push(current);
++            return [{
++                id: "block", label: "Block", type: "submenu",
++                submenu: [{id: "document", label: "Document"}],
++            }];
++        },
++    });
++    try {
++        const items = getMathConversionMenuItems(context);
++        assert.equal(seen.length, 1);
++        assert.equal(seen[0].surface, "block-convert");
++        assert.equal(seen[0].isReadOnly, true);
++        assert.equal(seen[0].element, context.element);
++        assert.equal(seen[0].blockElement, context.blockElement);
++        assert.deepEqual(items.map(item => item.id), ["typst%2Fformula:block"]);
++        assert.deepEqual(items[0].submenu.map(item => item.id), ["typst%2Fformula:block:document"]);
++    } finally {
++        unregisterMathConversionMenuProvider("typst/formula");
++    }
++});
++
++test("duplicate ids are removed per provider and stay distinct across providers", () => {
++    registerMathConversionMenuProvider("one", {
++        items: () => [{id: "same", label: "a"}, {id: "same", label: "b"},
++            {type: "separator"}, {type: "separator"}, null as unknown as IMenu],
++    });
++    registerMathConversionMenuProvider("two", {
++        items: () => [{id: "same", label: "c"}],
++    });
++    try {
++        const items = getMathConversionMenuItems(mathContext());
++        assert.deepEqual(items.map(item => item.id),
++            ["one:same", "one:separator_2", "one:separator_3", "two:same"]);
++        assert.equal(new Set(items.map(item => item.id)).size, items.length);
++    } finally {
++        unregisterMathConversionMenuProvider("one");
++        unregisterMathConversionMenuProvider("two");
++    }
++});
++
++test("provider items within the recursive budget survive and invalid providers are isolated", () => {
++    const warnings: unknown[] = [];
++    const originalWarn = console.warn;
++    console.warn = (...args: unknown[]) => {
++        warnings.push(args);
++    };
++    registerMathConversionMenuProvider("many", {
++        items: () => Array.from({length: 40}, (_, index) => ({id: `item${index}`, label: `${index}`})),
++    });
++    registerMathConversionMenuProvider("throws", {
++        items: () => {
++            throw new Error("boom");
++        },
++    });
++    registerMathConversionMenuProvider("invalid", {
++        items: () => ({}) as unknown as IMenu[],
++    });
++    try {
++        const items = getMathConversionMenuItems(mathContext());
++        assert.equal(items.length, 40);
++        assert.equal(items[0].id, "many:item0");
++        assert.equal(warnings.length, 2);
++    } finally {
++        console.warn = originalWarn;
++        unregisterMathConversionMenuProvider("many");
++        unregisterMathConversionMenuProvider("throws");
++        unregisterMathConversionMenuProvider("invalid");
++    }
++});
++
++test("re-registering replaces a provider in place and unregister removes it", () => {
++    registerMathConversionMenuProvider("a", {items: () => [{id: "old", label: "Old"}]});
++    registerMathConversionMenuProvider("b", {items: () => [{id: "b", label: "B"}]});
++    registerMathConversionMenuProvider("a", {items: () => [{id: "new", label: "New"}]});
++    try {
++        assert.deepEqual(getMathConversionMenuItems(mathContext()).map(item => item.id), ["a:new", "b:b"]);
++        unregisterMathConversionMenuProvider("a");
++        assert.deepEqual(getMathConversionMenuItems(mathContext()).map(item => item.id), ["b:b"]);
++    } finally {
++        unregisterMathConversionMenuProvider("a");
++        unregisterMathConversionMenuProvider("b");
++    }
++    assert.deepEqual(getMathConversionMenuItems(mathContext()), []);
++});
++
++test("readonly editor and workspace do not pass through conversion entries", () => {
++    const restoreWritable = mockWindow(false);
++    assert.equal(isMathConversionMenuReadOnly({disabled: false} as IProtyle), false);
++    assert.equal(isMathConversionMenuReadOnly({disabled: true} as IProtyle), true);
++    restoreWritable();
++    const restoreReadonly = mockWindow(true);
++    let called = false;
++    registerMathConversionMenuProvider("guard", {
++        items: () => {
++            called = true;
++            return [{id: "x", label: "X"}];
++        },
++    });
++    try {
++        assert.equal(isMathConversionMenuReadOnly({disabled: false} as IProtyle), true);
++        assert.equal(createMathConversionMenu(target()), undefined);
++        assert.equal(appendMathConversionMenuItems([], target()), false);
++        assert.equal(called, false);
++    } finally {
++        unregisterMathConversionMenuProvider("guard");
++        restoreReadonly();
++    }
++});
++
++test("provider entries are appended to the native turnInto submenu without a duplicate parent", () => {
++    const restore = mockWindow(false);
++    registerMathConversionMenuProvider("typst", {
++        items: () => [{id: "block", label: "Math block", click: () => undefined}],
++    });
++    try {
++        const menu = createMathConversionMenu(target());
++        assert.equal(menu.id, "turnInto");
++        assert.equal(menu.label, "Turn into");
++        assert.equal(menu.type, "submenu");
++        assert.deepEqual(menu.submenu.map(item => item.id), ["typst:block"]);
++        const turnIntoSubmenu: IMenu[] = [{id: "list", label: "List"}];
++        assert.equal(appendMathConversionMenuItems(turnIntoSubmenu, target({surface: "block-convert"})), true);
++        assert.deepEqual(turnIntoSubmenu.map(item => item.id), ["list", "typst:block"]);
++    } finally {
++        unregisterMathConversionMenuProvider("typst");
++        restore();
++    }
++});
++
++test("block conversion resolves the math element and falls back to the block", () => {
++    const mathChild = {id: "math"} as unknown as HTMLElement;
++    const mathBlock = fakeBlock("NodeMathBlock", [], mathChild);
++    assert.equal(getMathConversionMenuElement(mathBlock), mathChild);
++    const bareMathBlock = fakeBlock("NodeMathBlock");
++    assert.equal(getMathConversionMenuElement(bareMathBlock), bareMathBlock);
++    const inline = [{id: "inline"} as unknown as HTMLElement];
++    const paragraph = fakeBlock("NodeParagraph", inline);
++    assert.equal(getMathConversionMenuElement(paragraph), inline[0]);
++    const multiple = fakeBlock("NodeParagraph", [inline[0], {id: "second"} as unknown as HTMLElement]);
++    assert.equal(getMathConversionMenuElement(multiple), multiple);
++});
++
++test("math conversion menu is wired to writable inline and single-block menus", () => {
++    const appRoot = process.cwd();
++    const gutter = readFileSync(resolve(appRoot, "src/protyle/gutter/index.ts"), "utf8");
++    const multiple = gutter.slice(gutter.indexOf("public renderMultipleMenu("), gutter.indexOf("public renderMenu("));
++    const single = gutter.slice(gutter.indexOf("public renderMenu("));
++    assert.match(single, /if \(allowStructuralMutation && !hasMultipleBlockSelection\(Array\.from\(selectsElement\)\)\) \{\r?\n\s+appendMathConversionMenuItems\(turnIntoSubmenu, \{/);
++    assert.match(single, /surface: "block-convert"/);
++    assert.doesNotMatch(multiple, /appendMathConversionMenuItems/);
++    const protyle = readFileSync(resolve(appRoot, "src/menus/protyle.ts"), "utf8");
++    const inline = protyle.slice(protyle.indexOf("export const inlineMathMenu"),
++        protyle.indexOf("const genImageWidthMenu"));
++    assert.match(inline, /createMathConversionMenu\(\{/);
++    assert.match(inline, /surface: "inline-context"/);
++    assert.doesNotMatch(inline, /data-content/);
++    const registry = readFileSync(resolve(appRoot, "src/protyle/render/mathConversionMenuRegistry.ts"), "utf8");
++    assert.match(registry, /label: window\.siyuan\.languages\.turnInto/);
++    assert.doesNotMatch(registry, /data-content/);
++});
++
++test("plugin provider registration is namespaced by plugin name", () => {
++    const source = readFileSync(resolve(process.cwd(), "src/plugin/index.ts"), "utf8");
++    const start = source.indexOf("public registerMathConversionMenuProvider");
++    const end = source.indexOf("public unregisterMathConversionMenuProvider", start);
++    assert.notEqual(start, -1);
++    assert.notEqual(end, -1);
++    const body = source.slice(start, end);
++    assert.match(body, /const namespacedID = `\$\{encodeURIComponent\(this\.name\)}\/\$\{encodeURIComponent\(id\)\}`;/);
++    assert.match(body, /return registerMathConversionMenuProviderRegistry\(namespacedID, provider\);/);
++    assert.match(source.slice(end, end + 240), /`\$\{encodeURIComponent\(this\.name\)}\/\$\{encodeURIComponent\(id\)\}`/);
++});
++
++const withProviders = (entries: Array<[string, IMathConversionMenuProvider]>, run: () => void) => {
++    const originalWarn = console.warn;
++    console.warn = () => undefined;
++    entries.forEach(([id, provider]) => registerMathConversionMenuProvider(id, provider));
++    try {
++        run();
++    } finally {
++        entries.forEach(([id]) => unregisterMathConversionMenuProvider(id));
++        console.warn = originalWarn;
++    }
++};
++
++const assertIsolated = (items: () => IMenu[]) => withProviders([
++    ["bad", {items}], ["good", {items: () => [{id: "ok"}]}],
++], () => assert.deepEqual(getMathConversionMenuItems(mathContext()).map(item => item.id), ["good:ok"]));
++
++test("cyclic submenu rejects its provider and continues", () => {
++    const cyclic: IMenu = {id: "x"};
++    cyclic.submenu = [cyclic];
++    assertIsolated(() => [cyclic]);
++});
++
++test("throwing own getters reject their provider and continue", () => {
++    for (const field of ["id", "label", "submenu", "click"]) {
++        const item: IMenu = {id: "x"};
++        Object.defineProperty(item, field, {enumerable: true, get: () => {throw Error("boom");}});
++        assertIsolated(() => [item]);
++    }
++});
++
++test("stale cleanup cannot remove a replacement provider", () => {
++    const oldCleanup = registerMathConversionMenuProvider("same", {items: () => [{id: "old"}]});
++    const newCleanup = registerMathConversionMenuProvider("same", {items: () => [{id: "new"}]});
++    try {
++        assert.equal(typeof oldCleanup, "function");
++        (oldCleanup as unknown as () => void)();
++        assert.deepEqual(getMathConversionMenuItems(mathContext()).map(item => item.id), ["same:new"]);
++        (newCleanup as unknown as () => void)();
++        assert.deepEqual(getMathConversionMenuItems(mathContext()), []);
++    } finally {
++        unregisterMathConversionMenuProvider("same");
++    }
++});
++
++test("provider and nested item path segments cannot collide", () => withProviders([
++    ["typst/a", {items: () => [{id: "b:c"}]}],
++    ["typst/a:b", {items: () => [{id: "c"}]}],
++    ["tree", {items: () => [{id: "a:b"}, {id: "a", submenu: [{id: "b"}]}]}],
++    ["percent%/\"", {items: () => [{id: ":%/\""}]}],
++], () => {
++    const items = getMathConversionMenuItems(mathContext());
++    const ids = [...items.map(item => item.id), items[3].submenu[0].id];
++    assert.equal(new Set(ids).size, ids.length);
++    assert.equal(items[0].id, "typst%2Fa:b%3Ac");
++    assert.equal(items[1].id, "typst%2Fa%3Ab:c");
++}));
++
++test("depth and recursive node budgets reject entire providers", () => {
++    let deep: IMenu = {id: "leaf"};
++    for (let depth = 0; depth < 8; depth++) deep = {id: `depth${depth}`, submenu: [deep]};
++    assertIsolated(() => [deep]);
++    assertIsolated(() => [{id: "root", submenu: Array.from({length: 64}, (_, index) => ({id: `${index}`}))}]);
++    assertIsolated(() => Array.from({length: 65}, (_, index) => ({id: `${index}`})));
++});
++
++test("global recursive budget rejects overflowing providers but permits later small providers", () => withProviders([
++    ["first", {items: () => Array.from({length: 64}, (_, index) => ({id: `${index}`}))}],
++    ["second", {items: () => Array.from({length: 63}, (_, index) => ({id: `${index}`}))}],
++    ["overflow", {items: () => [{id: "parent", submenu: [{id: "child"}]}]}],
++    ["last", {items: () => [{id: "ok"}]}],
++], () => {
++    const items = getMathConversionMenuItems(mathContext());
++    assert.equal(items.length, 128);
++    assert.equal(items.at(-1).id, "last:ok");
++    assert.equal(items.some(item => item.id.startsWith("overflow:")), false);
++}));
++
++test("array proxies and index getters cannot escape provider isolation", () => {
++    assertIsolated(() => new Proxy([{id: "x"}], {getOwnPropertyDescriptor: () => {throw Error("proxy");}}));
++    const items: IMenu[] = [{id: "x"}];
++    Object.defineProperty(items, "0", {get: () => {throw Error("index");}});
++    assertIsolated(() => items);
++    assertIsolated(() => [new Proxy({id: "x"}, {getOwnPropertyDescriptor: () => {throw Error("item");}})]);
++});
++
++test("array iterators are not executed and own fields are read once", () => {
++    let reads = 0;
++    const items: IMenu[] = [{get id() {reads++; return "x";}, label: "X"}];
++    Object.defineProperty(items, Symbol.iterator, {get: () => {throw Error("iterator");}});
++    withProviders([["safe", {items: () => items}]], () => {
++        assert.equal(getMathConversionMenuItems(mathContext())[0].id, "safe:x");
++        assert.equal(reads, 1);
++    });
++});
++
++test("shared noncyclic children are copied per path and native fields survive", () => {
++    const click = (): void => undefined;
++    const bind = (): void => undefined;
++    const loadSubmenu = async () => [] as IMenu[];
++    const child: IMenu = Object.freeze({id: "child", click, bind, loadSubmenu, iconHTML: "<svg/>", checked: true});
++    const original: IMenu[] = [Object.freeze({id: "a", submenu: [child]}), {id: "b", submenu: [child]}];
++    withProviders([["shared", {items: () => original}]], () => {
++        const items = getMathConversionMenuItems(mathContext());
++        assert.equal(items[0].submenu[0].id, "shared:a:child");
++        assert.equal(items[1].submenu[0].id, "shared:b:child");
++        assert.equal(items[0].submenu[0].click, click);
++        assert.equal(items[0].submenu[0].bind, bind);
++        assert.equal(items[0].submenu[0].loadSubmenu, loadSubmenu);
++        assert.equal(items[0].submenu[0].iconHTML, "<svg/>");
++        assert.equal(child.id, "child");
++    });
++});
++
++test("inherited getters are not read", () => {
++    const item = Object.create({get label() {throw Error("inherited");}}) as IMenu;
++    item.id = "x";
++    withProviders([["own", {items: () => [item]}]], () => {
++        assert.equal(getMathConversionMenuItems(mathContext())[0].label, undefined);
++    });
++});
++
++
++const pluginMenuMethods = () => {
++    const source = readFileSync(resolve(process.cwd(), "src/plugin/index.ts"), "utf8");
++    const method = (name: string) => {
++        const start = source.indexOf(`public ${name}(`);
++        const bodyStart = source.indexOf("{", start);
++        const bodyEnd = source.indexOf("\n    }", bodyStart);
++        return new Function("registerMathConversionMenuProviderRegistry", "unregisterMathConversionMenuProviderRegistry",
++            `return function(id, provider) ${source.slice(bodyStart, bodyEnd + 6)}`)(
++            registerMathConversionMenuProvider, unregisterMathConversionMenuProvider) as
++            (this: {name: string}, id: string, provider?: IMathConversionMenuProvider) => (() => void) | void;
++    };
++    return {register: method("registerMathConversionMenuProvider"), unregister: method("unregisterMathConversionMenuProvider")};
++};
++
++test("plugin methods keep all plugin and provider segments distinct and cleanup generation safe", () => {
++    const methods = pluginMenuMethods();
++    const pairs = [["a/b", "c"], ["a", "b/c"], ["a%2Fb", "c"], ["a:b", "c"], ["a", "b:c"], ["汉字/插件", "x:%/"]];
++    try {
++        for (const [name, id] of pairs) {
++            methods.register.call({name}, id, {items: () => [{id: "entry:%/"}]});
++        }
++        const items = getMathConversionMenuItems(mathContext());
++        assert.equal(items.length, pairs.length);
++        assert.equal(new Set(items.map(item => item.id)).size, pairs.length);
++        const cleanup = methods.register.call({name: "a"}, "b/c", {items: () => [{id: "old"}]}) as () => void;
++        methods.register.call({name: "a"}, "b/c", {items: () => [{id: "new"}]});
++        cleanup();
++        assert.equal(getMathConversionMenuItems(mathContext()).some(item => item.id.endsWith(":new")), true);
++        methods.unregister.call({name: "a"}, "b/c");
++        assert.equal(getMathConversionMenuItems(mathContext()).length, pairs.length - 1);
++    } finally {
++        for (const [name, id] of pairs) methods.unregister.call({name}, id);
++    }
++});
++
++test("exact depth and recursive node limits are accepted with submenu read once", () => {
++    let deep: IMenu = {id: "leaf"};
++    for (let depth = 0; depth < 7; depth++) deep = {id: `depth${depth}`, submenu: [deep]};
++    let reads = 0;
++    withProviders([["depth", {items: () => [deep]}], ["nodes", {items: () => [{
++        id: "root", get submenu() {reads++; return Array.from({length: 63}, (_, index) => ({id: `${index}`}));},
++    }]}]], () => {
++        const items = getMathConversionMenuItems(mathContext());
++        assert.equal(items.length, 2);
++        assert.equal(items[1].submenu.length, 63);
++        assert.equal(reads, 1);
++    });
++});
++
++test("revoked arrays and provider accessor errors remain isolated", () => {
++    const revoked = Proxy.revocable([] as IMenu[], {});
++    revoked.revoke();
++    assertIsolated(() => revoked.proxy);
++    withProviders([
++        ["accessor", {get items(): IMathConversionMenuProvider["items"] {throw Error("provider getter");}}],
++        ["normal", {items: () => [{id: "ok"}]}],
++    ], () => assert.deepEqual(getMathConversionMenuItems(mathContext()).map(item => item.id), ["normal:ok"]));
++});
++
+diff --git a/app/src/protyle/render/mathConversionMenuRegistry.ts b/app/src/protyle/render/mathConversionMenuRegistry.ts
+new file mode 100644
+index 0000000..02ec8b4
+--- /dev/null
++++ b/app/src/protyle/render/mathConversionMenuRegistry.ts
+@@ -0,0 +1,188 @@
++/**
++ * 数学公式转换菜单提供器注册表。
++ *
++ * 宿主只在可写的公式菜单里收集提供器条目，并追加到原生“转换为”子菜单；
++ * 注册表负责命名空间化 data-id、隔离提供器异常并限制条目数量，不执行任何转换或写入操作。
++ */
++
++export type TMathConversionMenuSurface = "inline-context" | "block-convert";
++
++export interface IMathConversionMenuContext {
++    /** 公式节点：行内公式为 span[data-type="inline-math"]，块级公式为 div[data-subtype="math"] */
++    element: HTMLElement;
++    /** 公式所在块 */
++    blockElement: HTMLElement;
++    protyle: IProtyle;
++    surface: TMathConversionMenuSurface;
++    isReadOnly: boolean;
++}
++
++export interface IMathConversionMenuProvider {
++    /** 返回追加到原生“转换为”子菜单的条目 */
++    items: (context: IMathConversionMenuContext) => IMenu[];
++}
++
++export interface IMathConversionMenuTarget {
++    element: HTMLElement;
++    blockElement: HTMLElement;
++    protyle: IProtyle;
++    surface: TMathConversionMenuSurface;
++}
++
++interface IRegisteredMathConversionMenuProvider {
++    id: string;
++    provider: IMathConversionMenuProvider;
++}
++
++const providers: IRegisteredMathConversionMenuProvider[] = [];
++const MAX_DEPTH = 8;
++const MAX_PROVIDER_NODES = 64;
++const MAX_TOTAL_NODES = 128;
++const MENU_FIELDS: Array<keyof IMenu> = [
++    "checked", "iconClass", "label", "click", "type", "accelerator", "action", "actionLabel",
++    "id", "submenu", "loadSubmenu", "disabled", "icon", "iconHTML", "current", "bind", "index",
++    "element", "ignore", "warning",
++];
++
++/** 注册提供器；同一 id 重复注册会原位覆盖，保持菜单顺序不变 */
++export const registerMathConversionMenuProvider = (id: string, provider: IMathConversionMenuProvider) => {
++    const record = {id, provider};
++    const index = providers.findIndex(item => item.id === id);
++    if (index > -1) {
++        providers[index] = record;
++    } else {
++        providers.push(record);
++    }
++    return () => {
++        const currentIndex = providers.indexOf(record);
++        if (currentIndex > -1) {
++            providers.splice(currentIndex, 1);
++        }
++    };
++};
++
++/** 注销提供器 */
++export const unregisterMathConversionMenuProvider = (id: string) => {
++    const index = providers.findIndex(item => item.id === id);
++    if (index > -1) {
++        providers.splice(index, 1);
++    }
++};
++
++/** 只读工作区与只读编辑器都不提供转换菜单 */
++export const isMathConversionMenuReadOnly = (protyle: Pick<IProtyle, "disabled">) =>
++    Boolean(protyle.disabled || window.siyuan.config.readonly);
++
++const readOwn = (object: object, key: PropertyKey): unknown => {
++    const descriptor = Object.getOwnPropertyDescriptor(object, key);
++    return descriptor && ("value" in descriptor ? descriptor.value : descriptor.get?.call(object));
++};
++
++const qualifyMenuItems = (providerID: string, items: unknown, remaining: number) => {
++    let nodes = 0;
++    const path = new WeakSet<object>();
++    const visit = (parentID: string, entries: unknown, depth: number): IMenu[] => {
++        if (!Array.isArray(entries) || path.has(entries)) {
++            throw new Error("Invalid or cyclic math conversion submenu");
++        }
++        const length = readOwn(entries, "length");
++        if (typeof length !== "number" || length > MAX_PROVIDER_NODES || (length > 0 && depth > MAX_DEPTH)) {
++            throw new Error("Math conversion menu depth or node budget exceeded");
++        }
++        path.add(entries);
++        const result: IMenu[] = [];
++        const ids = new Set<string>();
++        for (let index = 0; index < length; index++) {
++            const item = readOwn(entries, index);
++            if (!item || typeof item !== "object") {
++                continue;
++            }
++            if (path.has(item) || ++nodes > MAX_PROVIDER_NODES || nodes > remaining) {
++                throw new Error("Math conversion menu cycle or node budget exceeded");
++            }
++            path.add(item);
++            const qualified: IMenu = {};
++            for (const field of MENU_FIELDS) {
++                const value = readOwn(item, field);
++                if (value !== undefined) {
++                    Object.defineProperty(qualified, field, {value, enumerable: true, writable: true, configurable: true});
++                }
++            }
++            const rawID = typeof qualified.id === "string" ? qualified.id : "";
++            const id = rawID ? `${parentID}:${encodeURIComponent(rawID)}` :
++                qualified.type === "separator" ? `${parentID}:separator_${index}` : "";
++            if (id && !ids.has(id)) {
++                ids.add(id);
++                qualified.id = id;
++                if (qualified.submenu !== undefined) {
++                    qualified.submenu = visit(id, qualified.submenu, depth + 1);
++                }
++                result.push(qualified);
++            }
++            path.delete(item);
++        }
++        path.delete(entries);
++        return result;
++    };
++    const qualified = visit(encodeURIComponent(providerID), items, 1);
++    return {items: qualified, nodes};
++};
++
++/** 按注册顺序收集提供器条目；单个提供器的异常不会影响其他提供器 */
++export const getMathConversionMenuItems = (context: IMathConversionMenuContext): IMenu[] => {
++    const result: IMenu[] = [];
++    let totalNodes = 0;
++    for (const entry of providers.slice()) {
++        if (totalNodes >= MAX_TOTAL_NODES) {
++            break;
++        }
++        try {
++            const qualified = qualifyMenuItems(entry.id, entry.provider.items(context), MAX_TOTAL_NODES - totalNodes);
++            result.push(...qualified.items);
++            totalNodes += qualified.nodes;
++        } catch (error) {
++            console.warn(`Math conversion menu provider [${entry.id}] failed:`, error);
++        }
++    }
++    return result;
++};
++
++/** 块级菜单使用的公式节点；块内没有唯一公式节点时回退为块元素 */
++export const getMathConversionMenuElement = (blockElement: HTMLElement): HTMLElement => {
++    if (blockElement.getAttribute("data-type") === "NodeMathBlock") {
++        return blockElement.querySelector<HTMLElement>('[data-subtype="math"]') || blockElement;
++    }
++    const inlineMathElements = blockElement.querySelectorAll<HTMLElement>('[data-type="inline-math"]');
++    return inlineMathElements.length === 1 ? inlineMathElements[0] : blockElement;
++};
++
++/** 为行内公式菜单创建原生“转换为”父条目，无提供器条目或只读时返回空 */
++export const createMathConversionMenu = (target: IMathConversionMenuTarget): IMenu | undefined => {
++    if (isMathConversionMenuReadOnly(target.protyle)) {
++        return undefined;
++    }
++    const submenu = getMathConversionMenuItems({...target, isReadOnly: false});
++    if (submenu.length === 0) {
++        return undefined;
++    }
++    return {
++        id: "turnInto",
++        icon: "iconTurnInto",
++        label: window.siyuan.languages.turnInto,
++        type: "submenu",
++        submenu,
++    };
++};
++
++/** 把提供器条目追加到块标菜单已有的“转换为”子菜单，返回是否追加 */
++export const appendMathConversionMenuItems = (items: IMenu[], target: IMathConversionMenuTarget) => {
++    if (isMathConversionMenuReadOnly(target.protyle)) {
++        return false;
++    }
++    const conversionItems = getMathConversionMenuItems({...target, isReadOnly: false});
++    if (conversionItems.length === 0) {
++        return false;
++    }
++    items.push(...conversionItems);
++    return true;
++};

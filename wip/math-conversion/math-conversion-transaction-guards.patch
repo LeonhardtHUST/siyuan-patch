@@ -1,0 +1,659 @@
+diff --git a/kernel/model/math_conversion.go b/kernel/model/math_conversion.go
+index 5978272..a8c3da0 100644
+--- a/kernel/model/math_conversion.go
++++ b/kernel/model/math_conversion.go
+@@ -10,6 +10,7 @@ import (
+ 	"errors"
+ 	"maps"
+ 	"slices"
++	"strconv"
+ 	"strings"
+ 
+ 	"github.com/88250/lute/ast"
+@@ -264,15 +265,19 @@ func mathConversionReadonly(node *ast.Node) bool {
+ }
+ 
+ // mathConversionFingerprint 比较持久块内容、marks 与身份属性。IAL 是属性集合，持久化顺序不是身份，
+-// 因此先按属性名稳定排序；updated 与动态引用角标不属于转换身份。
++// 因此只按属性名稳定排序；updated、refcount、av-names 与动态引用正文都属于持久内容，任何外部变化
++// 都必须参与冲突比较。克隆使用 cloneBlockSwapNode，与替换快照保持同一字段集合；JSON 渲染会丢弃
++// refcount 等属性，所以额外把所有节点的 IAL 与 Properties 摘要一起纳入指纹。
+ func mathConversionFingerprint(node *ast.Node) string {
+-	cloned := cloneRenderNode(node)
++	if node == nil {
++		return ""
++	}
++	cloned := cloneBlockSwapNode(node)
++	var canonical strings.Builder
+ 	ast.Walk(cloned, func(current *ast.Node, entering bool) ast.WalkStatus {
+ 		if !entering {
+ 			return ast.WalkContinue
+ 		}
+-		current.RemoveIALAttr("updated")
+-		current.RemoveIALAttr("refcount")
+ 		if len(current.KramdownIAL) > 1 {
+ 			slices.SortFunc(current.KramdownIAL, func(a, b []string) int {
+ 				if len(a) == 0 || len(b) == 0 {
+@@ -281,13 +286,35 @@ func mathConversionFingerprint(node *ast.Node) string {
+ 				return strings.Compare(a[0], b[0])
+ 			})
+ 		}
+-		if current.Type == ast.NodeTextMark && current.IsTextMarkType("block-ref") && current.TextMarkBlockRefSubtype == "d" {
+-			current.TextMarkTextContent = ""
+-		}
++		canonical.WriteString(current.Type.String())
++		canonical.WriteByte('\x00')
++		canonical.WriteString(current.ID)
++		canonical.WriteByte('\x00')
++		for _, attribute := range current.KramdownIAL {
++			for _, part := range attribute {
++				canonical.WriteString(strconv.Itoa(len(part)))
++				canonical.WriteByte(':')
++				canonical.WriteString(part)
++			}
++			canonical.WriteByte('\x01')
++		}
++		canonical.WriteByte('\x02')
++		for _, key := range slices.Sorted(maps.Keys(current.Properties)) {
++			canonical.WriteString(strconv.Itoa(len(key)))
++			canonical.WriteByte(':')
++			canonical.WriteString(key)
++			canonical.WriteString(strconv.Itoa(len(current.Properties[key])))
++			canonical.WriteByte(':')
++			canonical.WriteString(current.Properties[key])
++			canonical.WriteByte('\x01')
++		}
++		canonical.WriteByte('\x03')
+ 		return ast.WalkContinue
+ 	})
+ 	luteEngine := util.NewLute()
+-	return string(render.NewJSONRenderer(&parse.Tree{Root: cloned}, luteEngine.RenderOptions, luteEngine.ParseOptions).Render())
++	rendered := render.NewJSONRenderer(&parse.Tree{Root: cloned}, luteEngine.RenderOptions, luteEngine.ParseOptions).Render()
++	digest := sha256.Sum256([]byte(canonical.String() + "\x04" + string(rendered)))
++	return hex.EncodeToString(digest[:])
+ }
+ 
+ func mathConversionPlannerError(err error) error {
+@@ -405,14 +432,15 @@ func SnapshotMathConversion(blockID string) (*MathConversionSnapshot, error) {
+ 	}
+ 	switch node.Type {
+ 	case ast.NodeParagraph:
+-		for index, child := range mathConversionDirectChildren(node) {
+-			if !mathConversionInlineCandidate(child) {
+-				continue
+-			}
+-			target := MathConversionTarget{Path: []int{index}, Type: "inline-math"}
++		candidates, scanErr := mathConversionCollectBoundedTargets(node)
++		if scanErr != nil {
++			return nil, scanErr
++		}
++		for _, candidate := range candidates {
++			target := MathConversionTarget{Path: candidate.path, Type: "inline-math"}
+ 			if !snapshot.TopLevel {
+ 				target.Reason = "nested math conversion is not supported"
+-			} else if source, ok := mathConversionInlineSource(child); !ok {
++			} else if source, ok := mathConversionInlineSource(candidate.node); !ok {
+ 				target.Reason = "noncanonical inline math node"
+ 			} else if plan, buildErr := mathconversion.Build(mathconversion.Request{
+ 				Block: node, TargetPath: target.Path, Direction: mathconversion.InlineToBlock,
+@@ -445,12 +473,44 @@ func SnapshotMathConversion(blockID string) (*MathConversionSnapshot, error) {
+ 	return snapshot, nil
+ }
+ 
+-func mathConversionDirectChildren(node *ast.Node) []*ast.Node {
+-	var children []*ast.Node
+-	for child := node.FirstChild; child != nil; child = child.Next {
+-		children = append(children, child)
++const (
++	mathConversionMaxDirectChildren   = 1024
++	mathConversionMaxInlineCandidates = 32
++)
++
++type mathConversionCandidate struct {
++	path []int
++	node *ast.Node
++}
++
++// mathConversionCollectBoundedTargets 在构造任何快照目标或调用 planner 之前，单次有界扫描目标段落的
++// 直接子级：最多 1024 个直接子级和 32 个行内公式候选。超过任一预算，或发现环状、共享链接时整体拒绝，
++// 调用方不会得到部分目标列表。这里不复制完整子级数组，也不扫描全文公式库存。
++func mathConversionCollectBoundedTargets(block *ast.Node) ([]mathConversionCandidate, error) {
++	if block == nil {
++		return nil, failMathConversion(MathConversionUnsupported, "conversion target block is unavailable")
+ 	}
+-	return children
++	var candidates []mathConversionCandidate
++	seen := make(map[*ast.Node]bool)
++	directChildren := 0
++	for child := block.FirstChild; child != nil; child = child.Next {
++		directChildren++
++		if directChildren > mathConversionMaxDirectChildren {
++			return nil, failMathConversion(MathConversionUnsupported, "paragraph has too many direct children")
++		}
++		if seen[child] {
++			return nil, failMathConversion(MathConversionUnsupported, "paragraph direct children contain a cycle or shared node")
++		}
++		seen[child] = true
++		if !mathConversionInlineCandidate(child) {
++			continue
++		}
++		if len(candidates) >= mathConversionMaxInlineCandidates {
++			return nil, failMathConversion(MathConversionUnsupported, "paragraph has too many inline formula candidates")
++		}
++		candidates = append(candidates, mathConversionCandidate{path: []int{directChildren - 1}, node: child})
++	}
++	return candidates, nil
+ }
+ 
+ func mathConversionInlineCandidate(node *ast.Node) bool {
+@@ -473,12 +533,13 @@ func mathConversionSnapshotNewID(block *ast.Node) func() string {
+ }
+ 
+ func (tx *Transaction) doConvertMath(operation *Operation) *TxErr {
++	if operation == nil {
++		err := failMathConversion(MathConversionInvalid, "missing conversion operation")
++		return &TxErr{code: TxErrCodePushMsg, msg: err.Error(), cause: err}
++	}
+ 	fail := func(err error) *TxErr {
+ 		return &TxErr{code: TxErrCodePushMsg, id: operation.ID, msg: err.Error(), cause: err}
+ 	}
+-	if operation == nil {
+-		return fail(failMathConversion(MathConversionInvalid, "missing conversion operation"))
+-	}
+ 	if len(tx.DoOperations) != 1 {
+ 		return fail(failMathConversion(MathConversionInvalid, "math conversion requires a separate transaction"))
+ 	}
+diff --git a/kernel/model/math_conversion_fts5_test.go b/kernel/model/math_conversion_fts5_test.go
+index 2793344..88fc1e1 100644
+--- a/kernel/model/math_conversion_fts5_test.go
++++ b/kernel/model/math_conversion_fts5_test.go
+@@ -18,6 +18,7 @@ import (
+ 
+ 	"github.com/88250/lute/ast"
+ 	"github.com/88250/lute/parse"
++	"github.com/siyuan-note/siyuan/kernel/cache"
+ 	"github.com/siyuan-note/siyuan/kernel/conf"
+ 	"github.com/siyuan-note/siyuan/kernel/filesys"
+ 	"github.com/siyuan-note/siyuan/kernel/mathconversion"
+@@ -1020,3 +1021,481 @@ func TestMathConversionSnapshotDrainsQueuedEdits(t *testing.T) {
+ 		t.Fatal("snapshot did not observe the drained edit")
+ 	}
+ }
++
++func mathConversionTestParagraph(childCount int, child func(index int) *ast.Node) *ast.Node {
++	block := mathConversionParagraph("20260718009901-abcdefg")
++	for index := 0; index < childCount; index++ {
++		block.AppendChild(child(index))
++	}
++	return block
++}
++
++func TestMathConversionCollectBoundedTargets(t *testing.T) {
++	textChild := func(int) *ast.Node { return mathConversionText("text") }
++	inlineChild := func(int) *ast.Node { return mathConversionInline("x + 1") }
++
++	t.Run("direct-children-exact-limit", func(t *testing.T) {
++		candidates, err := mathConversionCollectBoundedTargets(mathConversionTestParagraph(1024, textChild))
++		if err != nil {
++			t.Fatalf("exact direct child budget was rejected: %v", err)
++		}
++		if len(candidates) != 0 {
++			t.Fatalf("text children produced %d formula candidates", len(candidates))
++		}
++	})
++
++	t.Run("direct-children-limit-plus-one", func(t *testing.T) {
++		candidates, err := mathConversionCollectBoundedTargets(mathConversionTestParagraph(1025, textChild))
++		requireMathConversionKind(t, err, MathConversionUnsupported)
++		if candidates != nil {
++			t.Fatalf("over-budget direct children returned partial candidates: %d", len(candidates))
++		}
++	})
++
++	t.Run("candidates-exact-limit", func(t *testing.T) {
++		candidates, err := mathConversionCollectBoundedTargets(mathConversionTestParagraph(32, inlineChild))
++		if err != nil {
++			t.Fatalf("exact candidate budget was rejected: %v", err)
++		}
++		if len(candidates) != 32 {
++			t.Fatalf("unexpected candidate count at the exact budget: %d", len(candidates))
++		}
++		for index, candidate := range candidates {
++			if candidate.node == nil || !slices.Equal(candidate.path, []int{index}) {
++				t.Fatalf("candidate %d has an unexpected path or node: %+v", index, candidate)
++			}
++		}
++	})
++
++	t.Run("candidates-limit-plus-one", func(t *testing.T) {
++		candidates, err := mathConversionCollectBoundedTargets(mathConversionTestParagraph(33, inlineChild))
++		requireMathConversionKind(t, err, MathConversionUnsupported)
++		if candidates != nil {
++			t.Fatalf("over-budget candidates returned partial targets: %d", len(candidates))
++		}
++	})
++
++	t.Run("candidate-indexes", func(t *testing.T) {
++		wanted := map[int]bool{5: true, 21: true, 37: true}
++		candidates, err := mathConversionCollectBoundedTargets(mathConversionTestParagraph(40, func(index int) *ast.Node {
++			if wanted[index] {
++				return inlineChild(index)
++			}
++			return textChild(index)
++		}))
++		if err != nil {
++			t.Fatalf("bounded scan rejected a valid mixed paragraph: %v", err)
++		}
++		if len(candidates) != 3 || !slices.Equal(candidates[0].path, []int{5}) ||
++			!slices.Equal(candidates[1].path, []int{21}) || !slices.Equal(candidates[2].path, []int{37}) {
++			t.Fatalf("unexpected candidate indexes: %+v", candidates)
++		}
++	})
++
++	t.Run("cycle", func(t *testing.T) {
++		first, second := mathConversionText("first"), mathConversionText("second")
++		block := mathConversionParagraph("20260718009902-abcdefg", first, second)
++		second.Next = first
++		candidates, err := mathConversionCollectBoundedTargets(block)
++		requireMathConversionKind(t, err, MathConversionUnsupported)
++		if candidates != nil {
++			t.Fatalf("cyclic direct children returned partial candidates: %d", len(candidates))
++		}
++	})
++}
++
++func TestMathConversionSnapshotBoundsRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718002601-abcdefg"
++	neighborID := "20260718002600-abcdefg"
++	target := mathConversionParagraph(targetID,
++		mathConversionInline("padded  +  source"),
++		mathConversionText(" / "),
++		mathConversionInline("second + source"),
++	)
++	target.SetIALAttr("style", "color: red")
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(neighborID, mathConversionText("neighbor")),
++		target,
++	)
++	mathConversionWriteTree(t, tree)
++
++	snapshot := mathConversionSnapshot(t, targetID)
++	if len(snapshot.Targets) != 2 {
++		t.Fatalf("unexpected target count under budget: %+v", snapshot.Targets)
++	}
++	first, second := snapshot.Targets[0], snapshot.Targets[1]
++	if !first.Supported || !slices.Equal(first.Path, []int{0}) || first.Source != "padded  +  source" ||
++		!second.Supported || !slices.Equal(second.Path, []int{2}) || second.Source != "second + source" {
++		t.Fatalf("snapshot did not preserve exact inline sources: %+v", snapshot.Targets)
++	}
++
++	bounded := mathConversionLoadTree(t, fixture.sourceID)
++	boundedTarget := treenode.GetNodeInTree(bounded, targetID)
++	if boundedTarget == nil {
++		t.Fatal("test target is missing from the reloaded document")
++	}
++	for child := boundedTarget.FirstChild; child != nil; {
++		next := child.Next
++		child.Unlink()
++		child = next
++	}
++	for range 33 {
++		boundedTarget.AppendChild(mathConversionInline("x + 1"))
++	}
++	mathConversionWriteTree(t, bounded)
++	beforeReject := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	rejected, err := SnapshotMathConversion(targetID)
++	if rejected != nil {
++		t.Fatalf("over-budget snapshot returned partial targets: %+v", rejected)
++	}
++	requireMathConversionKind(t, err, MathConversionUnsupported)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, beforeReject) {
++		t.Fatal("rejected snapshot changed the source")
++	}
++}
++
++// mathConversionInjectBlockProperty 模拟其他进程直接改 raw .sy：JSON 渲染会主动删除 refcount，
++// 只能通过源文件注入才能构造真实的仅 refcount 外部修改。
++func mathConversionInjectBlockProperty(t *testing.T, boxID, documentID, documentPath, blockID, key, value string) []byte {
++	t.Helper()
++	raw := mathConversionRawFile(t, boxID, documentPath)
++	var document map[string]any
++	if err := json.Unmarshal(raw, &document); err != nil {
++		t.Fatalf("decode document source failed: %v", err)
++	}
++	var find func(any) map[string]any
++	find = func(candidate any) map[string]any {
++		node, ok := candidate.(map[string]any)
++		if !ok {
++			return nil
++		}
++		if node["ID"] == blockID {
++			return node
++		}
++		children, ok := node["Children"].([]any)
++		if !ok {
++			return nil
++		}
++		for _, child := range children {
++			if found := find(child); found != nil {
++				return found
++			}
++		}
++		return nil
++	}
++	target := find(document)
++	if target == nil {
++		t.Fatalf("block %s is missing from the document source", blockID)
++	}
++	properties, ok := target["Properties"].(map[string]any)
++	if !ok {
++		properties = map[string]any{}
++		target["Properties"] = properties
++	}
++	properties[key] = value
++	data, err := json.Marshal(document)
++	if err != nil {
++		t.Fatalf("encode external document source failed: %v", err)
++	}
++	filePath := filepath.Join(util.DataDir, boxID, documentPath)
++	if err := os.WriteFile(filePath, data, 0644); err != nil {
++		t.Fatalf("write external document source failed: %v", err)
++	}
++	cache.RemoveTreeDataInBox(documentID, boxID)
++	return data
++}
++
++func TestMathConversionUndoRejectsExternalPersistentFieldChanges(t *testing.T) {
++	for _, testcase := range []struct {
++		name    string
++		field   string
++		value   string
++		rawJSON bool
++	}{
++		{"updated", "updated", "20260718002700", false},
++		{"refcount", "refcount", "7", true},
++	} {
++		t.Run(testcase.name, func(t *testing.T) {
++			fixture := setupMathConversionTest(t)
++			tree := mathConversionLoadTree(t, fixture.sourceID)
++			targetID := "20260718002701-abcdefg"
++			mathConversionSetRootBlocks(t, tree,
++				mathConversionParagraph("20260718002700-abcdefg", mathConversionText("before")),
++				mathConversionParagraph(targetID, mathConversionInline("persistent + field")),
++			)
++			mathConversionWriteTree(t, tree)
++			snapshot := mathConversionSnapshot(t, targetID)
++			request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++				BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++				ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++			if err := mathConversionPerform(t, request); err != nil {
++				t.Fatalf("conversion failed: %v", err)
++			}
++			converted := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++			var changed []byte
++			if testcase.rawJSON {
++				changed = mathConversionInjectBlockProperty(t, fixture.box.ID, fixture.sourceID, fixture.sourcePath,
++					targetID, testcase.field, testcase.value)
++			} else {
++				external := mathConversionLoadTree(t, fixture.sourceID)
++				externalBlock := treenode.GetNodeInTree(external, targetID)
++				if externalBlock == nil {
++					t.Fatal("converted block is missing from the reloaded document")
++				}
++				externalBlock.SetIALAttr(testcase.field, testcase.value)
++				mathConversionWriteTree(t, external)
++				changed = mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++			}
++			if bytes.Equal(changed, converted) {
++				t.Fatalf("external %s edit did not reach the document source", testcase.field)
++			}
++			persisted := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), targetID)
++			if persisted == nil || persisted.IALAttr(testcase.field) != testcase.value {
++				t.Fatalf("external %s edit was not persisted", testcase.field)
++			}
++
++			err := mathConversionUndo(t, fixture.sourceID)
++			requireMathConversionKind(t, err, MathConversionConflict)
++			if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, changed) {
++				t.Fatal("failed undo overwrote the external persistent field change")
++			}
++			if depth := mathConversionUndoDepth(fixture.sourceID); depth != 1 {
++				t.Fatalf("failed undo must stay retryable: undo=%d", depth)
++			}
++			reloaded := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), targetID)
++			if reloaded == nil || reloaded.IALAttr(testcase.field) != testcase.value {
++				t.Fatalf("failed undo discarded the external %s value", testcase.field)
++			}
++		})
++	}
++}
++
++func TestMathConversionUndoPreservesExternalNeighborEdit(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718002801-abcdefg"
++	neighborBeforeID := "20260718002800-abcdefg"
++	neighborAfterID := "20260718002802-abcdefg"
++	neighborBefore := mathConversionParagraph(neighborBeforeID, mathConversionText("neighbor original text"))
++	neighborBefore.SetIALAttr("custom-neighbor", "original")
++	neighborBefore.SetIALAttr("updated", "20260718002800")
++	target := mathConversionParagraph(targetID, mathConversionInline("neighbor + target"))
++	target.SetIALAttr("custom-target", "keep")
++	mathConversionSetRootBlocks(t, tree,
++		neighborBefore,
++		target,
++		mathConversionParagraph(neighborAfterID, mathConversionText("right neighbor")),
++	)
++	mathConversionWriteTree(t, tree)
++	original := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatalf("conversion failed: %v", err)
++	}
++	converted := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	if bytes.Equal(converted, original) {
++		t.Fatal("conversion did not change the document source")
++	}
++
++	external := mathConversionLoadTree(t, fixture.sourceID)
++	externalNeighbor := treenode.GetNodeInTree(external, neighborBeforeID)
++	if externalNeighbor == nil || externalNeighbor.FirstChild == nil {
++		t.Fatal("neighbor is missing from the converted document")
++	}
++	externalNeighbor.FirstChild.Tokens = []byte("neighbor externally edited text")
++	externalNeighbor.SetIALAttr("custom-neighbor", "external")
++	mathConversionWriteTree(t, external)
++	changed := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	if bytes.Equal(changed, converted) {
++		t.Fatal("external neighbor edit did not reach the document source")
++	}
++
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatalf("neighbor-only external edit blocked undo: %v", err)
++	}
++	current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	if !bytes.Contains(current, []byte("neighbor externally edited text")) {
++		t.Fatal("undo discarded the external neighbor edit")
++	}
++	if bytes.Contains(current, []byte("neighbor original text")) {
++		t.Fatal("undo restored the stale neighbor text")
++	}
++	restoredTree := mathConversionLoadTree(t, fixture.sourceID)
++	if ids := mathConversionTopBlockIDs(restoredTree); !slices.Equal(ids, []string{neighborBeforeID, targetID, neighborAfterID}) {
++		t.Fatalf("undo changed top-level blocks: %v", ids)
++	}
++	restoredNeighbor := treenode.GetNodeInTree(restoredTree, neighborBeforeID)
++	if restoredNeighbor == nil || restoredNeighbor.FirstChild == nil ||
++		string(restoredNeighbor.FirstChild.Tokens) != "neighbor externally edited text" {
++		t.Fatalf("undo did not preserve the external neighbor content: %+v", restoredNeighbor)
++	}
++	if restoredNeighbor.IALAttr("custom-neighbor") != "external" || restoredNeighbor.IALAttr("updated") != "20260718002800" {
++		t.Fatalf("undo did not preserve unaffected neighbor attributes: %+v", restoredNeighbor.KramdownIAL)
++	}
++	restoredTarget := treenode.GetNodeInTree(restoredTree, targetID)
++	if restoredTarget == nil || restoredTarget.Type != ast.NodeParagraph ||
++		mathConversionInlineSourceOf(restoredTarget) != "neighbor + target" ||
++		restoredTarget.IALAttr("custom-target") != "keep" {
++		t.Fatalf("undo did not restore the converted target: %+v", restoredTarget)
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("undo left %d undo entries", depth)
++	}
++}
++
++func TestMathConversionFingerprintPersistentFields(t *testing.T) {
++	block := mathConversionParagraph("20260718002901-abcdefg",
++		mathConversionText("see "),
++		&ast.Node{Type: ast.NodeTextMark, TextMarkType: "block-ref",
++			TextMarkBlockRefID: "20260718002900-abcdefg", TextMarkBlockRefSubtype: "d", TextMarkTextContent: "1"},
++	)
++	block.SetIALAttr("updated", "20260718002901")
++	block.SetIALAttr("refcount", "1")
++	block.SetIALAttr("style", "color: red")
++	block.SetIALAttr("custom-keep", "yes")
++	baseline := mathConversionFingerprint(block)
++	if baseline == "" {
++		t.Fatal("fingerprint is empty")
++	}
++	if mathConversionFingerprint(block) != baseline {
++		t.Fatal("fingerprint is not deterministic")
++	}
++
++	fingerprintWith := func(mutate func(*ast.Node)) string {
++		cloned := cloneBlockSwapNode(block)
++		mutate(cloned)
++		return mathConversionFingerprint(cloned)
++	}
++	if fingerprintWith(func(node *ast.Node) { node.SetIALAttr("updated", "20260718003000") }) == baseline {
++		t.Fatal("updated attribute is not part of the fingerprint")
++	}
++	if fingerprintWith(func(node *ast.Node) { node.SetIALAttr("refcount", "2") }) == baseline {
++		t.Fatal("refcount attribute is not part of the fingerprint")
++	}
++	if fingerprintWith(func(node *ast.Node) { node.LastChild.TextMarkTextContent = "2" }) == baseline {
++		t.Fatal("dynamic block reference text is not part of the fingerprint")
++	}
++	reordered := cloneBlockSwapNode(block)
++	slices.Reverse(reordered.KramdownIAL)
++	if got := mathConversionFingerprint(reordered); got != baseline {
++		t.Fatal("attribute order changed the fingerprint")
++	}
++}
++
++func TestMathConversionUndoPreservesDynamicRefNeighborInline(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718003101-abcdefg"
++	neighborID := "20260718003100-abcdefg"
++	refID := "20260718003102-abcdefg"
++	neighbor := mathConversionParagraph(neighborID, mathConversionText("refer "),
++		&ast.Node{Type: ast.NodeTextMark, TextMarkType: "block-ref",
++			TextMarkBlockRefID: refID, TextMarkBlockRefSubtype: "d", TextMarkTextContent: "1"},
++	)
++	mathConversionSetRootBlocks(t, tree,
++		neighbor,
++		mathConversionParagraph(targetID, mathConversionInline("dynamic + neighbor")),
++	)
++	mathConversionWriteTree(t, tree)
++
++	reloaded := mathConversionLoadTree(t, fixture.sourceID)
++	reloadedRef := treenode.GetNodeInTree(reloaded, neighborID).LastChild
++	if reloadedRef == nil || reloadedRef.Type != ast.NodeTextMark || reloadedRef.TextMarkBlockRefSubtype != "d" ||
++		reloadedRef.TextMarkTextContent != "1" {
++		t.Fatalf("block reference did not survive the document write: %+v", reloadedRef)
++	}
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatalf("conversion failed: %v", err)
++	}
++
++	external := mathConversionLoadTree(t, fixture.sourceID)
++	externalRef := treenode.GetNodeInTree(external, neighborID).LastChild
++	externalRef.TextMarkTextContent = "9"
++	mathConversionWriteTree(t, external)
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatalf("dynamic reference neighbor edit blocked undo: %v", err)
++	}
++	restored := mathConversionLoadTree(t, fixture.sourceID)
++	restoredRef := treenode.GetNodeInTree(restored, neighborID).LastChild
++	if restoredRef == nil || restoredRef.TextMarkTextContent != "9" {
++		t.Fatalf("undo did not preserve the dynamic reference text: %+v", restoredRef)
++	}
++	restoredTarget := treenode.GetNodeInTree(restored, targetID)
++	if restoredTarget == nil || restoredTarget.Type != ast.NodeParagraph ||
++		mathConversionInlineSourceOf(restoredTarget) != "dynamic + neighbor" {
++		t.Fatalf("undo did not restore the converted target: %+v", restoredTarget)
++	}
++}
++
++func mathConversionFindDynamicRef(node *ast.Node) *ast.Node {
++	var found *ast.Node
++	ast.Walk(node, func(current *ast.Node, entering bool) ast.WalkStatus {
++		if entering && current.Type == ast.NodeTextMark && current.TextMarkType == "block-ref" &&
++			current.TextMarkBlockRefSubtype == "d" {
++			found = current
++			return ast.WalkStop
++		}
++		return ast.WalkContinue
++	})
++	return found
++}
++
++// planner 会拒绝目标段落里公式之外的 block-ref（persistentFields 认定为 unproven metadata），
++// 因此动态引用角标无法经由一次成功转换进入被替换 run。这里直接调用 undo 重放前的同一份
++// mathConversionValidateRun 校验：被替换 run 的动态引用正文变化必须整体 conflict。
++func TestMathConversionUndoValidationRejectsDynamicRefChange(t *testing.T) {
++	targetID := "20260718003201-abcdefg"
++	block := mathConversionParagraph(targetID, mathConversionText("see "),
++		&ast.Node{Type: ast.NodeTextMark, TextMarkType: "block-ref",
++			TextMarkBlockRefID: "20260718003202-abcdefg", TextMarkBlockRefSubtype: "d", TextMarkTextContent: "1"},
++	)
++	root := &ast.Node{Type: ast.NodeDocument, ID: "20260718003200-abcdefg"}
++	root.AppendChild(block)
++	tree := &parse.Tree{Root: root}
++	fragment := mathConversionFragment{node: cloneBlockSwapNode(block)}
++	position := mathConversionCapturePosition(block, block)
++	run, err := mathConversionValidateRun(tree, []mathConversionFragment{fragment}, position)
++	if err != nil || len(run) != 1 || run[0] != block {
++		t.Fatalf("baseline undo validation failed: run=%+v err=%v", run, err)
++	}
++
++	ref := mathConversionFindDynamicRef(block)
++	if ref == nil {
++		t.Fatal("dynamic reference is missing from the validation fixture")
++	}
++	ref.TextMarkTextContent = "9"
++	run, err = mathConversionValidateRun(tree, []mathConversionFragment{fragment}, position)
++	requireMathConversionKind(t, err, MathConversionConflict)
++	if run != nil {
++		t.Fatalf("conflicted undo validation returned a stale run: %d blocks", len(run))
++	}
++}
++
++func TestMathConversionNilOperationRejected(t *testing.T) {
++	transaction := &Transaction{}
++	txErr := transaction.doConvertMath(nil)
++	if txErr == nil {
++		t.Fatal("nil conversion operation was accepted")
++	}
++	if code := txErr.Code(); code != TxErrCodePushMsg {
++		t.Fatalf("unexpected transaction error code: got %d, want %d", code, TxErrCodePushMsg)
++	}
++	if txErr.id != "" {
++		t.Fatalf("nil operation failure must not carry a block ID: %q", txErr.id)
++	}
++	var failure *MathConversionError
++	if !errors.As(txErr, &failure) || failure.Kind != MathConversionInvalid {
++		t.Fatalf("nil operation failure is not a typed invalid conversion error: %v", txErr)
++	}
++}

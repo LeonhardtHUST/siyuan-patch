@@ -1,0 +1,1897 @@
+diff --git a/kernel/model/math_conversion.go b/kernel/model/math_conversion.go
+new file mode 100644
+index 0000000..5978272
+--- /dev/null
++++ b/kernel/model/math_conversion.go
+@@ -0,0 +1,827 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package model
++
++import (
++	"crypto/sha256"
++	"encoding/hex"
++	"errors"
++	"maps"
++	"slices"
++	"strings"
++
++	"github.com/88250/lute/ast"
++	"github.com/88250/lute/parse"
++	"github.com/88250/lute/render"
++	"github.com/siyuan-note/siyuan/kernel/filesys"
++	"github.com/siyuan-note/siyuan/kernel/mathconversion"
++	"github.com/siyuan-note/siyuan/kernel/treenode"
++	"github.com/siyuan-note/siyuan/kernel/util"
++)
++
++// MathConversionKind 区分公式转换在身份、冲突、支持范围或权限上的失败，调用方不需要依赖错误文本。
++type MathConversionKind string
++
++const (
++	MathConversionInvalid     MathConversionKind = "invalid"
++	MathConversionConflict    MathConversionKind = "conflict"
++	MathConversionUnsupported MathConversionKind = "unsupported"
++	MathConversionPermission  MathConversionKind = "permission"
++	MathConversionIO          MathConversionKind = "io"
++)
++
++type MathConversionError struct {
++	Kind   MathConversionKind
++	Reason string
++}
++
++func (failure *MathConversionError) Error() string {
++	return string(failure.Kind) + ": " + failure.Reason
++}
++
++func failMathConversion(kind MathConversionKind, reason string) error {
++	return &MathConversionError{Kind: kind, Reason: reason}
++}
++
++// MathConversionRequest 绑定一次公式转换的目标与来源版本。ExpectedVersion 是快照读取到的原始文件字节
++// 摘要；加密笔记本同样使用落盘密文的摘要，与最终 WriteFileWithPreflight 的原像比较保持一致。
++type MathConversionRequest struct {
++	Notebook        string
++	RootID          string
++	Path            string
++	BlockID         string
++	Direction       mathconversion.Direction
++	TargetPath      []int
++	ExpectedSource  string
++	ExpectedVersion string
++}
++
++type MathConversionTarget struct {
++	Path      []int
++	Type      string
++	Source    string
++	Supported bool
++	Reason    string
++}
++
++// MathConversionSnapshot 是只读来源快照。Version 绑定同一份 raw original 字节，而不是 updated 或
++// Markdown 投影；提交事务会再次在锁内读取并比较该版本。
++type MathConversionSnapshot struct {
++	Notebook  string
++	RootID    string
++	Path      string
++	Version   string
++	BlockType string
++	TopLevel  bool
++	Targets   []MathConversionTarget
++}
++
++type mathConversionFragment struct {
++	node *ast.Node
++}
++
++type mathConversionPosition struct {
++	previousID string
++	nextID     string
++	ids        []string
++}
++
++// mathConversionOperationState 只保存在内核内存中，客户端无法提交 before/after 快照或生成新 ID 的回调。
++type mathConversionOperationState struct {
++	request MathConversionRequest
++
++	notebook string
++	rootID   string
++	path     string
++	blockID  string
++
++	before         []mathConversionFragment
++	after          []mathConversionFragment
++	beforePosition mathConversionPosition
++	afterPosition  mathConversionPosition
++
++	newID func() string
++}
++
++func mathConversionSourceVersion(data []byte) string {
++	digest := sha256.Sum256(data)
++	return hex.EncodeToString(digest[:])
++}
++
++func mathConversionBlockTree(blockID string) *treenode.BlockTree {
++	if blockTree := treenode.GetBlockTree(blockID); blockTree != nil {
++		return blockTree
++	}
++	for _, boxID := range treenode.GetOpenedEncryptedBoxIDs() {
++		if blockTree := treenode.GetBlockTreeInBox(blockID, boxID); blockTree != nil {
++			return blockTree
++		}
++	}
++	return nil
++}
++
++func validateMathConversionRequest(request MathConversionRequest) error {
++	if !ast.IsNodeIDPattern(request.Notebook) {
++		return failMathConversion(MathConversionInvalid, "invalid notebook ID")
++	}
++	if !ast.IsNodeIDPattern(request.RootID) {
++		return failMathConversion(MathConversionInvalid, "invalid document ID")
++	}
++	if !ast.IsNodeIDPattern(request.BlockID) {
++		return failMathConversion(MathConversionInvalid, "invalid block ID")
++	}
++	if request.Direction != mathconversion.InlineToBlock && request.Direction != mathconversion.BlockToInline {
++		return failMathConversion(MathConversionInvalid, "unknown conversion direction")
++	}
++	if request.Direction == mathconversion.InlineToBlock {
++		if len(request.TargetPath) != 1 || request.TargetPath[0] < 0 {
++			return failMathConversion(MathConversionInvalid, "inline target requires one AST child index")
++		}
++	} else if len(request.TargetPath) != 0 {
++		return failMathConversion(MathConversionInvalid, "block target must not carry an AST child index")
++	}
++	if _, err := documentSourcePath(request.Notebook, request.Path, false); err != nil {
++		return failMathConversion(MathConversionInvalid, "invalid document path: "+err.Error())
++	}
++	if util.GetTreeID(request.Path) != request.RootID {
++		return failMathConversion(MathConversionInvalid, "document path and root ID differ")
++	}
++	if len(request.ExpectedVersion) != sha256.Size*2 {
++		return failMathConversion(MathConversionInvalid, "invalid expected source version")
++	}
++	if _, err := hex.DecodeString(request.ExpectedVersion); err != nil {
++		return failMathConversion(MathConversionInvalid, "invalid expected source version")
++	}
++	if len(request.ExpectedSource) > 1<<20 {
++		return failMathConversion(MathConversionUnsupported, "expected formula source exceeds source budget")
++	}
++	return nil
++}
++
++func validateMathConversionOperation(request MathConversionRequest) (*Operation, error) {
++	if err := validateMathConversionRequest(request); err != nil {
++		return nil, err
++	}
++	state := &mathConversionOperationState{request: request, blockID: request.BlockID,
++		notebook: request.Notebook, rootID: request.RootID, path: request.Path}
++	return &Operation{Action: "convertMath", ID: request.BlockID, BlockID: request.BlockID, mathConversion: state}, nil
++}
++
++// NewConvertMathOperation 构造模型层的单操作事务载荷。HTTP/API 解码尚未开放该 action，由后续独立任务接线。
++func NewConvertMathOperation(request MathConversionRequest) (*Operation, error) {
++	return validateMathConversionOperation(request)
++}
++
++func mathConversionNextBlock(node *ast.Node) *ast.Node {
++	for next := node.Next; next != nil; next = next.Next {
++		if next.IsBlock() && next.ID != "" {
++			return next
++		}
++	}
++	return nil
++}
++
++func mathConversionPreviousBlock(node *ast.Node) *ast.Node {
++	for previous := node.Previous; previous != nil; previous = previous.Previous {
++		if previous.IsBlock() && previous.ID != "" {
++			return previous
++		}
++	}
++	return nil
++}
++
++func mathConversionTopLevelBlock(tree *parse.Tree, id string) *ast.Node {
++	node := treenode.GetNodeInTree(tree, id)
++	if node == nil || node.Parent != tree.Root {
++		return nil
++	}
++	return node
++}
++
++func mathConversionFragmentIDs(fragments []mathConversionFragment) []string {
++	ids := make([]string, 0, len(fragments))
++	for _, fragment := range fragments {
++		if fragment.node != nil {
++			ids = append(ids, fragment.node.ID)
++		}
++	}
++	return ids
++}
++
++func mathConversionFragmentBlockIDs(fragments []mathConversionFragment) []string {
++	var ids []string
++	for _, fragment := range fragments {
++		if fragment.node == nil {
++			continue
++		}
++		ids = append(ids, fragment.node.BlockIDs()...)
++	}
++	return ids
++}
++
++func mathConversionCapturePosition(first, last *ast.Node) mathConversionPosition {
++	position := mathConversionPosition{ids: mathConversionRunIDsNodes(first, last)}
++	if previous := mathConversionPreviousBlock(first); previous != nil {
++		position.previousID = previous.ID
++	}
++	if next := mathConversionNextBlock(last); next != nil {
++		position.nextID = next.ID
++	}
++	return position
++}
++
++// mathConversionRunIDsNodes 按文档顶层顺序收集 first..last 之间的块 ID，忽略非块装饰节点。
++func mathConversionRunIDsNodes(first, last *ast.Node) (ids []string) {
++	for node := first; node != nil; node = mathConversionNextBlock(node) {
++		ids = append(ids, node.ID)
++		if node == last {
++			return
++		}
++	}
++	return
++}
++
++func mathConversionBlockIDSet(root *ast.Node) map[string]bool {
++	ids := map[string]bool{}
++	ast.Walk(root, func(node *ast.Node, entering bool) ast.WalkStatus {
++		if entering && node.IsBlock() && node.ID != "" {
++			ids[node.ID] = true
++		}
++		return ast.WalkContinue
++	})
++	return ids
++}
++
++func mathConversionReadonly(node *ast.Node) bool {
++	for current := node; current != nil; current = current.Parent {
++		if current.IALAttr(readonlyAttr) == "true" || current.Type == ast.NodeMindmapItem {
++			return true
++		}
++	}
++	return false
++}
++
++// mathConversionFingerprint 比较持久块内容、marks 与身份属性。IAL 是属性集合，持久化顺序不是身份，
++// 因此先按属性名稳定排序；updated 与动态引用角标不属于转换身份。
++func mathConversionFingerprint(node *ast.Node) string {
++	cloned := cloneRenderNode(node)
++	ast.Walk(cloned, func(current *ast.Node, entering bool) ast.WalkStatus {
++		if !entering {
++			return ast.WalkContinue
++		}
++		current.RemoveIALAttr("updated")
++		current.RemoveIALAttr("refcount")
++		if len(current.KramdownIAL) > 1 {
++			slices.SortFunc(current.KramdownIAL, func(a, b []string) int {
++				if len(a) == 0 || len(b) == 0 {
++					return 0
++				}
++				return strings.Compare(a[0], b[0])
++			})
++		}
++		if current.Type == ast.NodeTextMark && current.IsTextMarkType("block-ref") && current.TextMarkBlockRefSubtype == "d" {
++			current.TextMarkTextContent = ""
++		}
++		return ast.WalkContinue
++	})
++	luteEngine := util.NewLute()
++	return string(render.NewJSONRenderer(&parse.Tree{Root: cloned}, luteEngine.RenderOptions, luteEngine.ParseOptions).Render())
++}
++
++func mathConversionPlannerError(err error) error {
++	var failure *mathconversion.Error
++	if !errors.As(err, &failure) {
++		return failMathConversion(MathConversionInvalid, err.Error())
++	}
++	switch failure.Kind {
++	case mathconversion.Conflict:
++		return failMathConversion(MathConversionConflict, failure.Reason)
++	case mathconversion.Unsupported:
++		return failMathConversion(MathConversionUnsupported, failure.Reason)
++	default:
++		return failMathConversion(MathConversionInvalid, failure.Reason)
++	}
++}
++
++func mathConversionInlineSource(node *ast.Node) (string, bool) {
++	switch node.Type {
++	case ast.NodeTextMark:
++		if node.TextMarkType != "inline-math" {
++			return "", false
++		}
++		return node.TextMarkInlineMathContent, true
++	case ast.NodeInlineMath:
++		var content *ast.Node
++		for child := node.FirstChild; child != nil; child = child.Next {
++			if child.Type == ast.NodeInlineMathContent {
++				if content != nil {
++					return "", false
++				}
++				content = child
++				continue
++			}
++			if child.Type != ast.NodeInlineMathOpenMarker && child.Type != ast.NodeInlineMathCloseMarker {
++				return "", false
++			}
++		}
++		if content == nil {
++			return "", false
++		}
++		return string(content.Tokens), true
++	}
++	return "", false
++}
++
++func mathConversionMathBlockSource(node *ast.Node) (string, bool) {
++	if node.Type != ast.NodeMathBlock {
++		return "", false
++	}
++	var content *ast.Node
++	for child := node.FirstChild; child != nil; child = child.Next {
++		if child.Type == ast.NodeMathBlockContent {
++			if content != nil {
++				return "", false
++			}
++			content = child
++			continue
++		}
++		if child.Type != ast.NodeMathBlockOpenMarker && child.Type != ast.NodeMathBlockCloseMarker {
++			return "", false
++		}
++	}
++	if content == nil {
++		return "", false
++	}
++	return string(content.Tokens), true
++}
++
++// SnapshotMathConversion 在事务执行锁内排空已排队编辑，再从同一次文档读取返回 raw original 版本和
++// 目标描述。该接口只读；权限角色由后续 HTTP 接线负责，这里仍校验加密笔记本可访问性和文件认证。
++func SnapshotMathConversion(blockID string) (*MathConversionSnapshot, error) {
++	if !ast.IsNodeIDPattern(blockID) {
++		return nil, failMathConversion(MathConversionInvalid, "invalid block ID")
++	}
++	flushLock.Lock()
++	isFlushing.Store(true)
++	defer func() {
++		isFlushing.Store(false)
++		flushLock.Unlock()
++	}()
++	for _, queued := range takeQueuedTransactions() {
++		flushTx(queued)
++	}
++
++	blockTree := mathConversionBlockTree(blockID)
++	if blockTree == nil {
++		return nil, failMathConversion(MathConversionConflict, "block not found")
++	}
++	if IsEncryptedBox(blockTree.BoxID) && GetEncryptedBoxState(blockTree.BoxID) != EncryptedBoxStateUnlocked {
++		return nil, failMathConversion(MathConversionPermission, "encrypted notebook is not unlocked")
++	}
++	tree, original, err := filesys.LoadTreeSnapshot(blockTree.BoxID, blockTree.Path, util.NewLute())
++	if err != nil {
++		if errors.Is(err, ErrEncryptedBoxNotUnlocked) {
++			return nil, failMathConversion(MathConversionPermission, err.Error())
++		}
++		return nil, failMathConversion(MathConversionIO, err.Error())
++	}
++	if tree == nil || tree.Root == nil || tree.ID != blockTree.RootID || tree.Box != blockTree.BoxID || tree.Path != blockTree.Path {
++		return nil, failMathConversion(MathConversionConflict, "document location changed while reading the source")
++	}
++	node := treenode.GetNodeInTree(tree, blockID)
++	if node == nil {
++		return nil, failMathConversion(MathConversionConflict, "target block is missing from the document")
++	}
++
++	snapshot := &MathConversionSnapshot{
++		Notebook:  tree.Box,
++		RootID:    tree.ID,
++		Path:      tree.Path,
++		Version:   mathConversionSourceVersion(original),
++		BlockType: node.Type.String(),
++		TopLevel:  node.Parent == tree.Root,
++	}
++	switch node.Type {
++	case ast.NodeParagraph:
++		for index, child := range mathConversionDirectChildren(node) {
++			if !mathConversionInlineCandidate(child) {
++				continue
++			}
++			target := MathConversionTarget{Path: []int{index}, Type: "inline-math"}
++			if !snapshot.TopLevel {
++				target.Reason = "nested math conversion is not supported"
++			} else if source, ok := mathConversionInlineSource(child); !ok {
++				target.Reason = "noncanonical inline math node"
++			} else if plan, buildErr := mathconversion.Build(mathconversion.Request{
++				Block: node, TargetPath: target.Path, Direction: mathconversion.InlineToBlock,
++				ExpectedSource: source, NewID: mathConversionSnapshotNewID(node),
++			}); buildErr != nil {
++				target.Reason = buildErr.Error()
++			} else {
++				target.Supported = true
++				target.Source = plan.Source
++			}
++			snapshot.Targets = append(snapshot.Targets, target)
++		}
++	case ast.NodeMathBlock:
++		target := MathConversionTarget{Path: []int{}, Type: "math-block"}
++		if !snapshot.TopLevel {
++			target.Reason = "nested math conversion is not supported"
++		} else if source, ok := mathConversionMathBlockSource(node); !ok {
++			target.Reason = "noncanonical math block node"
++		} else if plan, buildErr := mathconversion.Build(mathconversion.Request{
++			Block: node, TargetPath: target.Path, Direction: mathconversion.BlockToInline,
++			ExpectedSource: source, NewID: mathConversionSnapshotNewID(node),
++		}); buildErr != nil {
++			target.Reason = buildErr.Error()
++		} else {
++			target.Supported = true
++			target.Source = plan.Source
++		}
++		snapshot.Targets = append(snapshot.Targets, target)
++	}
++	return snapshot, nil
++}
++
++func mathConversionDirectChildren(node *ast.Node) []*ast.Node {
++	var children []*ast.Node
++	for child := node.FirstChild; child != nil; child = child.Next {
++		children = append(children, child)
++	}
++	return children
++}
++
++func mathConversionInlineCandidate(node *ast.Node) bool {
++	return node.Type == ast.NodeInlineMath ||
++		node.Type == ast.NodeTextMark && strings.Contains(node.TextMarkType, "inline-math")
++}
++
++func mathConversionSnapshotNewID(block *ast.Node) func() string {
++	used := mathConversionBlockIDSet(block)
++	return func() string {
++		for range 8 {
++			id := ast.NewNodeID()
++			if !used[id] {
++				used[id] = true
++				return id
++			}
++		}
++		return ""
++	}
++}
++
++func (tx *Transaction) doConvertMath(operation *Operation) *TxErr {
++	fail := func(err error) *TxErr {
++		return &TxErr{code: TxErrCodePushMsg, id: operation.ID, msg: err.Error(), cause: err}
++	}
++	if operation == nil {
++		return fail(failMathConversion(MathConversionInvalid, "missing conversion operation"))
++	}
++	if len(tx.DoOperations) != 1 {
++		return fail(failMathConversion(MathConversionInvalid, "math conversion requires a separate transaction"))
++	}
++	state := operation.mathConversion
++	if tx.isReplay {
++		if state == nil || state.blockID == "" || state.rootID == "" || state.notebook == "" || state.path == "" ||
++			len(state.before) != 1 || len(state.after) == 0 {
++			return fail(failMathConversion(MathConversionInvalid, "math conversion undo state is unavailable"))
++		}
++		if err := tx.replayMathConversion(operation, state); err != nil {
++			return fail(err)
++		}
++		return nil
++	}
++	if state == nil || len(state.before) != 0 || len(state.after) != 0 {
++		return fail(failMathConversion(MathConversionInvalid, "client-provided conversion snapshot is not allowed"))
++	}
++	request := state.request
++	if err := validateMathConversionRequest(request); err != nil {
++		return fail(err)
++	}
++	if err := tx.convertMathOperation(operation, state); err != nil {
++		return fail(err)
++	}
++	return nil
++}
++
++func (tx *Transaction) convertMathOperation(operation *Operation, state *mathConversionOperationState) error {
++	request := state.request
++	blockTree := mathConversionBlockTree(request.BlockID)
++	if blockTree == nil {
++		return failMathConversion(MathConversionConflict, "block not found")
++	}
++	if blockTree.BoxID != request.Notebook || blockTree.RootID != request.RootID || blockTree.Path != request.Path {
++		return failMathConversion(MathConversionConflict, "document location changed before commit")
++	}
++	if IsEncryptedBox(blockTree.BoxID) && GetEncryptedBoxState(blockTree.BoxID) != EncryptedBoxStateUnlocked {
++		return failMathConversion(MathConversionPermission, "encrypted notebook is not unlocked")
++	}
++
++	tree, err := tx.loadTree(request.BlockID)
++	if err != nil {
++		if errors.Is(err, ErrEncryptedBoxNotUnlocked) {
++			return failMathConversion(MathConversionPermission, err.Error())
++		}
++		return failMathConversion(MathConversionIO, err.Error())
++	}
++	if tree == nil || tree.Root == nil || tree.Box != request.Notebook || tree.ID != request.RootID || tree.Path != request.Path {
++		return failMathConversion(MathConversionConflict, "document location changed while reading the source")
++	}
++	file := tx.documentSource(tree)
++	if file == nil || file.Box != tree.Box || file.Path != tree.Path {
++		return failMathConversion(MathConversionInvalid, "document source journal is unavailable")
++	}
++	if mathConversionSourceVersion(file.Before) != request.ExpectedVersion {
++		return failMathConversion(MathConversionConflict, "document source changed since the snapshot")
++	}
++	if IsEncryptedBox(tree.Box) && !tx.sourceLeases[tree.Box] {
++		return failMathConversion(MathConversionPermission, "encrypted notebook lease is unavailable")
++	}
++
++	block := treenode.GetNodeInTree(tree, request.BlockID)
++	if block == nil {
++		return failMathConversion(MathConversionConflict, "target block is missing from the document")
++	}
++	if block.Parent != tree.Root {
++		return failMathConversion(MathConversionUnsupported, "nested math conversion is not supported")
++	}
++	if mathConversionReadonly(block) {
++		return failMathConversion(MathConversionPermission, "math conversion requires editable blocks")
++	}
++
++	existingIDs := mathConversionBlockIDSet(tree.Root)
++	usedIDs := maps.Clone(existingIDs)
++	var newIDErr error
++	newID := state.newID
++	if newID == nil {
++		newID = ast.NewNodeID
++	}
++	plan, err := mathconversion.Build(mathconversion.Request{
++		Block: block, TargetPath: request.TargetPath, Direction: request.Direction,
++		ExpectedSource: request.ExpectedSource,
++		NewID: func() string {
++			for range 32 {
++				id := newID()
++				if !usedIDs[id] {
++					usedIDs[id] = true
++					return id
++				}
++			}
++			newIDErr = failMathConversion(MathConversionConflict, "new block ID collides with an existing block")
++			return ""
++		},
++	})
++	if err != nil {
++		if newIDErr != nil {
++			return newIDErr
++		}
++		return mathConversionPlannerError(err)
++	}
++	if plan.PreservedID != request.BlockID {
++		return failMathConversion(MathConversionConflict, "planner changed the preserved block ID")
++	}
++	if len(plan.Fragments) == 0 {
++		return failMathConversion(MathConversionInvalid, "planner returned no replacement blocks")
++	}
++	before := mathConversionFragment{node: cloneBlockSwapNode(block)}
++	if err = validateMathConversionProposedIDs(plan.Fragments, map[string]bool{request.BlockID: true}, existingIDs); err != nil {
++		return err
++	}
++
++	beforePosition := mathConversionCapturePosition(block, block)
++	if len(beforePosition.ids) != 1 || beforePosition.ids[0] != request.BlockID {
++		return failMathConversion(MathConversionConflict, "target block position changed before commit")
++	}
++
++	inserted := make([]*ast.Node, 0, len(plan.Fragments))
++	for _, fragment := range plan.Fragments {
++		inserted = append(inserted, cloneBlockSwapNode(fragment))
++	}
++	if err = mathConversionReplaceRun([]*ast.Node{block}, inserted); err != nil {
++		return err
++	}
++	afterPosition := mathConversionCapturePosition(inserted[0], inserted[len(inserted)-1])
++
++	state.notebook, state.rootID, state.path, state.blockID = tree.Box, tree.ID, tree.Path, request.BlockID
++	state.before = []mathConversionFragment{before}
++	state.after = cloneMathConversionFragments(inserted)
++	state.beforePosition = beforePosition
++	state.afterPosition = afterPosition
++	inverse := &Operation{Action: "convertMath", ID: request.BlockID, BlockID: request.BlockID,
++		RetData: mathConversionFragmentIDs(state.before), mathConversion: state, mathConversionUndo: true}
++	tx.UndoOperations = []*Operation{inverse}
++	if err = tx.finishMathConversion(state.before, state.after, inserted, tree); err != nil {
++		return err
++	}
++	operation.RetData = mathConversionFragmentIDs(state.after)
++	return nil
++}
++
++func mathConversionBlockIDSetFromFragments(fragments []mathConversionFragment) map[string]bool {
++	ids := map[string]bool{}
++	for _, id := range mathConversionFragmentBlockIDs(fragments) {
++		ids[id] = true
++	}
++	return ids
++}
++
++func validateMathConversionProposedIDs(fragments []*ast.Node, allowed map[string]bool, used map[string]bool) error {
++	seen := map[string]bool{}
++	for _, fragment := range fragments {
++		for _, id := range fragment.BlockIDs() {
++			if seen[id] {
++				return failMathConversion(MathConversionConflict, "replacement blocks reuse a block ID")
++			}
++			seen[id] = true
++			if used[id] && !allowed[id] {
++				return failMathConversion(MathConversionConflict, "replacement block ID collides with an existing block")
++			}
++		}
++	}
++	return nil
++}
++
++func cloneMathConversionFragments(nodes []*ast.Node) []mathConversionFragment {
++	fragments := make([]mathConversionFragment, 0, len(nodes))
++	for _, node := range nodes {
++		fragments = append(fragments, mathConversionFragment{node: cloneBlockSwapNode(node)})
++	}
++	return fragments
++}
++
++func cloneMathConversionState(state *mathConversionOperationState) *mathConversionOperationState {
++	if state == nil {
++		return nil
++	}
++	cloned := *state
++	cloned.request.TargetPath = append([]int(nil), state.request.TargetPath...)
++	cloned.before = append([]mathConversionFragment(nil), state.before...)
++	cloned.after = append([]mathConversionFragment(nil), state.after...)
++	cloned.beforePosition.ids = append([]string(nil), state.beforePosition.ids...)
++	cloned.afterPosition.ids = append([]string(nil), state.afterPosition.ids...)
++	return &cloned
++}
++
++func mathConversionReplaceRun(from, to []*ast.Node) error {
++	if len(from) == 0 || len(to) == 0 {
++		return failMathConversion(MathConversionInvalid, "conversion replacement is empty")
++	}
++	if from[0].Parent == nil {
++		return failMathConversion(MathConversionConflict, "conversion target is detached")
++	}
++	for index := 1; index < len(from); index++ {
++		if mathConversionNextBlock(from[index-1]) != from[index] {
++			return failMathConversion(MathConversionConflict, "conversion target blocks are not contiguous")
++		}
++	}
++	for _, node := range to {
++		from[0].InsertBefore(node)
++	}
++	for _, node := range from {
++		node.Unlink()
++	}
++	return nil
++}
++
++func mathConversionValidateRun(tree *parse.Tree, fragments []mathConversionFragment, position mathConversionPosition) (run []*ast.Node, err error) {
++	if len(fragments) == 0 {
++		return nil, failMathConversion(MathConversionInvalid, "conversion undo snapshot is empty")
++	}
++	ids := mathConversionFragmentIDs(fragments)
++	if len(ids) != len(position.ids) {
++		return nil, failMathConversion(MathConversionConflict, "conversion undo position metadata is inconsistent")
++	}
++	for index := range ids {
++		if ids[index] != position.ids[index] {
++			return nil, failMathConversion(MathConversionConflict, "conversion undo block order changed")
++		}
++	}
++	first := mathConversionTopLevelBlock(tree, ids[0])
++	if first == nil {
++		return nil, failMathConversion(MathConversionConflict, "conversion block changed since the snapshot")
++	}
++	run = []*ast.Node{first}
++	for index := 1; index < len(ids); index++ {
++		next := mathConversionNextBlock(run[index-1])
++		if next == nil || next.ID != ids[index] {
++			return nil, failMathConversion(MathConversionConflict, "conversion block sequence changed since the snapshot")
++		}
++		run = append(run, next)
++	}
++	if previous := mathConversionPreviousBlock(first); (previous == nil && position.previousID != "") ||
++		(previous != nil && previous.ID != position.previousID) {
++		return nil, failMathConversion(MathConversionConflict, "conversion block position changed since the snapshot")
++	}
++	if next := mathConversionNextBlock(run[len(run)-1]); (next == nil && position.nextID != "") ||
++		(next != nil && next.ID != position.nextID) {
++		return nil, failMathConversion(MathConversionConflict, "conversion block position changed since the snapshot")
++	}
++	for index, node := range run {
++		if fragments[index].node == nil {
++			return nil, failMathConversion(MathConversionInvalid, "conversion undo snapshot is missing a block")
++		}
++		if mathConversionFingerprint(node) != mathConversionFingerprint(fragments[index].node) {
++			return nil, failMathConversion(MathConversionConflict, "conversion block content changed since the snapshot")
++		}
++	}
++	return run, nil
++}
++
++func validateMathConversionReplayIDs(tree *parse.Tree, from, to []mathConversionFragment) error {
++	used := mathConversionBlockIDSet(tree.Root)
++	removed := mathConversionBlockIDSetFromFragments(from)
++	seen := map[string]bool{}
++	for _, fragment := range to {
++		if fragment.node == nil {
++			return failMathConversion(MathConversionInvalid, "conversion replacement is missing")
++		}
++		for _, id := range fragment.node.BlockIDs() {
++			if seen[id] {
++				return failMathConversion(MathConversionConflict, "conversion replacement reuses a block ID")
++			}
++			seen[id] = true
++			if used[id] && !removed[id] {
++				return failMathConversion(MathConversionConflict, "conversion replacement block ID is already occupied")
++			}
++		}
++	}
++	return nil
++}
++
++func (tx *Transaction) replayMathConversion(operation *Operation, state *mathConversionOperationState) error {
++	tree, err := tx.loadTree(state.blockID)
++	if err != nil {
++		if errors.Is(err, ErrEncryptedBoxNotUnlocked) {
++			return failMathConversion(MathConversionPermission, err.Error())
++		}
++		return failMathConversion(MathConversionIO, err.Error())
++	}
++	if tree == nil || tree.Root == nil || tree.Box != state.notebook || tree.ID != state.rootID || tree.Path != state.path {
++		return failMathConversion(MathConversionConflict, "conversion document location changed since the snapshot")
++	}
++	if IsEncryptedBox(tree.Box) && !tx.sourceLeases[tree.Box] {
++		return failMathConversion(MathConversionPermission, "encrypted notebook lease is unavailable")
++	}
++
++	from, to := state.before, state.after
++	position := state.beforePosition
++	if operation.mathConversionUndo {
++		from, to = state.after, state.before
++		position = state.afterPosition
++	}
++	run, err := mathConversionValidateRun(tree, from, position)
++	if err != nil {
++		return err
++	}
++	if mathConversionReadonly(run[0]) {
++		return failMathConversion(MathConversionPermission, "math conversion requires editable blocks")
++	}
++	if err = validateMathConversionReplayIDs(tree, from, to); err != nil {
++		return err
++	}
++	inserted := make([]*ast.Node, 0, len(to))
++	for _, fragment := range to {
++		inserted = append(inserted, cloneBlockSwapNode(fragment.node))
++	}
++	if err = mathConversionReplaceRun(run, inserted); err != nil {
++		return err
++	}
++	if err = tx.finishMathConversion(from, to, inserted, tree); err != nil {
++		return err
++	}
++	operation.RetData = mathConversionFragmentIDs(to)
++	return nil
++}
++
++func (tx *Transaction) finishMathConversion(from, to []mathConversionFragment, inserted []*ast.Node, tree *parse.Tree) error {
++	fromIDs := mathConversionBlockIDSetFromFragments(from)
++	toIDs := mathConversionBlockIDSetFromFragments(to)
++	var removed []string
++	for id := range fromIDs {
++		if !toIDs[id] {
++			removed = append(removed, id)
++		}
++	}
++	if len(removed) > 0 {
++		if err := treenode.RemoveBlockTreesByIDsWithError(tree.Box, removed); err != nil {
++			tx.sourceErr = err
++			return failMathConversion(MathConversionIO, err.Error())
++		}
++	}
++	tx.writeTree(tree)
++	if tx.sourceErr != nil {
++		return failMathConversion(MathConversionIO, tx.sourceErr.Error())
++	}
++	for _, node := range inserted {
++		ast.Walk(node, func(current *ast.Node, entering bool) ast.WalkStatus {
++			if entering && current.IsBlock() && current.ID != "" {
++				tx.nodes[current.ID] = current
++				tx.markStructureCheck(current)
++			}
++			return ast.WalkContinue
++		})
++	}
++	return nil
++}
+diff --git a/kernel/model/math_conversion_fts5_test.go b/kernel/model/math_conversion_fts5_test.go
+new file mode 100644
+index 0000000..2793344
+--- /dev/null
++++ b/kernel/model/math_conversion_fts5_test.go
+@@ -0,0 +1,1022 @@
++// SiYuan - https://github.com/siyuan-note/siyuan
++// Copyright (c) 2020-present, b3log.org
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++//go:build fts5
++
++package model
++
++import (
++	"bytes"
++	"encoding/json"
++	"errors"
++	"os"
++	"path/filepath"
++	"slices"
++	"sync"
++	"testing"
++
++	"github.com/88250/lute/ast"
++	"github.com/88250/lute/parse"
++	"github.com/siyuan-note/siyuan/kernel/conf"
++	"github.com/siyuan-note/siyuan/kernel/filesys"
++	"github.com/siyuan-note/siyuan/kernel/mathconversion"
++	"github.com/siyuan-note/siyuan/kernel/sql"
++	"github.com/siyuan-note/siyuan/kernel/treenode"
++	"github.com/siyuan-note/siyuan/kernel/util"
++)
++
++// setupMathConversionTest 在任何磁盘或数据库操作前把工作空间、用户主目录、临时目录、历史目录和队列
++// 全部指向本次测试独占的临时目录，清理时按建立顺序恢复。事务和后台刷新共享进程级变量，因此测试串行执行。
++func setupMathConversionTest(t *testing.T) *fileOperationTestFixture {
++	t.Helper()
++	root := t.TempDir()
++	previousWorkspaceDir, previousHomeDir, previousTempDir := util.WorkspaceDir, util.HomeDir, util.TempDir
++	previousHistoryDir, previousRepoDir, previousLogPath := util.HistoryDir, util.RepoDir, util.LogPath
++	previousDBPath, previousHistoryDBPath, previousAssetContentDBPath := util.DBPath, util.HistoryDBPath, util.AssetContentDBPath
++	util.WorkspaceDir = filepath.Join(root, "workspace")
++	util.HomeDir = filepath.Join(root, "home")
++	util.TempDir = filepath.Join(root, "temp")
++	util.HistoryDir = filepath.Join(root, "history")
++	util.RepoDir = filepath.Join(root, "repo")
++	util.LogPath = filepath.Join(root, "log", "siyuan.log")
++	for _, dir := range []string{util.WorkspaceDir, util.HomeDir, util.TempDir, util.HistoryDir, util.RepoDir,
++		filepath.Dir(util.LogPath)} {
++		if err := os.MkdirAll(dir, 0755); err != nil {
++			t.Fatalf("create isolated test directory failed: %v", err)
++		}
++	}
++	t.Cleanup(func() {
++		util.WorkspaceDir, util.HomeDir, util.TempDir = previousWorkspaceDir, previousHomeDir, previousTempDir
++		util.HistoryDir, util.RepoDir, util.LogPath = previousHistoryDir, previousRepoDir, previousLogPath
++		util.DBPath, util.HistoryDBPath, util.AssetContentDBPath = previousDBPath, previousHistoryDBPath, previousAssetContentDBPath
++	})
++
++	fixture := setupStructureTransactionTest(t)
++	setupFoldTransactionDatabase(t, fixture)
++	previousUndoLog := GlobalUndoLog
++	GlobalUndoLog = newUndoLog(64)
++	t.Cleanup(func() { GlobalUndoLog = previousUndoLog })
++	return fixture
++}
++
++func setupMathConversionEncryptedTest(t *testing.T) (*fileOperationTestFixture, []byte) {
++	t.Helper()
++	fixture := setupMathConversionTest(t)
++	source := mathConversionLoadTree(t, fixture.sourceID)
++	mathConversionSetRootBlocks(t, source,
++		mathConversionParagraph("20260718000100-abcdeff", mathConversionStrong("keep-before")),
++		mathConversionParagraph("20260718000101-abcdefg", mathConversionInline("x + 1")),
++		mathConversionParagraph("20260718000102-abcdefg", mathConversionText("keep-after")),
++	)
++	mathConversionWriteTree(t, source)
++
++	key := bytes.Repeat([]byte{0x6a}, 32)
++	prepareUnlockedEncryptedBoxTest(t, fixture.box.ID, key)
++	encryptDocumentTestSources(t, key, source)
++	boxConf := conf.NewBoxConf()
++	boxConf.Encrypted = true
++	boxConf.BoxCrypt = &conf.BoxEncryption{Spec: boxEncryptionSpec}
++	if err := encryptBoxMetadata(fixture.box.ID, boxConf, key); err != nil {
++		t.Fatal(err)
++	}
++	configData, err := json.Marshal(boxConf)
++	if err != nil {
++		t.Fatal(err)
++	}
++	if err = os.WriteFile(filepath.Join(util.DataDir, fixture.box.ID, ".siyuan", "conf.json"), configData, 0600); err != nil {
++		t.Fatal(err)
++	}
++	return fixture, key
++}
++
++func mathConversionLoadTree(t *testing.T, rootID string) *parse.Tree {
++	t.Helper()
++	tree, err := LoadTreeByBlockID(rootID)
++	if err != nil {
++		t.Fatalf("load test document failed: %v", err)
++	}
++	return tree
++}
++
++func mathConversionWriteTree(t *testing.T, tree *parse.Tree) {
++	t.Helper()
++	if _, err := filesys.WriteTree(tree); err != nil {
++		t.Fatalf("write test document failed: %v", err)
++	}
++	treenode.UpsertBlockTree(tree)
++}
++
++func mathConversionRawFile(t *testing.T, boxID, documentPath string) []byte {
++	t.Helper()
++	data, err := os.ReadFile(filepath.Join(util.DataDir, boxID, documentPath))
++	if err != nil {
++		t.Fatalf("read test document source failed: %v", err)
++	}
++	return data
++}
++
++func mathConversionSetRootBlocks(t *testing.T, tree *parse.Tree, blocks ...*ast.Node) {
++	t.Helper()
++	for child := tree.Root.FirstChild; child != nil; {
++		next := child.Next
++		child.Unlink()
++		child = next
++	}
++	for _, block := range blocks {
++		tree.Root.AppendChild(block)
++	}
++}
++
++func mathConversionParagraph(id string, children ...*ast.Node) *ast.Node {
++	paragraph := &ast.Node{Type: ast.NodeParagraph, ID: id}
++	paragraph.SetIALAttr("id", id)
++	for _, child := range children {
++		paragraph.AppendChild(child)
++	}
++	return paragraph
++}
++
++func mathConversionText(text string) *ast.Node {
++	return &ast.Node{Type: ast.NodeText, Tokens: []byte(text)}
++}
++
++func mathConversionStrong(text string) *ast.Node {
++	strong := &ast.Node{Type: ast.NodeStrong}
++	strong.AppendChild(&ast.Node{Type: ast.NodeStrongA6kOpenMarker, Tokens: []byte("**")})
++	strong.AppendChild(mathConversionText(text))
++	strong.AppendChild(&ast.Node{Type: ast.NodeStrongA6kCloseMarker, Tokens: []byte("**")})
++	return strong
++}
++
++func mathConversionEmphasis(text string) *ast.Node {
++	emphasis := &ast.Node{Type: ast.NodeEmphasis}
++	emphasis.AppendChild(&ast.Node{Type: ast.NodeEmA6kOpenMarker, Tokens: []byte("*")})
++	emphasis.AppendChild(mathConversionText(text))
++	emphasis.AppendChild(&ast.Node{Type: ast.NodeEmA6kCloseMarker, Tokens: []byte("*")})
++	return emphasis
++}
++
++func mathConversionInline(source string) *ast.Node {
++	return &ast.Node{Type: ast.NodeTextMark, TextMarkType: "inline-math", TextMarkInlineMathContent: source}
++}
++
++func mathConversionMathBlock(id, source string) *ast.Node {
++	block := &ast.Node{Type: ast.NodeMathBlock, ID: id}
++	block.SetIALAttr("id", id)
++	block.AppendChild(&ast.Node{Type: ast.NodeMathBlockOpenMarker, Tokens: []byte("$$")})
++	block.AppendChild(&ast.Node{Type: ast.NodeMathBlockContent, Tokens: []byte(source)})
++	block.AppendChild(&ast.Node{Type: ast.NodeMathBlockCloseMarker, Tokens: []byte("$$")})
++	return block
++}
++
++func mathConversionTopBlockIDs(tree *parse.Tree) []string {
++	var ids []string
++	for node := tree.Root.FirstChild; node != nil; node = node.Next {
++		if node.IsBlock() && node.ID != "" {
++			ids = append(ids, node.ID)
++		}
++	}
++	return ids
++}
++
++func mathConversionMathSource(node *ast.Node) string {
++	if node == nil || node.Type != ast.NodeMathBlock {
++		return ""
++	}
++	content := node.ChildByType(ast.NodeMathBlockContent)
++	if content == nil {
++		return ""
++	}
++	return string(content.Tokens)
++}
++
++func mathConversionInlineSourceOf(node *ast.Node) string {
++	if node == nil || node.Type != ast.NodeParagraph {
++		return ""
++	}
++	for child := node.FirstChild; child != nil; child = child.Next {
++		if child.Type == ast.NodeTextMark && child.TextMarkType == "inline-math" {
++			return child.TextMarkInlineMathContent
++		}
++	}
++	return ""
++}
++
++func mathConversionSnapshot(t *testing.T, blockID string) *MathConversionSnapshot {
++	t.Helper()
++	snapshot, err := SnapshotMathConversion(blockID)
++	if err != nil {
++		t.Fatalf("snapshot failed: %v", err)
++	}
++	return snapshot
++}
++
++func mathConversionPerform(t *testing.T, request MathConversionRequest) error {
++	t.Helper()
++	operation, err := NewConvertMathOperation(request)
++	if err != nil {
++		t.Fatalf("construct conversion operation failed: %v", err)
++	}
++	transaction := &Transaction{DoOperations: []*Operation{operation}}
++	transaction.MarkFromAPI()
++	return PerformTransactionSync(transaction)
++}
++
++func mathConversionUndo(t *testing.T, rootID string) error {
++	t.Helper()
++	entry := GlobalUndoLog.Undo(rootID)
++	if entry == nil {
++		return errors.New("undo stack is empty")
++	}
++	transaction := &Transaction{DoOperations: entry.UndoOperationsForReplay()}
++	transaction.MarkReplay()
++	if err := PerformTxSync(transaction); err != nil {
++		GlobalUndoLog.UndoRollback(entry, rootID)
++		return err
++	}
++	GlobalUndoLog.UndoCommit(entry, rootID)
++	return nil
++}
++
++func mathConversionRedo(t *testing.T, rootID string) error {
++	t.Helper()
++	entry := GlobalUndoLog.Redo(rootID)
++	if entry == nil {
++		return errors.New("redo stack is empty")
++	}
++	transaction := &Transaction{DoOperations: entry.DoOperationsForReplay()}
++	transaction.MarkReplay()
++	if err := PerformTxSync(transaction); err != nil {
++		GlobalUndoLog.RedoRollback(entry, rootID)
++		return err
++	}
++	GlobalUndoLog.RedoCommit(entry, rootID)
++	return nil
++}
++
++func mathConversionUndoDepth(rootID string) int {
++	GlobalUndoLog.mu.Lock()
++	defer GlobalUndoLog.mu.Unlock()
++	stack := GlobalUndoLog.stacks[rootID]
++	if stack == nil {
++		return 0
++	}
++	return len(stack.undoStack)
++}
++
++func mathConversionRedoDepth(rootID string) int {
++	GlobalUndoLog.mu.Lock()
++	defer GlobalUndoLog.mu.Unlock()
++	stack := GlobalUndoLog.stacks[rootID]
++	if stack == nil {
++		return 0
++	}
++	return len(stack.redoStack)
++}
++
++func requireMathConversionKind(t *testing.T, err error, kind MathConversionKind) {
++	t.Helper()
++	var failure *MathConversionError
++	if !errors.As(err, &failure) {
++		t.Fatalf("expected MathConversionError, got [%T] %v", err, err)
++	}
++	if failure.Kind != kind {
++		t.Fatalf("unexpected conversion failure kind: got %s (%v), want %s", failure.Kind, failure, kind)
++	}
++}
++
++func assertMathConversionNoChange(t *testing.T, boxID, documentPath, rootID string, before []byte) {
++	t.Helper()
++	if current := mathConversionRawFile(t, boxID, documentPath); !bytes.Equal(current, before) {
++		t.Fatal("failed conversion changed the persisted document")
++	}
++	if depth := mathConversionUndoDepth(rootID); depth != 0 {
++		t.Fatalf("failed conversion added %d undo entries", depth)
++	}
++}
++
++func TestMathConversionSoleInlineToBlockUndoRedo(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000201-abcdefg"
++	beforeID := "20260718000200-abcdefg"
++	afterID := "20260718000202-abcdefg"
++	target := mathConversionParagraph(targetID, mathConversionInline("alpha + beta"))
++	target.SetIALAttr("custom-keep", "yes")
++	target.SetIALAttr("style", "color: red")
++	target.SetIALAttr("updated", "20260718000201")
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(beforeID, mathConversionStrong("neighbor before")),
++		target,
++		mathConversionParagraph(afterID, mathConversionEmphasis("neighbor after")),
++	)
++	mathConversionWriteTree(t, tree)
++	original := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	snapshot := mathConversionSnapshot(t, targetID)
++	if snapshot.Notebook != fixture.box.ID || snapshot.RootID != fixture.sourceID || snapshot.Path != fixture.sourcePath ||
++		!snapshot.TopLevel || snapshot.BlockType != ast.NodeParagraph.String() || len(snapshot.Targets) != 1 {
++		t.Fatalf("unexpected inline snapshot: %+v", snapshot)
++	}
++	targetDescription := snapshot.Targets[0]
++	if !targetDescription.Supported || !slices.Equal(targetDescription.Path, []int{0}) ||
++		targetDescription.Type != "inline-math" || targetDescription.Source != "alpha + beta" {
++		t.Fatalf("unexpected inline target description: %+v", targetDescription)
++	}
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: targetDescription.Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatalf("inline-to-block conversion failed: %v", err)
++	}
++	converted := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	convertedTree := mathConversionLoadTree(t, fixture.sourceID)
++	if ids := mathConversionTopBlockIDs(convertedTree); !slices.Equal(ids, []string{beforeID, targetID, afterID}) {
++		t.Fatalf("conversion changed top-level blocks: %v", ids)
++	}
++	convertedBlock := treenode.GetNodeInTree(convertedTree, targetID)
++	if convertedBlock == nil || convertedBlock.Type != ast.NodeMathBlock ||
++		mathConversionMathSource(convertedBlock) != "alpha + beta" {
++		t.Fatalf("conversion did not produce the expected math block: %+v", convertedBlock)
++	}
++	if convertedBlock.IALAttr("custom-keep") != "yes" || convertedBlock.IALAttr("style") != "color: red" {
++		t.Fatal("conversion lost the original block IAL")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 1 {
++		t.Fatalf("one conversion must create one undo entry, got %d", depth)
++	}
++
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatalf("undo failed: %v", err)
++	}
++	restoredTree := mathConversionLoadTree(t, fixture.sourceID)
++	restoredBlock := treenode.GetNodeInTree(restoredTree, targetID)
++	if restoredBlock == nil || restoredBlock.Type != ast.NodeParagraph ||
++		mathConversionInlineSourceOf(restoredBlock) != "alpha + beta" ||
++		restoredBlock.IALAttr("custom-keep") != "yes" || restoredBlock.IALAttr("style") != "color: red" {
++		t.Fatalf("undo did not restore the original paragraph: %+v", restoredBlock)
++	}
++	if ids := mathConversionTopBlockIDs(restoredTree); !slices.Equal(ids, []string{beforeID, targetID, afterID}) {
++		t.Fatalf("undo changed top-level blocks: %v", ids)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, original) {
++		t.Fatal("undo did not restore the exact original source bytes")
++	}
++
++	if err := mathConversionRedo(t, fixture.sourceID); err != nil {
++		t.Fatalf("redo failed: %v", err)
++	}
++	redoneTree := mathConversionLoadTree(t, fixture.sourceID)
++	redoneBlock := treenode.GetNodeInTree(redoneTree, targetID)
++	if redoneBlock == nil || redoneBlock.Type != ast.NodeMathBlock || mathConversionMathSource(redoneBlock) != "alpha + beta" {
++		t.Fatalf("redo did not restore the converted math block: %+v", redoneBlock)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, converted) {
++		t.Fatal("redo did not restore the converted source bytes")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 1 {
++		t.Fatalf("redo changed the undo entry count: %d", depth)
++	}
++}
++
++func TestMathConversionSoleBlockToInlineUndoRedo(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000301-abcdefg"
++	beforeID := "20260718000300-abcdefg"
++	afterID := "20260718000302-abcdefg"
++	target := mathConversionMathBlock(targetID, "gamma^2")
++	target.SetIALAttr("custom-keep", "math")
++	target.SetIALAttr("style", "direction: ltr")
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(beforeID, mathConversionStrong("neighbor before")),
++		target,
++		mathConversionParagraph(afterID, mathConversionText("neighbor after")),
++	)
++	mathConversionWriteTree(t, tree)
++	original := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	snapshot := mathConversionSnapshot(t, targetID)
++	if !snapshot.TopLevel || snapshot.BlockType != ast.NodeMathBlock.String() || len(snapshot.Targets) != 1 {
++		t.Fatalf("unexpected math block snapshot: %+v", snapshot)
++	}
++	targetDescription := snapshot.Targets[0]
++	if !targetDescription.Supported || len(targetDescription.Path) != 0 ||
++		targetDescription.Type != "math-block" || targetDescription.Source != "gamma^2" {
++		t.Fatalf("unexpected math block target description: %+v", targetDescription)
++	}
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.BlockToInline, TargetPath: nil,
++		ExpectedSource: targetDescription.Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatalf("block-to-inline conversion failed: %v", err)
++	}
++	converted := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	convertedTree := mathConversionLoadTree(t, fixture.sourceID)
++	if ids := mathConversionTopBlockIDs(convertedTree); !slices.Equal(ids, []string{beforeID, targetID, afterID}) {
++		t.Fatalf("conversion changed top-level blocks: %v", ids)
++	}
++	convertedBlock := treenode.GetNodeInTree(convertedTree, targetID)
++	if convertedBlock == nil || convertedBlock.Type != ast.NodeParagraph ||
++		mathConversionInlineSourceOf(convertedBlock) != "gamma^2" ||
++		convertedBlock.IALAttr("custom-keep") != "math" || convertedBlock.IALAttr("style") != "direction: ltr" {
++		t.Fatalf("conversion did not produce the expected paragraph: %+v", convertedBlock)
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 1 {
++		t.Fatalf("one conversion must create one undo entry, got %d", depth)
++	}
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatalf("undo failed: %v", err)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, original) {
++		t.Fatal("undo did not restore the exact original source bytes")
++	}
++	restoredBlock := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), targetID)
++	if restoredBlock == nil || restoredBlock.Type != ast.NodeMathBlock || mathConversionMathSource(restoredBlock) != "gamma^2" {
++		t.Fatalf("undo did not restore the math block: %+v", restoredBlock)
++	}
++	if err := mathConversionRedo(t, fixture.sourceID); err != nil {
++		t.Fatalf("redo failed: %v", err)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, converted) {
++		t.Fatal("redo did not restore the converted source bytes")
++	}
++}
++
++func TestMathConversionMixedParagraphUndoRedo(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000401-abcdefg"
++	beforeID := "20260718000400-abcdefg"
++	afterID := "20260718000402-abcdefg"
++	target := mathConversionParagraph(targetID, mathConversionStrong("before"), mathConversionText(" "),
++		mathConversionInline("a + b"), mathConversionText(" "), mathConversionEmphasis("after"))
++	target.SetIALAttr("style", "color: blue")
++	neighborBefore := mathConversionParagraph(beforeID, mathConversionText("left neighbor"))
++	neighborAfter := mathConversionParagraph(afterID, mathConversionText("right neighbor"))
++	mathConversionSetRootBlocks(t, tree, neighborBefore, target, neighborAfter)
++	mathConversionWriteTree(t, tree)
++	original := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	loadedBeforeConversion := mathConversionLoadTree(t, fixture.sourceID)
++	originalFingerprint := mathConversionFingerprint(treenode.GetNodeInTree(loadedBeforeConversion, targetID))
++	neighborBeforeFingerprint := mathConversionFingerprint(treenode.GetNodeInTree(loadedBeforeConversion, beforeID))
++	neighborAfterFingerprint := mathConversionFingerprint(treenode.GetNodeInTree(loadedBeforeConversion, afterID))
++
++	snapshot := mathConversionSnapshot(t, targetID)
++	if len(snapshot.Targets) != 1 || !snapshot.Targets[0].Supported ||
++		!slices.Equal(snapshot.Targets[0].Path, []int{2}) || snapshot.Targets[0].Source != "a + b" {
++		t.Fatalf("unexpected mixed target: %+v", snapshot)
++	}
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{2},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatalf("mixed conversion failed: %v", err)
++	}
++	converted := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	convertedTree := mathConversionLoadTree(t, fixture.sourceID)
++	ids := mathConversionTopBlockIDs(convertedTree)
++	if len(ids) != 5 || ids[0] != beforeID || ids[1] != targetID || ids[3] == "" || ids[4] != afterID {
++		t.Fatalf("unexpected mixed top-level block order: %v", ids)
++	}
++	mathID, textAfterID := ids[2], ids[3]
++	if mathID == targetID || textAfterID == targetID || mathID == textAfterID {
++		t.Fatalf("mixed conversion reused the preserved ID: %v", ids)
++	}
++	beforeBlock := treenode.GetNodeInTree(convertedTree, targetID)
++	if beforeBlock == nil || beforeBlock.Type != ast.NodeParagraph || beforeBlock.IALAttr("style") != "color: blue" ||
++		beforeBlock.FirstChild == nil || beforeBlock.FirstChild.Type != ast.NodeStrong ||
++		beforeBlock.FirstChild.Next == nil || string(beforeBlock.FirstChild.Next.Tokens) != " " {
++		t.Fatalf("mixed before fragment lost original content or IAL: %+v", beforeBlock)
++	}
++	mathBlock := treenode.GetNodeInTree(convertedTree, mathID)
++	if mathBlock == nil || mathBlock.Type != ast.NodeMathBlock || mathConversionMathSource(mathBlock) != "a + b" ||
++		mathBlock.IALAttr("style") != "color: blue" || mathBlock.IALAttr("updated") != "" {
++		t.Fatalf("unexpected mixed math fragment: %+v", mathBlock)
++	}
++	textAfter := treenode.GetNodeInTree(convertedTree, textAfterID)
++	if textAfter == nil || textAfter.Type != ast.NodeParagraph || textAfter.IALAttr("style") != "color: blue" ||
++		textAfter.IALAttr("updated") != "" || textAfter.FirstChild == nil || string(textAfter.FirstChild.Tokens) != " " ||
++		textAfter.FirstChild.Next == nil || textAfter.FirstChild.Next.Type != ast.NodeEmphasis {
++		t.Fatalf("unexpected mixed after fragment: %+v", textAfter)
++	}
++	if mathConversionFingerprint(treenode.GetNodeInTree(convertedTree, beforeID)) != neighborBeforeFingerprint ||
++		mathConversionFingerprint(treenode.GetNodeInTree(convertedTree, afterID)) != neighborAfterFingerprint {
++		t.Fatal("mixed conversion changed a neighboring block")
++	}
++
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatalf("mixed undo failed: %v", err)
++	}
++	restoredTree := mathConversionLoadTree(t, fixture.sourceID)
++	if got := mathConversionTopBlockIDs(restoredTree); !slices.Equal(got, []string{beforeID, targetID, afterID}) {
++		t.Fatalf("mixed undo changed top-level blocks: %v", got)
++	}
++	restored := treenode.GetNodeInTree(restoredTree, targetID)
++	if restored == nil || restored.Type != ast.NodeParagraph || mathConversionFingerprint(restored) != originalFingerprint {
++		t.Fatalf("mixed undo did not restore the original paragraph: %+v", restored)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, original) {
++		t.Fatal("mixed undo did not restore the exact original source bytes")
++	}
++
++	for range 2 {
++		if err := mathConversionRedo(t, fixture.sourceID); err != nil {
++			t.Fatalf("mixed redo failed: %v", err)
++		}
++		redoneTree := mathConversionLoadTree(t, fixture.sourceID)
++		if got := mathConversionTopBlockIDs(redoneTree); !slices.Equal(got, ids) {
++			t.Fatalf("mixed redo did not reuse snapshot IDs: got %v want %v", got, ids)
++		}
++		if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, converted) {
++			t.Fatal("mixed redo did not restore the converted source bytes")
++		}
++		if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++			t.Fatalf("mixed second undo failed: %v", err)
++		}
++	}
++}
++
++func TestMathConversionMixedIndexZeroPreservesOuterID(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000501-abcdefg"
++	beforeID := "20260718000500-abcdefg"
++	afterID := "20260718000502-abcdefg"
++	target := mathConversionParagraph(targetID, mathConversionInline("first"), mathConversionText(" tail"))
++	target.SetIALAttr("style", "font-weight: bold")
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(beforeID, mathConversionText("left")),
++		target,
++		mathConversionParagraph(afterID, mathConversionText("right")),
++	)
++	mathConversionWriteTree(t, tree)
++	original := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	snapshot := mathConversionSnapshot(t, targetID)
++	if len(snapshot.Targets) != 1 || !slices.Equal(snapshot.Targets[0].Path, []int{0}) {
++		t.Fatalf("unexpected index-zero target: %+v", snapshot)
++	}
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatalf("index-zero conversion failed: %v", err)
++	}
++	converted := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	convertedTree := mathConversionLoadTree(t, fixture.sourceID)
++	ids := mathConversionTopBlockIDs(convertedTree)
++	if len(ids) != 4 || ids[0] != beforeID || ids[2] != targetID || ids[3] != afterID {
++		t.Fatalf("index-zero conversion did not keep the outer ID on the text fragment: %v", ids)
++	}
++	mathBlock := treenode.GetNodeInTree(convertedTree, ids[1])
++	if mathBlock == nil || mathBlock.Type != ast.NodeMathBlock || mathConversionMathSource(mathBlock) != "first" {
++		t.Fatalf("unexpected index-zero math fragment: %+v", mathBlock)
++	}
++	textAfter := treenode.GetNodeInTree(convertedTree, targetID)
++	if textAfter == nil || textAfter.Type != ast.NodeParagraph || textAfter.FirstChild == nil ||
++		string(textAfter.FirstChild.Tokens) != " tail" || textAfter.IALAttr("style") != "font-weight: bold" {
++		t.Fatalf("index-zero after fragment did not retain the outer ID: %+v", textAfter)
++	}
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatalf("index-zero undo failed: %v", err)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, original) {
++		t.Fatal("index-zero undo did not restore the original source bytes")
++	}
++	if err := mathConversionRedo(t, fixture.sourceID); err != nil {
++		t.Fatalf("index-zero redo failed: %v", err)
++	}
++	if got := mathConversionTopBlockIDs(mathConversionLoadTree(t, fixture.sourceID)); !slices.Equal(got, ids) {
++		t.Fatalf("index-zero redo did not reuse snapshot IDs: got %v want %v", got, ids)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, converted) {
++		t.Fatal("index-zero redo did not restore the converted source bytes")
++	}
++}
++
++func TestMathConversionStaleSnapshotRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000601-abcdefg"
++	neighborID := "20260718000600-abcdefg"
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(neighborID, mathConversionText("neighbor")),
++		mathConversionParagraph(targetID, mathConversionInline("stale + source")),
++	)
++	mathConversionWriteTree(t, tree)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++
++	modified := mathConversionLoadTree(t, fixture.sourceID)
++	neighbor := treenode.GetNodeInTree(modified, neighborID)
++	neighbor.FirstChild.Tokens = []byte("changed neighbor after snapshot")
++	mathConversionWriteTree(t, modified)
++	external := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	err := mathConversionPerform(t, request)
++	requireMathConversionKind(t, err, MathConversionConflict)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, external) {
++		t.Fatal("stale conversion overwrote the changed source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("stale conversion added %d undo entries", depth)
++	}
++	reloaded := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), targetID)
++	if reloaded == nil || reloaded.Type != ast.NodeParagraph || mathConversionInlineSourceOf(reloaded) != "stale + source" {
++		t.Fatalf("stale conversion changed the target block: %+v", reloaded)
++	}
++}
++
++func TestMathConversionWrongInputsRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000701-abcdefg"
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph("20260718000700-abcdefg", mathConversionText("neighbor")),
++		mathConversionParagraph(targetID, mathConversionInline("input + checks")),
++	)
++	mathConversionWriteTree(t, tree)
++	before := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	snapshot := mathConversionSnapshot(t, targetID)
++
++	base := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	cases := []struct {
++		name    string
++		request MathConversionRequest
++		kind    MathConversionKind
++	}{
++		{"wrong-source", func() MathConversionRequest { request := base; request.ExpectedSource = "different"; return request }(), MathConversionConflict},
++		{"wrong-target-path", func() MathConversionRequest { request := base; request.TargetPath = []int{9}; return request }(), MathConversionConflict},
++		{"wrong-direction", func() MathConversionRequest {
++			request := base
++			request.Direction = mathconversion.BlockToInline
++			request.TargetPath = nil
++			return request
++		}(), MathConversionUnsupported},
++		{"wrong-notebook", func() MathConversionRequest {
++			request := base
++			request.Notebook = "20260718000799-abcdefg"
++			return request
++		}(), MathConversionConflict},
++	}
++	for _, testcase := range cases {
++		t.Run(testcase.name, func(t *testing.T) {
++			err := mathConversionPerform(t, testcase.request)
++			requireMathConversionKind(t, err, testcase.kind)
++			if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, before) {
++				t.Fatal("rejected conversion changed the source")
++			}
++			if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++				t.Fatalf("rejected conversion added %d undo entries", depth)
++			}
++		})
++	}
++
++	for _, request := range []MathConversionRequest{
++		{},
++		{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path, BlockID: "bad",
++			Direction: mathconversion.InlineToBlock, TargetPath: []int{0}, ExpectedVersion: snapshot.Version},
++		func() MathConversionRequest { request := base; request.ExpectedVersion = "short"; return request }(),
++		func() MathConversionRequest { request := base; request.Path = fixture.targetPath; return request }(),
++	} {
++		if _, err := NewConvertMathOperation(request); err == nil {
++			t.Fatalf("invalid conversion request was accepted: %+v", request)
++		} else {
++			requireMathConversionKind(t, err, MathConversionInvalid)
++		}
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, before) {
++		t.Fatal("invalid conversion request changed the source")
++	}
++}
++
++func TestMathConversionNestedBlockUnsupported(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	paragraphID := "20260718000801-abcdefg"
++	list := &ast.Node{Type: ast.NodeList, ID: "20260718000800-abcdefg", ListData: &ast.ListData{Typ: 0, BulletChar: '*'}}
++	list.SetIALAttr("id", list.ID)
++	item := &ast.Node{Type: ast.NodeListItem, ID: "20260718000803-abcdefg", ListData: &ast.ListData{Typ: 0, BulletChar: '*'}}
++	item.SetIALAttr("id", item.ID)
++	target := mathConversionParagraph(paragraphID, mathConversionInline("nested + formula"))
++	item.AppendChild(target)
++	list.AppendChild(item)
++	mathConversionSetRootBlocks(t, tree, list, mathConversionParagraph("20260718000802-abcdefg", mathConversionText("after")))
++	mathConversionWriteTree(t, tree)
++	before := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	snapshot := mathConversionSnapshot(t, paragraphID)
++	if snapshot.TopLevel || len(snapshot.Targets) != 1 || snapshot.Targets[0].Supported {
++		t.Fatalf("nested target was not marked unsupported: %+v", snapshot)
++	}
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: paragraphID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: "nested + formula", ExpectedVersion: snapshot.Version}
++	err := mathConversionPerform(t, request)
++	requireMathConversionKind(t, err, MathConversionUnsupported)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, before) {
++		t.Fatal("nested conversion changed the source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("nested conversion added %d undo entries", depth)
++	}
++}
++
++func TestMathConversionIDCollisionRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718000901-abcdefg"
++	occupiedID := "20260718000900-abcdefg"
++	target := mathConversionParagraph(targetID, mathConversionText("before"), mathConversionInline("collision + formula"), mathConversionText("after"))
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(occupiedID, mathConversionText("occupied identity")),
++		target,
++	)
++	mathConversionWriteTree(t, tree)
++	before := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{1},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	operation, err := NewConvertMathOperation(request)
++	if err != nil {
++		t.Fatal(err)
++	}
++	operation.mathConversion.newID = func() string { return occupiedID }
++	transaction := &Transaction{DoOperations: []*Operation{operation}}
++	transaction.MarkFromAPI()
++	err = PerformTransactionSync(transaction)
++	requireMathConversionKind(t, err, MathConversionConflict)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, before) {
++		t.Fatal("ID collision changed the source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("ID collision added %d undo entries", depth)
++	}
++	reloaded := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), targetID)
++	if reloaded == nil || reloaded.Type != ast.NodeParagraph {
++		t.Fatalf("ID collision changed the target: %+v", reloaded)
++	}
++}
++
++func TestMathConversionReadonlyRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718001001-abcdefg"
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(targetID, mathConversionInline("readonly + formula")),
++	)
++	tree.Root.SetIALAttr(readonlyAttr, "true")
++	mathConversionWriteTree(t, tree)
++	before := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	err := mathConversionPerform(t, request)
++	requireMathConversionKind(t, err, MathConversionPermission)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, before) {
++		t.Fatal("readonly conversion changed the source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("readonly conversion added %d undo entries", depth)
++	}
++}
++
++func TestMathConversionEncryptedSourceLockedRejected(t *testing.T) {
++	fixture, key := setupMathConversionEncryptedTest(t)
++	if len(key) != 32 {
++		t.Fatal("encrypted fixture key is missing")
++	}
++	targetID := "20260718000101-abcdefg"
++	snapshot := mathConversionSnapshot(t, targetID)
++	if len(snapshot.Targets) != 1 || !snapshot.Targets[0].Supported {
++		t.Fatalf("encrypted target was not readable: %+v", snapshot)
++	}
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	before := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++
++	setEncryptedBoxState(fixture.box.ID, EncryptedBoxStateLocked)
++	err := mathConversionPerform(t, request)
++	requireMathConversionKind(t, err, MathConversionPermission)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, before) {
++		t.Fatal("locked conversion changed the encrypted source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("locked conversion added %d undo entries", depth)
++	}
++	if snapshot.Version != mathConversionSourceVersion(before) {
++		t.Fatal("encrypted snapshot version does not bind the persisted ciphertext")
++	}
++}
++
++func TestMathConversionWriteFailureRollsBack(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718001101-abcdefg"
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(targetID, mathConversionInline("write + failure")),
++	)
++	mathConversionWriteTree(t, tree)
++	original := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	operation, err := NewConvertMathOperation(request)
++	if err != nil {
++		t.Fatal(err)
++	}
++	transaction := &Transaction{DoOperations: []*Operation{operation}, m: &sync.Mutex{}}
++	transaction.MarkFromAPI()
++	if err = transaction.begin(); err != nil {
++		t.Fatal(err)
++	}
++	defer func() {
++		if transaction.state.Load() == 1 {
++			transaction.rollback()
++		}
++	}()
++	if txErr := transaction.doConvertMath(operation); txErr != nil {
++		t.Fatalf("prepare conversion failed: %v", txErr)
++	}
++	injected := errors.New("injected math conversion write failure")
++	transaction.writeTransactionTree = func(*parse.Tree) error { return injected }
++	if err = transaction.commit(); !errors.Is(err, injected) {
++		t.Fatalf("unexpected commit result: %v", err)
++	}
++	transaction.rollback()
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, original) {
++		t.Fatal("write failure changed the document source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("write failure added %d undo entries", depth)
++	}
++	block := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), targetID)
++	if block == nil || block.Type != ast.NodeParagraph || mathConversionInlineSourceOf(block) != "write + failure" {
++		t.Fatalf("write failure did not restore the original block: %+v", block)
++	}
++}
++
++func TestMathConversionExternalWriteBeforeCommitRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718001201-abcdefg"
++	neighborID := "20260718001200-abcdefg"
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(neighborID, mathConversionText("old neighbor")),
++		mathConversionParagraph(targetID, mathConversionInline("race + formula")),
++	)
++	mathConversionWriteTree(t, tree)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	operation, err := NewConvertMathOperation(request)
++	if err != nil {
++		t.Fatal(err)
++	}
++	transaction := &Transaction{DoOperations: []*Operation{operation}, m: &sync.Mutex{}}
++	transaction.MarkFromAPI()
++	if err = transaction.begin(); err != nil {
++		t.Fatal(err)
++	}
++	defer func() {
++		if transaction.state.Load() == 1 {
++			transaction.rollback()
++		}
++	}()
++	if txErr := transaction.doConvertMath(operation); txErr != nil {
++		t.Fatalf("prepare conversion failed: %v", txErr)
++	}
++
++	newer := mathConversionLoadTree(t, fixture.sourceID)
++	treenode.GetNodeInTree(newer, neighborID).FirstChild.Tokens = []byte("external newer edit")
++	mathConversionWriteTree(t, newer)
++	external := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	if err = transaction.commit(); !errors.Is(err, util.ErrFileChanged) {
++		t.Fatalf("external write was not rejected: %v", err)
++	}
++	transaction.rollback()
++	if !errors.Is(transaction.sourceRollbackErr, util.ErrFileChanged) {
++		t.Fatalf("rollback did not report the preserved conflict: %v", transaction.sourceRollbackErr)
++	}
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, external) {
++		t.Fatal("conversion or rollback overwrote the external edit")
++	}
++	if err = recoverDocumentSources(); err != nil {
++		t.Fatal(err)
++	}
++	indexBox(fixture.box.ID)
++	sql.FlushQueue()
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, external) {
++		t.Fatal("recovery overwrote the external edit")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 0 {
++		t.Fatalf("failed conversion added %d undo entries", depth)
++	}
++}
++
++func TestMathConversionUndoConflictPreservesNewerSource(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718001301-abcdefg"
++	mathConversionSetRootBlocks(t, tree, mathConversionParagraph(targetID, mathConversionInline("undo + conflict")))
++	mathConversionWriteTree(t, tree)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{0},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatal(err)
++	}
++	converted := mathConversionLoadTree(t, fixture.sourceID)
++	convertedBlock := treenode.GetNodeInTree(converted, targetID)
++	convertedBlock.ChildByType(ast.NodeMathBlockContent).Tokens = []byte("external newer math")
++	mathConversionWriteTree(t, converted)
++	newer := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	err := mathConversionUndo(t, fixture.sourceID)
++	requireMathConversionKind(t, err, MathConversionConflict)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, newer) {
++		t.Fatal("failed undo overwrote the externally edited source")
++	}
++	if depth := mathConversionUndoDepth(fixture.sourceID); depth != 1 {
++		t.Fatalf("failed undo changed the undo stack: %d", depth)
++	}
++}
++
++func TestMathConversionRedoIDCollisionRejected(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718001501-abcdefg"
++	target := mathConversionParagraph(targetID, mathConversionText("before"), mathConversionInline("redo + collision"), mathConversionText("after"))
++	mathConversionSetRootBlocks(t, tree, target)
++	mathConversionWriteTree(t, tree)
++	snapshot := mathConversionSnapshot(t, targetID)
++	request := MathConversionRequest{Notebook: snapshot.Notebook, RootID: snapshot.RootID, Path: snapshot.Path,
++		BlockID: targetID, Direction: mathconversion.InlineToBlock, TargetPath: []int{1},
++		ExpectedSource: snapshot.Targets[0].Source, ExpectedVersion: snapshot.Version}
++	if err := mathConversionPerform(t, request); err != nil {
++		t.Fatal(err)
++	}
++	convertedIDs := mathConversionTopBlockIDs(mathConversionLoadTree(t, fixture.sourceID))
++	if len(convertedIDs) != 3 || convertedIDs[0] != targetID {
++		t.Fatalf("unexpected converted blocks: %v", convertedIDs)
++	}
++	mathID := convertedIDs[1]
++	if err := mathConversionUndo(t, fixture.sourceID); err != nil {
++		t.Fatal(err)
++	}
++	if undoDepth, redoDepth := mathConversionUndoDepth(fixture.sourceID), mathConversionRedoDepth(fixture.sourceID); undoDepth != 0 || redoDepth != 1 {
++		t.Fatalf("unexpected undo stacks after undo: undo=%d redo=%d", undoDepth, redoDepth)
++	}
++
++	collision := mathConversionLoadTree(t, fixture.sourceID)
++	collision.Root.AppendChild(mathConversionParagraph(mathID, mathConversionText("occupied after undo")))
++	mathConversionWriteTree(t, collision)
++	beforeRedo := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	err := mathConversionRedo(t, fixture.sourceID)
++	requireMathConversionKind(t, err, MathConversionConflict)
++	if current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath); !bytes.Equal(current, beforeRedo) {
++		t.Fatal("failed redo overwrote the source with a colliding block ID")
++	}
++	if undoDepth, redoDepth := mathConversionUndoDepth(fixture.sourceID), mathConversionRedoDepth(fixture.sourceID); undoDepth != 0 || redoDepth != 1 {
++		t.Fatalf("failed redo must stay retryable: undo=%d redo=%d", undoDepth, redoDepth)
++	}
++}
++
++func TestMathConversionSnapshotDrainsQueuedEdits(t *testing.T) {
++	fixture := setupMathConversionTest(t)
++	tree := mathConversionLoadTree(t, fixture.sourceID)
++	targetID := "20260718001401-abcdefg"
++	neighborID := "20260718001400-abcdefg"
++	mathConversionSetRootBlocks(t, tree,
++		mathConversionParagraph(neighborID, mathConversionText("queued neighbor")),
++		mathConversionParagraph(targetID, mathConversionInline("queued + snapshot")),
++	)
++	mathConversionWriteTree(t, tree)
++
++	queued := []*Transaction{{DoOperations: []*Operation{{
++		Action: "setAttrs", ID: neighborID, Data: `{"custom-queued":"yes"}`,
++	}}}}
++	PerformTransactions(&queued)
++	snapshot := mathConversionSnapshot(t, targetID)
++	if txQueueSize() != 0 {
++		t.Fatalf("snapshot did not drain the transaction queue: %d", txQueueSize())
++	}
++	current := mathConversionRawFile(t, fixture.box.ID, fixture.sourcePath)
++	if snapshot.Version != mathConversionSourceVersion(current) {
++		t.Fatal("snapshot version does not match the source it read")
++	}
++	reloaded := treenode.GetNodeInTree(mathConversionLoadTree(t, fixture.sourceID), neighborID)
++	if reloaded.IALAttr("custom-queued") != "yes" {
++		t.Fatal("snapshot did not observe the drained edit")
++	}
++}
+diff --git a/kernel/model/transaction.go b/kernel/model/transaction.go
+index 59e4684..10e10ac 100644
+--- a/kernel/model/transaction.go
++++ b/kernel/model/transaction.go
+@@ -413,6 +413,8 @@ func performTx(tx *Transaction) (ret *TxErr) {
+ 				ret = tx.doSwapBlockRef(op)
+ 			case "convertList":
+ 				ret = tx.doConvertList(op)
++			case "convertMath":
++				ret = tx.doConvertMath(op)
+ 			case "moveOutlineHeading":
+ 				ret = tx.doMoveOutlineHeading(op)
+ 			case "append":
+@@ -2774,6 +2776,8 @@ type Operation struct {
+ 	documentTitleUndo             bool
+ 	listConversion                *listConversionState
+ 	listConversionUndo            bool
++	mathConversion                *mathConversionOperationState
++	mathConversionUndo            bool
+ 	attributeViewItems            *attributeViewItemsSnapshot
+ 	attributeViewCreatedSubItems  *attributeViewCreatedSubItemsSnapshot
+ 	attributeViewRelationSubItems *attributeViewRelationSubItemsSnapshot
+diff --git a/kernel/model/undolog.go b/kernel/model/undolog.go
+index 593422e..3b762c8 100644
+--- a/kernel/model/undolog.go
++++ b/kernel/model/undolog.go
+@@ -425,6 +425,9 @@ func cloneOperations(ops []*Operation) []*Operation {
+ 			state := *op.attributeViewFields
+ 			cloned.attributeViewFields = &state
+ 		}
++		if op.mathConversion != nil {
++			cloned.mathConversion = cloneMathConversionState(op.mathConversion)
++		}
+ 		if op.relationCellContext != nil {
+ 			context := *op.relationCellContext
+ 			context.SourceItemIDs = slices.Clone(op.relationCellContext.SourceItemIDs)
