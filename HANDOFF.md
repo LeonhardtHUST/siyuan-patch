@@ -1,173 +1,58 @@
-# HANDOFF：冻结于 v3.8.11-p4
+# 当前状态
 
-接手前的 `patch-drift: v3.8.11-p1` 已修复，镜像 `v3.8.11-p4` 已发布并通过幂等复检。
-后续维护者从「冻结快照」一节接着做，不需要重读历史会话。
+本文件是 2026-11-24 的快照，不是长期契约。实时真相以 `git log`、CI 运行记录与 GHCR 为准。
 
-冻结时间：2026-11-21 13:13（Asia/Shanghai）。镜像发布完成于 2026-11-20 23:57（Asia/Shanghai）。
-
-## 冻结快照
+## 现在跑的是什么
 
 | 项 | 值 |
 |---|---|
-| main HEAD | `d09b50527c1920049d4e97110791f0817ecb642b` |
-| 上游源码 tag | `v3.8.11` |
-| `PATCH_REVISION` | `4` |
-| canonical 镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.11-p4` |
-| 镜像架构 | `linux/amd64`、`linux/arm64` |
-| 最近一次版本校验 | run `44761783943` check-image-version success |
-| 最近一次构建 | run `44761883782` release-docker success |
-| 最近一次幂等复检 | run `44812475523` watch-upstream success，`canonical_state=exists` 后跳过 |
+| main | 见 `git log -1` |
+| 镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.11-p5`（amd64 + arm64，匿名可拉） |
+| `PATCH_REVISION` | `5` |
+| 线上部署 | 私有 config 仓库 `deploy-siyuan` 每 30 分钟轮询，已于 2026-11-24 切到 p5 并通过健康检查 |
+| 平台产物 | v3.8.11 的 PC（linux/mac/win 全架构）、iOS `.ipa`、Android `.apk` 均已随 Release 发布 |
 
-本文件是文档提交，不改变任何补丁内容、不改变 `PATCH_REVISION`，因此不影响上表的镜像身份。
-历史重建仍应以 `d09b505` 为准，而不是包含本文件的后续 commit。
+已接入 docker 构建的补丁，顺序固定为：`disable-update` → `default-config` → `mock-vip-user` →
+`docker-build` → `math-renderer-registry` → `content-prefetch` → `startup-slow-loading`。
+`watch-upstream` 的顺序必须与之一致。
 
-## 起点状态
+## 仓库里有什么
 
-接手时 main HEAD 为 `68fc10c`，`PATCH_REVISION=1`。上游发布 v3.8.11 后，`watch-upstream`
-预演失败并开出 issue #1（标题 `patch-drift: v3.8.11-p1`）：`content-prefetch.patch`
-在 22 个语言包、`destroy.ts`、`transactionAV.test.ts`、`api/index.d.ts` 上无法应用，未触发构建。
+- `patches/siyuan/`：参与构建的补丁
+- `patches/siyuan-ios/`、`patches/siyuan-android/`：平台侧补丁
+- `wip/math-conversion/`：公式转换子系统，已重基线到 v3.8.11 但**未接入构建**，见该目录 README
+- `scripts/`：版本 identity helper 与单测，CI 里 `node --test` 直接跑
+- `HANDOFF.md`（本文件）：状态快照
 
-执行过程中出现并发写入：另一个会话在 18:14 推送了 `e8d680b`（`startup-slow-loading.patch`，
-`PATCH_REVISION` 置为 2）。该 commit 已被远端接受，本次顺延修订号，未把内容并入 p2。
+## 版本纪律要点
 
-## 终点状态
+`PATCH_REVISION` 是镜像身份的全局单调整数。`patches/**` 与 `release-docker.yml`、
+`watch-upstream.yml`、`release-cron.yml`、`check-image-version.yml`、三个版本 helper 的改动
+都会强制递增 N，`check-image-version.yml` 在每次 push 与 PR 上硬校验。
 
-- `content-prefetch.patch` 已重基线到 v3.8.11，50 个文件块、纯 LF、无冲突标记
-- `docker-build.patch` 增加 ONNX Runtime 源码地址回退链
-- `PATCH_REVISION` 由 1 增至 4，三处内容变更各占一个修订号（其中 2 被并发会话先行占用）
-- 镜像 `v3.8.11-p4` 发布完成，7 个补丁按既定顺序全部应用成功
-- `watch-upstream` 下一次巡检识别到 canonical 已存在，正确跳过，未覆写
+因此把「不参与构建的补丁」放进 `patches/` 会白白产出一个内容相同的新镜像。`wip/` 就是为此存在：
+不触发 N 递增，也不误导 CI。
 
-## 变更清单
+## 已知债务
 
-| commit | 内容 |
-|---|---|
-| `e8d680b` | startup-slow-loading 补丁引入，`PATCH_REVISION` 1→2（并发会话提交，非本次操作） |
-| `31ffa6c` | content-prefetch 重基线到 v3.8.11，`PATCH_REVISION` 2→3 |
-| `d09b505` | ONNX Runtime 地址回退链，`PATCH_REVISION` 3→4 |
+1. **GHCR 的 staging tag 不回收**。`release-docker` 的 publish 只用
+   `vX.Y.Z-pN-<arch>-<run_id>` 合并出 canonical 与 `latest`，之后不删，每次构建永久留 2 个。
+   清理要加在 publish 与 `latest` 之后（`latest` 也引用它们），失败只告警。但改
+   `release-docker.yml` 必须递增 N，所以这项并到下一次真正的补丁内容变更里做。
+2. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 已走不到（构建用
+   `--build-arg ONNX_IMAGE` 复用官方镜像产物），留着是为了将来没有 digest 的版本。
+   上游若恢复 `microsoft/onnxruntime` 应重新评估。
+3. **iOS 依赖第三方 fork**：`dominionapps/onnxruntime-swift-package-manager` 的
+   `apx-mirror-binaries` 分支（已固定 commit `2136772`，两个二进制 sha256 已核对）。
+   这是 `microsoft/onnxruntime` 整仓消失后的替代。
+4. **Android 目前是调试签名**：仓库没有 `KEYSTORE` / `KEYSTORE_PASSWORD` secret，
+   CI 用 keytool 现场生成一次性 debug keystore。配了 secret 会自动走回解码路径。
+5. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
+   的提交，该步骤已降级为告警，issue 正文给出不依赖分支的 `git fetch` + `git merge FETCH_HEAD`。
+6. **`wip/math-conversion/` 与 `content-prefetch` 尚未组合重基线**：只剩 22 个语言包与
+   `app/src/protyle/util/destroy.ts` 两处相撞。
 
-`31ffa6c` 触及 `patches/siyuan/content-prefetch.patch`、`PATCH_REVISION`、`PATCHES.md`。
-`d09b505` 触及 `patches/siyuan/docker-build.patch`、`PATCH_REVISION`、`PATCHES.md`。
+## 边界
 
-## 关键决策与理由
-
-### content-prefetch 用三方合并而非 fuzz
-
-`git apply --3way` 或 `patch --fuzz` 能让文本打上，但 24 个冲突文件里有两类必须人工判断：语言包是
-「在文件首行插入键」而上游也在同一位置插入了新键；`index.d.ts` 是整行重写的联合类型，
-上游在同一条语句里新增了字段。fuzz 会把两侧内容叠在一起而不报错。
-
-做法是在临时仓库里构造 base（v3.8.10）、patched（base + 旧补丁）、upstream3811（base 换 v3.8.11 文件）
-三个状态，rebase 后逐处按语义解决，再用「增删行集合比对」验证除 `index.d.ts` 外
-49 个文件的改动内容与原补丁完全一致。
-
-### 修订号跳跃而不是复用 2
-
-`e8d680b` 已把 `PATCH_REVISION=2` 推到远端。同一 N 对应两次不同内容会破坏
-「canonical tag 不可覆写」的前提，而远端历史不宜重写，因此顺延到 3、再到 4。
-
-### ONNX 源使用回退链
-
-`microsoft/onnxruntime` 自 2026-11-17 起整仓 404，GitHub API 与 `git ls-remote` 都返回 Not Found。
-上游 Dockerfile 按 `ONNX_COMMIT` 从该仓库取源码，`onnx-source` 阶段因此必然失败。
-现场报错容易误判成网络问题：
-
-```
-fatal: could not read Username for 'https://github.com': No such device or address
-```
-
-Git 拿到 404 后会转去索要账号。回退链保持原地址优先，失败后依次尝试仍保留该提交的公开 fork；
-取到后 Dockerfile 原有的 `git rev-parse` 与 `VERSION_NUMBER` 双校验不变，所以来源变化不改变内容。
-
-## 验证证据
-
-| 检查 | 结果 |
-|---|---|
-| `git apply --check` 于 pristine v3.8.11（Linux 换行） | 通过；旧补丁同命令失败 |
-| 补丁 50 个文件块的增删行与原补丁比对 | 49 个文件完全一致，5 个新增文件字节一致；`index.d.ts` 为整行重写，属预期 |
-| 22 个语言包键集合 | 各 3204 个顶层键完全一致，`contentPrefetch` 键各出现 1 次 |
-| `index.d.ts` 上游新增字段 | `databaseShowIcon`、`databaseShowRelationIcon`、`hideBreadcrumbIcons` 均保留 |
-| `schema.json` | 严格解析通过，三个 `SetEditor*` 类型均含 `contentPrefetch` |
-| watch-upstream dry_run（run `44719727118`） | 真实 v3.8.11 源码树上 7 个补丁全部通过 |
-| release-docker 补丁阶段 | `UPSTREAM_TAG: v3.8.11` 下 7 个 `git apply` 在 `set -euo pipefail` 下全部成功 |
-| ONNX 回退链 | 本地与 CI 均实证：两架构都先试原地址（404，重试两次）再切 `intel/onnxruntime`，取到 `3a728b7`（ORT 1.24.3）后版本校验通过 |
-| 发布后幂等复检 | `canonical_state=exists`，未重复构建 |
-
-## 失败与弯路
-
-留档以免重复踩：
-
-- 整仓 `git clone --depth=1` 在本地连续四次 SSL 中断，tar.gz 下载约 12 KB/s
-  → 改为按补丁清单逐文件取 raw，只取 50 个受影响文件
-- PowerShell 的 `ConvertFrom-Json` 对语言包里仅大小写不同的键（`"1m"` / `"1M"`）报错
-  → 校验脚本改用 node 的 `JSON.parse`，不做键名归一
-- PowerShell 写文件默认 CRLF，导致 `PATCHES.md` 出现整文件 diff → 统一按 UTF-8 无 BOM + LF 写回
-- Windows checkout 的 `.sy` 为 CRLF，`git apply` 因此失败 → 临时仓按 Linux checkout 归一为 LF
-- `raw.githubusercontent.com` 单次下载可截断且不报错（`schema.json` 两次只到 2143616 字节）
-  → 改用 `curl -C -` 续传并校验收尾字符
-- ONNX 失败最初按网络问题排查，实为上游仓库消失 → 以 `gh api` / `git ls-remote` 双重确认
-
-## 未完成与遗留
-
-| 项 | 状态 | 说明 |
-|---|---|---|
-| issue #1 | CLOSED | 已于 2026-11-21 以 completed 关闭并留说明；标题是创建时自动生成的 `v3.8.11-p1`，未改，与实际 p4 不一致 |
-| 部署 | 未执行 | 私有 config 仓库的 `SIYUAN_TAG` 需自行指向 `v3.8.11-p4`；本仓库不掌握该仓库 |
-| sync-upstream `44729285526` | 已修复 | 根因是 `git fetch upstream main --tags` 与本 fork 自建的 `v3.8.8` / `v3.8.10` 标签同名冲突（`would clobber existing tag`），在 `bash -e` 下中断整步。已改为 `--no-tags`，见 `d6cabda` 之后的提交 |
-| release-pc / android / ios | failure | 三者最后一次运行是 2026-11-19 的 `68fc10c`，均失败；v3.8.11 未构建过这些产物，失败原因未排查 |
-| 7 个未跟踪补丁 | 未纳入版本控制 | 见下表，未接入任何 workflow |
-| 前端与后端回归 | 未运行 | 本地无该源码树的 pnpm / go 依赖，仅做静态核对；TS 编译由镜像构建覆盖，单测未跑 |
-
-未跟踪文件（冻结时记录 SHA-256 前 16 位与字节数，避免状态丢失）：
-
-| 文件 | 字节 | SHA-256 前缀 |
-|---|---:|---|
-| `patches/siyuan/math-conversion-api.patch` | 584310 | `C30EC4D70AD7A793` |
-| `patches/siyuan/math-conversion-bridge.patch` | 123541 | `C4D08027C1AA938C` |
-| `patches/siyuan/math-conversion-core.patch` | 60265 | `F6B3FF3CCC91E8F7` |
-| `patches/siyuan/math-conversion-menu.patch` | 35219 | `BDB696EDB90195D9` |
-| `patches/siyuan/math-conversion-transaction-guards.patch` | 28287 | `1C9CE99BE869944E` |
-| `patches/siyuan/math-conversion-transaction.patch` | 78690 | `9669313116D9643C` |
-| `patches/siyuan/math-render-surface-context.patch` | 87749 | `6209D4CA6EE3E87B` |
-
-## 下一步
-
-issue #1 已关闭，剩下的三项按顺序：
-
-1. 在私有 config 仓库把 `SIYUAN_TAG` 指向 `ghcr.io/leonhardthust/siyuan:v3.8.11-p4`，
-   健康检查同时核对 `docker inspect .Config.Image` 等于该完整 tag。这是当前唯一还没落地的环节，
-   接管者拿到部署权限后直接从这一步开始
-2. 排查 `sync-upstream` 的 `Fetch upstream` 失败（`.github/workflows/sync-upstream.yml`）
-3. 决定 7 个 `math-conversion-*.patch` 的去向：接入 workflow 或删除，不要长期停在未跟踪状态
-
-## 向上游对齐的现状
-
-父仓库 `MohamedElashri/siyuan-patch` 的 `main` 与本 fork 已经双向分叉：我们比它多 20 个提交
-（本 fork 自己的补丁工作），它比我们多 3 个提交。共同祖先停在 `c80af18`。
-
-它多的三个提交是：
-
-| commit | 内容 |
-|---|---|
-| `c436738` | README 版本号更新到 v3.8.11 |
-| `d3b8777` | 用预构建镜像恢复 ONNX Runtime 输入（见下） |
-| `b6ccc7a` | 上述修复的合并提交 |
-
-`d3b8777` 与本次 p4 面对的是同一个 ONNX 问题，但走的是另一条路：不再从源码编译 ONNX，
-而是给 `docker buildx` 传 `--build-arg ONNX_IMAGE=docker.io/b3log/siyuan@sha256:…`，
-直接复用官方 v3.8.11 镜像里已构建好的 musl 产物（两个架构各一个 digest）。
-v3.8.11 的 Dockerfile 第 141 行就是 `FROM ${ONNX_IMAGE} AS onnx-runtime`，所以这个覆盖
-在我们这套 Dockerfile 上同样成立，能整段跳过 `onnx-source` 与 `onnx-build`。
-
-两条路的取舍：复用官方镜像更快也更稳（不再依赖任何 fork 存活，也不再编译 ORT），
-但需要改 `release-docker.yml` 并递增 `PATCH_REVISION`，等于换一个新镜像；
-当前 p4 的回退链已经产出可用镜像。是否切换需要单独决定，不在本次冻结范围内。
-
-## 边界声明
-
-本次达成的是「补丁可干净应用且镜像可构建」，不等于功能已验证。没有覆盖的有：长文档弱网下的
-预取收益与额外流量、Typst 渲染器认领路径、慢启动诊断在真实 CDN 下的表现。PC / Android / iOS
-产物本次未构建；`math-renderer-registry.patch` 与 `docker-build.patch` 只接在 docker 流程里。
-
-上游若恢复 `microsoft/onnxruntime`，应收紧 `docker-build.patch` 中的回退链；上游改用其他
-ONNX 来源时同理，届时同步递增 `PATCH_REVISION`。
+镜像可构建、可拉取、线上健康检查通过，不等于功能行为已验证。`content-prefetch` 的弱网收益与
+额外流量、Typst 渲染器认领、慢启动诊断在真实 CDN 下的表现，都还没有专项回归。
