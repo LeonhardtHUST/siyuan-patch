@@ -49,6 +49,7 @@
 - `wip/math-conversion/`：公式转换子系统 7 个补丁，已重基线到 v3.8.11 但**未接入构建**，
   且**没有任何调用方**，见该目录 README
 - `scripts/`：版本 identity helper 与单测，`node --test scripts/` 30 项全绿
+- `RUNTIME-REGRESSION.md`：运行时回归的五层做法（L0–L4 已自动化，L5 行为/收益回归待人工）
 - `HANDOFF.md`（本文件）：状态快照
 
 ## 版本纪律要点

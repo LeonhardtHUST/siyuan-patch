@@ -283,7 +283,7 @@ publish 再用 `docker buildx imagetools create` 把它们**扁平化**合并成
 4. 任一失败 → 开 issue `patch-drift: <vX.Y.Z-pN>`（assignee 会收到 GitHub 通知邮件）+ 可选 SMTP 邮件，**不构建**
 5. 补丁更新后递增 `PATCH_REVISION` 并推送，下一次巡检会为新 pN 构建；canonical 已存在时 release-docker 安全跳过，不会覆写
 
-补丁失配的处理原则：**别只追求"能打上"**。`git apply --3way` / `patch -p1 --fuzz=3` 打上之后必须核对语义——
+补丁失配的处理原则：**别只追求"能打上"**（运行时回归的分层做法见 [RUNTIME-REGRESSION.md](RUNTIME-REGRESSION.md)）。`git apply --3way` / `patch -p1 --fuzz=3` 打上之后必须核对语义——
 上游很可能把要改的逻辑整体搬了位置，照原样打上去能过编译但行为是错的。
 
 > 实例：3.8.10 把 `DownloadInstallPkg` 的检查从 `skipNewVerInstallPkg()` 里移到了

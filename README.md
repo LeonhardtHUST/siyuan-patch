@@ -71,6 +71,10 @@ Several changes have been made to improve privacy and user experience:
 
 ## Building from Source
 
+### 验证与运行时回归
+
+补丁能否应用、能否编译进产物、以及哪些行为还没有自动回归，见 [RUNTIME-REGRESSION.md](RUNTIME-REGRESSION.md)。
+
 ### Automated Builds
 - `watch-upstream` checks every 6 hours, rehearses the whole patch series against the upstream tag, and triggers `release-docker` for the full image tag `vX.Y.Z-pN` when that tag is not yet published.
 - `release-cron` runs daily: it creates the upstream-semantics GitHub Release (`vX.Y.Z`) when missing and dispatches `release-windows`; `release-checksums` then uploads `SHA256SUMS.txt`.
