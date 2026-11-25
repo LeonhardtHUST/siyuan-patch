@@ -43,7 +43,9 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           PACKAGE: siyuan
           ACTOR: ${{ github.actor }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN 无法访问用户级 Packages API；要真正删除必须提供带
+          # read:packages + delete:packages 的 PAT。未配置时本轮只列出、不删除。
+          TOKEN: ${{ secrets.GC_STAGING_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
           set -uo pipefail

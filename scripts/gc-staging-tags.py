@@ -219,11 +219,10 @@ def main() -> int:
     if not owner:
         print("缺少 OWNER 环境变量", file=sys.stderr)
         return 2
-    if not secret and not args.dry_run:
-        print("没有凭据时只能 --dry-run：删除需要 GHCR pull+push 令牌", file=sys.stderr)
-        return 2
 
-    token = fetch_token(owner, package, actor, secret)
+    # 读取走匿名 GHCR 令牌（包是 public 的，不需要任何凭据）；删除走 GitHub Packages API，
+    # 需要一个带 read:packages + delete:packages 的 token（GITHUB_TOKEN 不够）。
+    token = fetch_token(owner, package, "", "")
     tags = list_tags(token, owner, package)
     staging = sorted(t for t in tags if STAGING_RE.match(t))
     stable = sorted(t for t in tags if not STAGING_RE.match(t))
@@ -249,7 +248,23 @@ def main() -> int:
 
     # GHCR 的 registry API 不支持按 digest 删除 manifest（HTTP 405 UNSUPPORTED），
     # 因此删除走 GitHub Packages 的 REST API：按 digest 找到 package version id 再删除。
-    versions = list_package_versions(token, owner, package)
+    if not secret:
+        print("::warning::没有可用的 Packages API token（TOKEN 未设置），本轮只做只读检查，不删除。"
+              "自动化需要仓库 secret GC_STAGING_TOKEN（含 read:packages + delete:packages）。")
+        for tag in staging:
+            print(f"would-delete {tag}（无凭据，未删除）")
+        return 0
+    try:
+        versions = list_package_versions(secret, owner, package)
+    except SystemExit as exc:
+        msg = str(exc)
+        if "HTTP 401" in msg or "HTTP 403" in msg:
+            print("::warning::Packages API 拒绝了当前 token（需要 read:packages + delete:packages），"
+                  "本轮不删除；请改用带该权限的 PAT（仓库 secret GC_STAGING_TOKEN）或 gh auth refresh -s read:packages,delete:packages 后手动执行。")
+            for tag in staging:
+                print(f"would-delete {tag}（权限不足，未删除）")
+            return 0
+        raise
     by_digest: dict[str, dict] = {}
     for version in versions:
         digest = version.get("name") or ""
@@ -280,7 +295,7 @@ def main() -> int:
         if args.dry_run:
             print(f"dry-run delete {tag}（version id {version.get('id')}，digest {digest[:19]}…）")
             continue
-        status, detail = delete_version_via_api(token, owner, package, int(version["id"]))
+        status, detail = delete_version_via_api(secret, owner, package, int(version["id"]))
         if 200 <= status < 300:
             print(f"deleted {tag}（version id {version['id']}，HTTP {status}）")
         else:
