@@ -1,0 +1,92 @@
+name: release-cron
+
+# 定时检查上游版本并创建上游语义的 GitHub Release（tag = 上游 vX.Y.Z），随后派发 Windows dist 构建。
+#
+# 版本纪律边界（详见 PATCHES.md）：
+# - 本 workflow 的 GitHub Release 仍代表上游版本 vX.Y.Z，不创建 vX.Y.Z-pN Release；
+# - 本 workflow 只派发 release-windows.yml（Windows 桌面端 x86_64 / ARM64）；
+# - Docker 镜像由 watch-upstream → release-docker 按完整 tag vX.Y.Z-pN 独立发布，
+#   本 workflow 既不派发 docker 构建，也不等待它。
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  create_release:
+    name: get version and create release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+
+      - name: Check upstream version and whether we already have it
+        id: check
+        run: |
+          pkg_json=$(curl -fsSL "https://raw.githubusercontent.com/siyuan-note/siyuan/master/app/package.json")
+          upstream_ver=$(echo "$pkg_json" | grep '"version"' | head -1 | awk -F: '{print $2}' | sed 's/[", ]//g')
+          tag="v${upstream_ver}"
+          pkg_mgr=$(echo "$pkg_json" | grep '"packageManager"' | head -1 | awk -F: '{print $2}' | sed 's/[", ]//g')
+
+          echo "upstream_tag=${tag}" >> $GITHUB_OUTPUT
+          echo "package_manager=${pkg_mgr}" >> $GITHUB_OUTPUT
+          echo "Upstream version: ${tag}"
+
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${tag}")
+
+          if [[ "$status_code" == "200" ]]; then
+            echo "Tag/release ${tag} already exists → skip."
+            echo "needs_release=false" >> $GITHUB_OUTPUT
+          elif [[ "$status_code" == "404" ]]; then
+            echo "Tag/release ${tag} does NOT exist → will create."
+            echo "needs_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "Unexpected status: ${status_code} → aborting for safety."
+            exit 1
+          fi
+
+      - name: Create Release
+        if: ${{ steps.check.outputs.needs_release == 'true' }}
+        uses: ncipollo/release-action@v1.21.0
+        with:
+          tag: ${{ steps.check.outputs.upstream_tag }}
+          name: ${{ steps.check.outputs.upstream_tag }}
+          body: |
+            Sync with upstream release.
+
+            Windows 桌面端安装包（x86_64 / ARM64）由 `release-windows` 构建并上传到本 Release；
+            构建完成后由 `release-checksums` 生成并上传 `SHA256SUMS.txt`。
+
+            Docker 镜像不由本 Release 提供：它按完整补丁 tag `vX.Y.Z-pN`（N 来自仓库 `PATCH_REVISION`）由
+            `watch-upstream` → `release-docker` 单独发布，不是本 Release 的附件。
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dispatch builds
+        if: ${{ steps.check.outputs.needs_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ver="${{ steps.check.outputs.upstream_tag }}"
+          pm="${{ steps.check.outputs.package_manager }}"
+
+          echo "Dispatching Windows build for upstream ${ver} with ${pm}"
+
+          echo "Triggering release-windows.yml（上游 tag）..."
+          gh workflow run release-windows.yml \
+            --repo ${{ github.repository }} \
+            --ref main \
+            -f version="$ver" \
+            -f packageManager="$pm"
+
+          echo "Docker 镜像由 watch-upstream 独立触发，本 workflow 不派发。"

@@ -1,0 +1,64 @@
+name: gc-staging-tags
+
+# 清理 release-docker 的临时架构 tag（vX.Y.Z-pN-<arch>-<run_id>）。
+#
+# 为什么可以安全删除：publish 用 `docker buildx imagetools create` 把两个架构 tag **扁平化**合并成
+# canonical `vX.Y.Z-pN` 与 `latest`，canonical/latest 的 index 直接引用平台 manifest 与 attestation
+# 的 digest，不引用临时 tag 自身的 index digest。脚本仍会枚举所有稳定 tag 的 digest 及其一层子 digest，
+# 命中保护集合的一律跳过（宁可少删，不可删错）。
+#
+# 为什么不做成 release-docker 的后续 step：改 release-docker.yml 属于镜像相关输入，按版本纪律必须
+# 递增 PATCH_REVISION，会为一个纯清理动作产出一个内容相同的 pN 并重启线上。独立工作流（不在
+# scripts/image-version.mjs 的镜像相关清单里）可以在不动镜像身份的前提下完成同样的清理。
+#
+# 代价：清理最多滞后 24 小时；临时 tag 在此期间可见（它们是中间产物，不是版本身份）。
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = 只列出将要删除的临时 tag，不真的删"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: gc-staging-tags
+  cancel-in-progress: false
+
+jobs:
+  gc:
+    name: Delete staging tags
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Delete staging tags (best effort per tag)
+        env:
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: siyuan
+          ACTOR: ${{ github.actor }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          set -uo pipefail
+          if [ "${DRY_RUN}" = "true" ]; then
+            python3 scripts/gc-staging-tags.py --dry-run
+          else
+            python3 scripts/gc-staging-tags.py
+          fi
+
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo "### gc-staging-tags"
+            echo "- 该工作流只删除形如 \`vX.Y.Z-pN-<arch>-<run_id>\` 的临时 tag；"
+            echo "  canonical \`vX.Y.Z-pN\`、\`latest\` 与历史无后缀 tag 都在保护集合里。"
+            echo "- 删除的是临时 tag 自己的 index digest，平台 manifest 与 attestation 仍被 canonical 引用。"
+          } >> "$GITHUB_STEP_SUMMARY"

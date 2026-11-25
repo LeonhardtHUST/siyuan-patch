@@ -9,8 +9,18 @@
 | main | 见 `git log -1` |
 | 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`（amd64 + arm64，index digest `sha256:88eb9bd0…`，匿名可拉）；`latest` 已指向它；历史 p0/p1/p4/p5 仍在 GHCR |
 | `PATCH_REVISION` | `6`（对应 `v3.8.12-p6`，2026-11-25 构建发布） |
-| 线上部署 | 私有 config 仓库 `deploy-siyuan` 每 30 分钟轮询；p6 发布后它应在下一轮自动切到 `v3.8.12-p6`（服务器侧状态无法从本仓库核对） |
-| 构建入口 | **只有 docker**：`watch-upstream`（每 6 小时）→ `release-docker` |
+| 线上部署 | 已在私有 config 仓库 `LeonhardtHUST/config` 手动跑了一次 `deploy-siyuan`：`v3.8.11-p5` → `v3.8.12-p6`，健康检查通过（镜像引用 `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`、`/api/system/version` = `3.8.12`） |
+| 构建入口 | docker：`watch-upstream`（每 6 小时）→ `release-docker`；Windows 桌面端：`release-cron`（每天 12:00 UTC）→ `release-windows` → `release-checksums` |
+
+### 2026-11-25 的变更
+
+1. **恢复 Windows 桌面端 dist 构建**：新增 `release-windows.yml`（`windows-latest` x86_64 +
+   `windows-11-arm` ARM64），重新引入 `release-cron.yml`（只派发 Windows）与
+   `release-checksums.yml`。Windows 应用 5 个补丁（不含 `docker-build` / `math-renderer-registry`）。
+   **尚未在 Actions 实跑验证**。
+2. **临时架构 tag 改为自动清理**：新增独立的 `gc-staging-tags.yml`（每天 04:17）+ 
+   `scripts/gc-staging-tags.py`，只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定 tag 保护集合里的
+   digest；因为不改 `release-docker.yml`，不需要递增 `PATCH_REVISION`。
 
 ### 2026-11-24 的两项变更
 
@@ -52,18 +62,18 @@
 
 ## 已知债务
 
-1. **GHCR 的 staging tag 不回收**。`release-docker` 的 publish 只用
-   `vX.Y.Z-pN-<arch>-<run_id>` 合并出 canonical 与 `latest`，之后不删，每次构建永久留 2 个。
-   现存 `v3.8.10-p1-amd64/arm64-43829202417`、`v3.8.11-p4-amd64/arm64-44761883782`、
-   `v3.8.11-p5-amd64/arm64-45191492273`、`v3.8.12-p6-amd64/arm64-45596790786`（共 8 个）。清理要加在 publish 与 `latest` 之后（`latest` 也引用
-   它们），失败只告警；改 `release-docker.yml` 必须递增 N，因此并到下一次真正的补丁内容变更里做。
-2. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 / v3.8.12 已走不到（构建用
+1. **Windows 构建尚未实跑**：`release-windows.yml` 的 runner（`windows-11-arm`）、Go/pnpm/msys2
+   版本、ARM64 依赖上游 `dist-arm64` 都未经验证；`actions.lock` 也还没有该工作流的条目
+   （该文件由 `gh actions-lock` 机器生成，下一次 bot 更新会补上，同时清掉已删工作流的条目）。
+2. **临时架构 tag 由 `gc-staging-tags.yml` 自动清理**：只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定
+   tag 保护集合里的 digest；清理滞后最多 24 小时。首次上线时需手动跑一次把历史 8 个临时 tag 清掉。
+3. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 / v3.8.12 已走不到（构建用
    `--build-arg ONNX_IMAGE` 复用官方镜像产物），留着是为了将来没有 digest 的版本。
    上游若恢复 `microsoft/onnxruntime` 应重新评估。
-3. **`wip/math-conversion/` 与 `content-prefetch` 尚未在 v3.8.12 上做组合重基线**。v3.8.11 上
+4. **`wip/math-conversion/` 与 `content-prefetch` 尚未在 v3.8.12 上做组合重基线**。v3.8.11 上
    已验证组合后只剩两处同址冲突（22 个语言包、`app/src/protyle/util/destroy.ts`），v3.8.12
    需重做；且插件侧目前没有调用方，接入前应先确认产品需求。
-4. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
+5. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
    的提交，该步骤已降级为告警，issue 正文给出不依赖分支的 `git fetch` + `git merge FETCH_HEAD`。
 
 ## 边界

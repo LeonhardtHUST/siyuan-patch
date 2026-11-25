@@ -53,11 +53,11 @@ Docker 镜像的版本身份由「上游 tag + 全局补丁修订号」组成，
 
 ### 部署端兼容与合入顺序
 
-**2026-11-24 起，本仓库 CI 只保留 docker 镜像构建。** PC / iOS / Android 的 dist 构建、
-`release-cron`（上游语义 GitHub Release）与 `release-checksums` 已删除，平台侧补丁
-（`patches/siyuan-ios/`、`patches/siyuan-android/`、`patches/siyuan/ocr-arm64-recovery.patch`）
-也随之一并删除，不再参与任何构建。
-docker 镜像的构建入口只剩 `watch-upstream` → `release-docker`。
+本仓库的 dist 构建范围：**docker 镜像 + Windows 桌面端**。Linux / macOS / iOS / Android 的 dist 构建
+于 2026-11-24 删除；Windows 于 2026-11-25 恢复（`release-windows.yml`，由 `release-cron` 在上游有新版本时
+创建 GitHub Release 并派发，`release-checksums` 补 `SHA256SUMS.txt`）。平台侧补丁
+（`patches/siyuan-ios/`、`patches/siyuan-android/`、`patches/siyuan/ocr-arm64-recovery.patch`）已删除。
+docker 镜像的构建入口仍是 `watch-upstream` → `release-docker`。
 
 `deploy-siyuan` 位于**私有 config 仓库**（不在本仓库），由 `schedule`（每 30 分钟）+ `workflow_dispatch` 触发。兼容改造已先行合入 config 的 `master`（`8f441e4`）：识别 `vX.Y.Z-pN`，按 (X,Y,Z,N) 数值排序，旧无后缀 tag 按 p0 兼容。
 
@@ -75,8 +75,10 @@ docker 镜像的构建入口只剩 `watch-upstream` → `release-docker`。
 | **`patches/siyuan/content-prefetch.patch`** | **可选的块边界内容预取与同源图片预取** | **docker** | **默认关闭，见下；已重基线到 v3.8.12** |
 | **`patches/siyuan/startup-slow-loading.patch`** | **慢启动诊断：页面资源阶段独立 120 秒预算，业务阶段仍 30 秒** | **docker** | **本 fork 新增，见下** |
 
-> 平台侧补丁 `patches/siyuan-ios/*`、`patches/siyuan-android/*` 与 `patches/siyuan/ocr-arm64-recovery.patch`
-> 已随平台 dist 构建停止一并删除（见 git 历史）。
+> Windows 桌面端构建（`release-windows.yml`）应用上表中的 `disable-update`、`default-config`、
+> `mock-vip-user`、`content-prefetch`、`startup-slow-loading` 五项；`docker-build` 与
+> `math-renderer-registry` 是 docker 专用，Windows 不应用（与历史 PC 构建一致）。
+> 平台侧补丁 `patches/siyuan-ios/*`、`patches/siyuan-android/*` 与 `patches/siyuan/ocr-arm64-recovery.patch` 已删除。
 
 ## math-renderer-registry.patch
 
@@ -223,8 +225,9 @@ pnpm run test:focused src/boot/startupError.test.ts
 - `release-docker.yml` 已加入数学渲染器补丁的 `git apply` 行，并改造为推送 **GHCR**
   （`ghcr.io/<owner>/siyuan`，使用内置 `GITHUB_TOKEN`，**无需配置任何 secrets**）；
   镜像按 canonical tag `vX.Y.Z-pN` 发布，见上文「镜像版本与不可变 tag 纪律」。
-  平台产物工作流（`release-pc.yml` / `release-android.yml` / `release-ios.yml` /
-  `release-cron.yml` / `release-checksums.yml`）已于 2026-11-24 删除。
+  平台产物工作流：`release-pc.yml`（Linux/macOS）/ `release-android.yml` / `release-ios.yml`
+  已于 2026-11-24 删除；`release-windows.yml` 于 2026-11-25 恢复（x86_64 + ARM64），
+  `release-cron.yml` 重新引入但只派发 Windows，`release-checksums.yml` 供其生成校验和。
 - GHCR 上的 `siyuan` 包**当前是 public**，匿名即可拉取与查询 tag。`deploy-siyuan` 的
   `tag_version.py pick` 走匿名令牌，因此**不要把包改回 private**，否则部署会在选版本阶段失败。
 - 上游同步：`.github/workflows/sync-upstream.yml` 每日自动快进；出现分叉会推
@@ -232,16 +235,26 @@ pnpm run test:focused src/boot/startupError.test.ts
   注意 `GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml` 的提交，该步骤已降级为告警，
   issue 正文给出不依赖分支的 `git fetch` + `git merge FETCH_HEAD` 命令。
 
-### 已知待办：staging tag 不回收
+### 临时架构 tag 的清理（`gc-staging-tags`）
 
-`release-docker` 的 publish 只用两个 `vX.Y.Z-pN-<arch>-<run_id>` 合并出 canonical 与
-`latest`，之后再没有删除动作，因此每次构建在 GHCR 上永久留下 2 个中间 tag。当前量级很小
-（每次上游发布才构建一轮），不值得为它单独发一个镜像版本。
+`release-docker` 的两个并行 job 先把镜像推成 `vX.Y.Z-pN-<arch>-<run_id>`（临时 tag），
+publish 再用 `docker buildx imagetools create` 把它们**扁平化**合并成 canonical `vX.Y.Z-pN`
+与 `latest`。扁平化后 canonical/latest 的 index 直接引用平台 manifest 与 attestation 的 digest，
+**不引用临时 tag 自己的 index digest**，因此可以安全删除临时 tag。
 
-清理步骤应加在 publish 与 `latest` **之后**（`latest` 也引用这两个 tag），失败只告警。
-但 `release-docker.yml` 属于镜像相关文件，改它必须递增 `PATCH_REVISION`，会产出一个内容
-与上一版完全相同的 `pN` 并触发一次线上的无意义重启。因此这项**并到下一次真正的补丁内容
-变更里一起做**，不单独发版。
+清理由独立工作流 `.github/workflows/gc-staging-tags.yml` 负责（每天 04:17 + 手动 `dry_run`），
+执行 `scripts/gc-staging-tags.py`：
+
+- 枚举全部 tag，把形如 `vX.Y.Z-pN-<arch>-<run_id>` 的归为临时 tag；
+- 保护集合 = 所有稳定 tag（canonical、`latest`、历史无后缀 tag）的 digest 及其一层子 digest，
+  临时 tag 的 digest 命中保护集合时一律跳过；
+- 删除临时 tag 自己的 index digest；每个 tag 失败只告警，不中断其余清理；
+- 只读场景可用 `--dry-run`（匿名 token 即可）。
+
+**为什么不做成 `release-docker` 的后续 step**：`release-docker.yml` 属镜像相关输入，按版本纪律
+必须递增 `PATCH_REVISION`，会为一个纯清理动作产出内容相同的 `pN` 并重启线上。独立工作流不在
+`scripts/image-version.mjs` 的镜像相关清单里，可以在不动镜像身份的前提下完成清理；代价是清理最多
+滞后 24 小时，期间临时 tag 仍可见（它们是中间产物，不是版本身份）。
 
 ## 上游跟随 / 自动构建 / 自动部署
 
@@ -251,11 +264,16 @@ pnpm run test:focused src/boot/startupError.test.ts
 | `watch-upstream.yml` | 每 6 小时 + 手动 | 按完整 tag `vX.Y.Z-pN` 判断是否已构建；预演并应用全部补丁后触发 release-docker |
 | `check-image-version.yml` | 每个 PR / main push | 版本纪律硬校验：N 严格递增、首次引入为 1、回退失败；base checker 复跑防自我绕过 |
 | `release-docker.yml` | 手动 / 被 watch 触发 | 发布不可变多架构镜像 `vX.Y.Z-pN` 到 GHCR |
+| `gc-staging-tags.yml` | 每天 04:17 + 手动 | 删除临时架构 tag；稳定 tag 与其 digest 在保护集合里 |
+| `release-cron.yml` | 每天 12:00 UTC + 手动 | 按上游 `vX.Y.Z` 创建 Release（若缺失）并派发 `release-windows`；不派发 docker |
+| `release-windows.yml` | 手动 / 被 cron 派发 | 构建 Windows x86_64 + ARM64 安装包并上传到 Release |
+| `release-checksums.yml` | 被 Windows 构建调用 | 生成并上传 `SHA256SUMS.txt` |
 | `deploy-siyuan`（私有 config 仓库） | schedule 每 30 分钟 + 手动 | 按上游版本与补丁修订号选镜像，在服务器 runner 上更新、健康检查及失败回滚 |
 
-> **已删除（2026-11-24）**：`release-cron.yml`、`release-checksums.yml`、`release-pc.yml`、
-> `release-ios.yml`、`release-android.yml`。平台上不再有 dist 构建；docker 镜像的唯一构建入口
-> 是 `watch-upstream` → `release-docker`。
+> **dist 构建范围（2026-11-25）**：docker 镜像 + Windows 桌面端。
+> `release-windows.yml` 由 `release-cron.yml` 派发（上游语义 Release），`release-checksums.yml`
+> 生成校验和；`release-pc.yml`（Linux/macOS）、`release-ios.yml`、`release-android.yml` 保持删除。
+> 临时架构 tag 的清理由 `gc-staging-tags.yml` 独立负责，不需要为它递增 N。
 
 ### watch-upstream
 

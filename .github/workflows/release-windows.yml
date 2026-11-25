@@ -1,0 +1,216 @@
+name: release-windows
+
+# Windows 桌面端 dist 构建（x86_64 + ARM64），产物上传到上游语义的 GitHub Release（tag = 上游 vX.Y.Z）。
+#
+# 历史沿革：
+# - 2026-11-24 删除全部平台 dist 构建；本次只恢复 Windows 部分，Linux / macOS / iOS / Android 不恢复。
+# - 结构取自提交 e59ceee（2026-11-24 删除前的多平台 dist 工作流）的 Windows 矩阵项与步骤；
+#   linux（ubuntu-22.04 / ubuntu-24.04-arm）与 macOS 矩阵项及其专属步骤已删除。
+# - 补丁顺序沿用历史 PC 构建：disable-update → default-config → mock-vip-user
+#   → content-prefetch → startup-slow-loading。docker 镜像额外使用的 docker-build 与
+#   math-renderer-registry 在 Windows 构建中**不应用**（历史 PC 构建同样不应用）。
+# - 平台侧补丁（iOS / Android / mac）已随 2026-11-24 清理删除，本文件不引用。
+# - 历史 Windows 构建不需要代码签名，因此不引入任何新的 secret 依赖。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "release version/tag"
+        required: true
+      packageManager:
+        description: "pnpm@x.x.x (optional, auto-detected)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          # Windows x86_64
+          - os: windows-latest
+            kernel_path: "../app/kernel/SiYuan-Kernel.exe"
+            build_args: "-s -w -H=windowsgui -X github.com/siyuan-note/siyuan/kernel/util.Mode=prod"
+            electron_args: "dist"
+            goos: "windows"
+            gobin: "bin"
+            mingwsys: "MINGW64"
+            msys_packages: "p7zip mingw-w64-x86_64-lua"
+            goarch: "amd64"
+            suffix: "win.exe"
+          # Windows ARM64
+          - os: windows-11-arm
+            kernel_path: "../app/kernel-arm64/SiYuan-Kernel.exe"
+            build_args: "-s -w -H=windowsgui -X github.com/siyuan-note/siyuan/kernel/util.Mode=prod"
+            electron_args: "dist-arm64"
+            goos: "windows"
+            gobin: "bin"
+            mingwsys: "CLANGARM64"
+            msys_packages: "p7zip mingw-w64-clang-aarch64-clang"
+            goarch: "arm64"
+            suffix: "win-arm64.exe"
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: siyuan-note
+
+      - name: Format version number (Windows)
+        id: format_version_windows
+        shell: pwsh
+        run: |
+          $VERSION = "${{ github.event.inputs.version }}"
+          # Remove 'v' prefix if present
+          if ($VERSION.StartsWith("v")) {
+            $VERSION = $VERSION.Substring(1)
+          }
+          "version=$VERSION" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: clone origin and apply patches
+        shell: bash
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          git config --global core.autocrlf false
+          workspace="${{ github.workspace }}"
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            workspace="$(cygpath -u "${workspace}")"
+          fi
+          mkdir -p "${workspace}/go"
+          cd "${workspace}/siyuan-note"
+
+          # Clone the repository without checking out any branch
+          git clone https://github.com/siyuan-note/siyuan.git
+          cd siyuan
+
+          # Fetch the specific tag/version
+          git fetch origin "${VERSION}"
+
+          # Hard reset to the tag/version
+          git reset --hard FETCH_HEAD
+
+          # 补丁顺序与历史 PC 构建一致；Windows 不应用 docker-build / math-renderer-registry。
+          # Stop the build if any required modification no longer applies.
+          git apply "${workspace}/siyuan-note/patches/siyuan/disable-update.patch"
+          git apply "${workspace}/siyuan-note/patches/siyuan/default-config.patch"
+          git apply "${workspace}/siyuan-note/patches/siyuan/mock-vip-user.patch"
+          git apply "${workspace}/siyuan-note/patches/siyuan/content-prefetch.patch"
+          git apply "${workspace}/siyuan-note/patches/siyuan/startup-slow-loading.patch"
+
+          git status
+
+      - name: Set up MSYS2/MinGW
+        id: msys2
+        uses: msys2/setup-msys2@v2.33.0
+        if: contains( matrix.config.goos, 'windows')
+        with:
+          msystem: ${{ matrix.config.mingwsys }}
+          install: ${{ matrix.config.msys_packages }}
+
+      - name: Configure Windows ARM64 C compiler
+        if: matrix.config.goos == 'windows' && matrix.config.goarch == 'arm64'
+        shell: pwsh
+        run: |
+          $clang = Join-Path "${{ steps.msys2.outputs.msys2-location }}" "clangarm64\bin\clang.exe"
+          if (-not (Test-Path $clang)) {
+            throw "ARM64 C compiler not found at $clang"
+          }
+          $target = (& $clang -dumpmachine).Trim()
+          if ($target -notmatch '^aarch64-w64-') {
+            throw "Unexpected ARM64 C compiler target: $target"
+          }
+          "CC=$clang" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: ${{ github.workspace }}/siyuan-note/siyuan/kernel/go.mod
+          cache-dependency-path: "**/*.sum"
+      - run: go version
+
+      - name: Set up goversioninfo
+        run: go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo && go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
+        if: contains( matrix.config.goos, 'windows')
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/kernel
+        env:
+          GO111MODULE: on
+          CGO_ENABLED: 1
+          GOOS: ${{ matrix.config.goos }}
+          GOPATH: ${{ github.workspace }}/go
+          GOARCH: ${{ matrix.config.goarch }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install Node pnpm
+        run: |
+          PM=${{ github.event.inputs.packageManager }}
+          if [ -z "$PM" ]; then
+            PM=$(grep '"packageManager"' package.json | head -1 | awk -F: '{print $2}' | sed 's/[", ]//g')
+          fi
+          echo "Using pnpm: $PM"
+          npm install -g "$PM"
+        shell: bash
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/app
+
+      - name: Install Node Dependencies
+        run: pnpm install --no-frozen-lockfile
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/app
+
+      - name: Building UI
+        run: pnpm run build
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/app
+
+      - name: Generate Icon Resource and Properties/Version Info For Windows
+        run: ${{ github.workspace }}\go\${{ matrix.config.gobin }}\goversioninfo -platform-specific=true -icon="resource\icon.ico" -manifest="resource\goversioninfo.exe.manifest"
+        if: contains( matrix.config.goos, 'windows')
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/kernel
+
+      - name: Building Kernel
+        run: go build --tags fts5 -o "${{ matrix.config.kernel_path }}" -v -ldflags "${{ matrix.config.build_args }}"
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/kernel
+        env:
+          GO111MODULE: on
+          CGO_ENABLED: 1
+          GOOS: ${{ matrix.config.goos }}
+          GOPATH: ${{ github.workspace }}/go
+          GOARCH: ${{ matrix.config.goarch }}
+
+      - name: Building Electron
+        run: pnpm run ${{ matrix.config.electron_args }}
+        working-directory: ${{ github.workspace }}/siyuan-note/siyuan/app
+
+      - uses: joutvhu/get-release@v1.0.4
+        id: get_current_release
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Electron App
+        uses: shogo82148/actions-upload-release-asset@v1.10.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_current_release.outputs.upload_url }}
+          asset_name: siyuan-${{ github.event.inputs.version }}-${{ matrix.config.suffix }}
+          asset_path: ${{ github.workspace }}/siyuan-note/siyuan/app/build/siyuan-*-${{ matrix.config.suffix }}
+          asset_content_type: application/octet-stream
+          overwrite: true
+
+  checksums:
+    name: Update release checksums
+    needs: build
+    uses: ./.github/workflows/release-checksums.yml
+    with:
+      version: ${{ github.event.inputs.version }}
+    permissions:
+      contents: write

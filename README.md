@@ -1,12 +1,14 @@
 # SiYuan Note - Modified Version
 
 [![Docker build](https://github.com/LeonhardtHUST/siyuan-patch/actions/workflows/release-docker.yml/badge.svg)](https://github.com/LeonhardtHUST/siyuan-patch/actions/workflows/release-docker.yml)
+[![Windows build](https://github.com/LeonhardtHUST/siyuan-patch/actions/workflows/release-windows.yml/badge.svg)](https://github.com/LeonhardtHUST/siyuan-patch/actions/workflows/release-windows.yml)
 
-This repository contains modified Docker images of [SiYuan Note](https://github.com/siyuan-note/siyuan) for server deployment, published to GHCR.
+This repository publishes modified **Docker images** of [SiYuan Note](https://github.com/siyuan-note/siyuan)
+for server deployment (GHCR) and modified **Windows desktop installers** (x86_64 / ARM64) attached to the
+upstream-semantics GitHub Release.
 
-> **2026-11-24 起，本仓库 CI 只保留 docker 镜像构建。** PC / iOS / Android 的 dist 构建与
-> 上游语义的 GitHub Release（含 `SHA256SUMS.txt` 校验和）均已停止，不再产出桌面端、移动端安装包。
-> 需要桌面端/移动端安装包时，请使用上游项目或父仓库的发布产物。
+> 本仓库当前只产出两类东西：docker 镜像（`ghcr.io/leonhardthust/siyuan`）与 Windows 桌面端安装包。
+> Linux / macOS / iOS / Android 的 dist 构建已于 2026-11-24 停止，需要这些平台请使用上游项目或父仓库的发布产物。
 
 ## Docker
 
@@ -29,10 +31,23 @@ Image tags follow this discipline (see [PATCHES.md](PATCHES.md) for details):
 > **Deployment compatibility:** the server-side `deploy-siyuan` workflow lives in a private config repository. Support for `-pN`, numeric ordering, and exact image-reference health checks was merged there first (`8f441e4`). Keep that order when migrating: config first, then the image-tag producer. Push checks validate the code; scheduled or manual runs build and deploy images separately.
 
 ```bash
-docker pull ghcr.io/leonhardthust/siyuan:v3.8.11-p5
+docker pull ghcr.io/leonhardthust/siyuan:v3.8.12-p6
 ```
 
 `latest` exists only as a moving alias. `deploy-siyuan` uses the full `vX.Y.Z-pN` tag and compares the running image reference as well as `/api/system/version` (which reports upstream `X.Y.Z`). See the [deployment compatibility and integration order](PATCHES.md#部署端兼容与合入顺序).
+
+## Windows
+
+Windows 安装包随上游语义的 GitHub Release（tag = `vX.Y.Z`）发布，由 `release-cron` 在检测到新上游版本后
+创建 Release 并派发 `release-windows` 构建：
+
+| Platform | Architecture | Asset |
+|---|---|---|
+| Windows | x86_64 | `siyuan-vX.Y.Z-win.exe` |
+| Windows | ARM64 | `siyuan-vX.Y.Z-win-arm64.exe` |
+
+每个 Release 还附带 `SHA256SUMS.txt`。Windows 构建不应用 `docker-build` 与 `math-renderer-registry`
+两个 docker 专用补丁，其余补丁与 docker 一致。
 
 ## Feature Modifications
 
@@ -58,6 +73,8 @@ Several changes have been made to improve privacy and user experience:
 
 ### Automated Builds
 - `watch-upstream` checks every 6 hours, rehearses the whole patch series against the upstream tag, and triggers `release-docker` for the full image tag `vX.Y.Z-pN` when that tag is not yet published.
+- `release-cron` runs daily: it creates the upstream-semantics GitHub Release (`vX.Y.Z`) when missing and dispatches `release-windows`; `release-checksums` then uploads `SHA256SUMS.txt`.
+- `gc-staging-tags` runs daily: it deletes the intermediate `vX.Y.Z-pN-<arch>-<run_id>` tags, keeping canonical `vX.Y.Z-pN`, `latest` and legacy tags.
 - `check-image-version` enforces the version discipline on every PR and `main` push.
 - `sync-upstream` fast-forwards the parent fork daily and opens an issue when patches drift.
 
