@@ -1,8 +1,8 @@
 diff --git a/app/src/plugin/index.ts b/app/src/plugin/index.ts
-index ce61904..8b88c29 100644
+index f6173c5..8139682 100644
 --- a/app/src/plugin/index.ts
 +++ b/app/src/plugin/index.ts
-@@ -29,6 +29,8 @@ import {
+@@ -31,6 +31,8 @@ import {
      removeBreadcrumbButton as removePluginBreadcrumbButton,
  } from "./breadcrumbButton";
  import type {TCustomBlockRender} from "./customBlockRender";
@@ -11,7 +11,7 @@ index ce61904..8b88c29 100644
  import {registerPluginCommand} from "./commandAdapter";
  import {updatePluginKeymap} from "./keymap";
  import {
-@@ -163,6 +165,24 @@ export class Plugin {
+@@ -169,6 +171,24 @@ export class Plugin {
          // 卸载
      }
  
@@ -37,10 +37,10 @@ index ce61904..8b88c29 100644
       * 插件实例就绪后存储数据发生变化时运行，思源会等待返回的 Promise；
       * 未覆盖该方法时则重载整个插件。
 diff --git a/app/src/protyle/export/index.ts b/app/src/protyle/export/index.ts
-index 277587f..52955b6 100644
+index f2d6877..e5e82ef 100644
 --- a/app/src/protyle/export/index.ts
 +++ b/app/src/protyle/export/index.ts
-@@ -11,6 +11,7 @@ import {confirmDialog} from "../../dialog/confirmDialog";
+@@ -10,6 +10,7 @@ import {confirmDialog} from "../../dialog/confirmDialog";
  import {getThemeMode, setInlineStyle} from "../../util/assets";
  import {getCustomFontStyle} from "../../util/customFont";
  import {fetchPost, fetchSyncPost} from "../../util/fetch";
@@ -48,7 +48,7 @@ index 277587f..52955b6 100644
  import {Dialog} from "../../dialog";
  import {replaceLocalPath} from "../../editor/rename";
  import {getScreenWidth, isInMobileApp, saveExportFile, setStorageVal} from "../util/compatibility";
-@@ -234,6 +235,30 @@ const renderPDF = async (id: string) => {
+@@ -237,6 +238,30 @@ const renderPDF = async (id: string) => {
      const exportResourceVersion = Constants.NODE_ENV === "development" ?
          `${Constants.SIYUAN_VERSION}-${Date.now()}` : Constants.SIYUAN_VERSION;
      // data-theme-mode="light" https://github.com/siyuan-note/siyuan/issues/7379
@@ -79,7 +79,7 @@ index 277587f..52955b6 100644
      const html = `<!DOCTYPE html>
  <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="light" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
  <head>
-@@ -636,6 +661,10 @@ ${getIconScript(servePath)}
+@@ -648,6 +673,10 @@ ${getIconScript(servePath)}
          })
          Protyle.highlightRender(previewElement, "${servePath}stage/protyle", document.querySelector("#scale").value);
          previewElement.querySelectorAll('[data-type="NodeMathBlock"]').forEach((item) => {
@@ -90,7 +90,7 @@ index 277587f..52955b6 100644
              // 超级块内不能移除 width https://github.com/siyuan-note/siyuan/issues/14318
              item.removeAttribute('data-render');
          })
-@@ -757,7 +786,11 @@ ${getIconScript(servePath)}
+@@ -769,7 +798,11 @@ ${getIconScript(servePath)}
      }));
      let previewReady = Promise.resolve();
      let previewRevision = 0;
@@ -102,7 +102,7 @@ index 277587f..52955b6 100644
          previewElement.innerHTML = '<div style="padding:8px 0 0 0" class="protyle-wysiwyg${window.siyuan.config.editor.displayBookmarkIcon ? " protyle-wysiwyg--attr" : ""}">' + data.content + '</div>';
          const wysElement = previewElement.querySelector(".protyle-wysiwyg");
          wysElement.setAttribute("data-doc-type", data.type || "NodeDocument");
-@@ -1227,6 +1260,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
+@@ -1252,6 +1285,10 @@ export const onExport = async (data: IWebSocketData, filePath: string, servePath
  }
  .protyle-wysiwyg {padding: 0; margin: 0;}`
      } : {js: "", css: ""};
@@ -113,6 +113,20 @@ index 277587f..52955b6 100644
      const html = `<!DOCTYPE html>
  <html lang="${window.siyuan.config.appearance.lang}" data-theme-mode="${isInMobile ? "light" : getThemeMode()}" data-light-theme="${window.siyuan.config.appearance.themeLight}" data-dark-theme="${window.siyuan.config.appearance.themeDark}">
  <head>
+diff --git a/app/src/protyle/render/foldedContent.test.ts b/app/src/protyle/render/foldedContent.test.ts
+index fbb62a3..7c738ac 100644
+--- a/app/src/protyle/render/foldedContent.test.ts
++++ b/app/src/protyle/render/foldedContent.test.ts
+@@ -38,6 +38,9 @@ const browserCases = async (sources: Record<string, string>, css: string) => {
+     const never = () => new Promise<void>(() => {});
+     const dependencies = {...api, Constants: {PROTYLE_CDN: "cdn"},
+         getAVRelationHost: (): undefined => undefined,
++        // 渲染器注册表为空 → 全部公式走 KaTeX 兜底，与上游行为一致。
++        findMathRenderer: (): undefined => undefined,
++        applyInlineMathBoundaries: () => {},
+         addStyle: () => {}, addScript: (url: string) => { requests.push(url); return never(); },
+         loadECharts: () => { requests.push("echarts"); return never(); },
+     };
 diff --git a/app/src/protyle/render/mathBoundaries.ts b/app/src/protyle/render/mathBoundaries.ts
 new file mode 100644
 index 0000000..10f33ab
@@ -169,6 +183,20 @@ index 0000000..10f33ab
 +        mathElement.insertAdjacentText("beforebegin", Constants.ZWSP);
 +    }
 +};
+diff --git a/app/src/protyle/render/mathLayout.test.ts b/app/src/protyle/render/mathLayout.test.ts
+index 1e274e0..24f9835 100644
+--- a/app/src/protyle/render/mathLayout.test.ts
++++ b/app/src/protyle/render/mathLayout.test.ts
+@@ -15,6 +15,9 @@ const browserCases = async (source: string, styles: string[], katexPath: string)
+         Constants: {PROTYLE_CDN: "", ZWSP: "\u200b"},
+         addStyle: () => {}, addScript: () => Promise.resolve(),
+         isFoldedRenderContent: () => false, looseJsonParse: JSON.parse,
++        // 渲染器注册表为空 → 全部公式走 KaTeX 兜底，与上游行为一致。
++        findMathRenderer: (): undefined => undefined,
++        applyInlineMathBoundaries: () => {},
+         getHostCapabilities: () => ({remoteKernel: false}),
+         getMathRenderSecurity: () => ({trust: false, sanitize: false}),
+         Lute: {UnEscapeHTMLStr: (value: string) => value},
 diff --git a/app/src/protyle/render/mathRender.ts b/app/src/protyle/render/mathRender.ts
 index 25df9fe..e492914 100644
 --- a/app/src/protyle/render/mathRender.ts
@@ -551,3 +579,113 @@ index 0000000..9e04c83
 +    }
 +    return undefined;
 +};
+diff --git a/app/tests/inlineMathInput.test.js b/app/tests/inlineMathInput.test.js
+index 1af5b89..30f8e5c 100644
+--- a/app/tests/inlineMathInput.test.js
++++ b/app/tests/inlineMathInput.test.js
+@@ -13,7 +13,8 @@ const rendererSource = () => {
+             "hasSemanticInlineType", "getSemanticInternalMarkerPrefixLength", "isSemanticInlineElement", "getFirstTextNode",
+             "isSemanticInlineMarkerTextNode", "getSemanticMarkerPrefixLengthForNode"],
+     };
+-    const files = ["render/mathRender.ts", "render/mathRenderSecurity.ts", "render/foldedContent.ts", "util/hasClosest.ts",
++    const files = ["render/mathRender.ts", "render/mathRenderSecurity.ts", "render/foldedContent.ts",
++        "render/mathBoundaries.ts", "render/mathRendererRegistry.ts", "util/hasClosest.ts",
+         ...Object.keys(declarations)];
+     const source = files.map(file => {
+         const parsed = ts.createSourceFile(file, readFileSync(path.join(__dirname, "../src/protyle", file), "utf8"),
+diff --git a/app/tests/inlineMathSelection.test.js b/app/tests/inlineMathSelection.test.js
+index 202e7a8..d26def7 100644
+--- a/app/tests/inlineMathSelection.test.js
++++ b/app/tests/inlineMathSelection.test.js
+@@ -163,6 +163,7 @@ const runElectron = async () => {
+     try {
+         const root = path.join(__dirname, "../src/protyle");
+         let source = ["render/mathRender.ts", "render/mathRenderSecurity.ts", "render/foldedContent.ts",
++            "render/mathBoundaries.ts", "render/mathRendererRegistry.ts",
+             "util/hasClosest.ts", "util/selectionOffsets.ts", "wysiwyg/getBlock.ts"].map(file => {
+             const parsed = ts.createSourceFile(file, readFileSync(path.join(root, file), "utf8"), ts.ScriptTarget.Latest, true);
+             const statements = parsed.statements.filter(statement => !ts.isImportDeclaration(statement) &&
+diff --git a/app/tests/pdfExportCache.test.js b/app/tests/pdfExportCache.test.js
+index 02e7ff4..20ddca2 100644
+--- a/app/tests/pdfExportCache.test.js
++++ b/app/tests/pdfExportCache.test.js
+@@ -18,7 +18,14 @@ const createPreview = mode => {
+             storage: {pdf: {paged: true}}, languages: {_kernel: {16: "Untitled"}}}},
+         {LOCAL_EXPORTPDF: "pdf", SIYUAN_VERSION: "test", NODE_ENV: mode}, {invoke: async () => 0},
+         async () => "", () => ({}), () => "", () => "", () => "", () => "{}", async () => "", async () => "",
+-        async () => "", (_url, data) => html = data.content, () => "", {now: () => ++time}, name => name);
++        async () => "", (_url, data, callback) => {
++            html = data.content;
++            // 预览正文预取（payload 无 blockRefMode）是回调式接口，必须回调否则 await 永不结束；
++            // 其余调用保持上游同步桩行为。
++            if (callback && data.blockRefMode === undefined) {
++                callback({code: -1});
++            }
++        }, () => "", {now: () => ++time}, name => name);
+     return async () => {
+         await renderPDF("root");
+         return {
+diff --git a/app/tests/pdfHeadingPageBreaks.test.js b/app/tests/pdfHeadingPageBreaks.test.js
+index 626cf8e..908c9af 100644
+--- a/app/tests/pdfHeadingPageBreaks.test.js
++++ b/app/tests/pdfHeadingPageBreaks.test.js
+@@ -120,7 +120,14 @@ const browserCases = async (headingSource, uiSource, desktopSource, mobileSource
+         "getIconScript", "getSnippetCSS", "getSnippetJS", "getExportLanguages", "setInlineStyle", "getCustomFontStyle",
+         "getPluginStyle", "fetchPost", "headingPageBreakControls", "replaceLocalPath", desktopSource + ";return renderPDF;")(
+         Constants, {invoke: async () => 0}, async () => "", () => ({}), () => "", () => "", () => "", () => "{}",
+-        async () => "", async () => "", async () => "", (_url, data) => html = data.content, ui.headingPageBreakControls, name => name);
++        async () => "", async () => "", async () => "", (_url, data, callback) => {
++            html = data.content;
++            // 预览正文预取（payload 无 blockRefMode）是回调式接口，必须回调否则 await 永不结束；
++            // 其余调用保持上游同步桩行为。
++            if (callback && data.blockRefMode === undefined) {
++                callback({code: -1});
++            }
++        }, ui.headingPageBreakControls, name => name);
+     window.siyuan.storage.pdf.paged = false;
+     await renderPDF("root");
+     check.ok(new DOMParser().parseFromString(html, "text/html").getElementById("headingPageBreakOptions")
+@@ -218,8 +225,9 @@ const browserCases = async (headingSource, uiSource, desktopSource, mobileSource
+     window.siyuan = {config, storage: {pdf: {headingPageBreakLevels: [2, 6]}}, languages: {_kernel: {16: "Untitled"}}};
+     const onExport = new Function("Constants", "isInMobileApp", "getScreenWidth", "getThemeMode", "setInlineStyle",
+         "getPluginStyle", "getSnippetCSS", "getSnippetJS", "getIconScript", "getExportLanguages", "normalizeHeadingPageBreakLevels",
++        "bakeMathInHtml",
+         mobileSource + ";return onExport;")(Constants, () => true, () => 390, () => "light", async () => "",
+-        async () => "", () => "", () => "", () => "", () => "{}", normalize);
++        async () => "", () => "", () => "", () => "", () => "{}", normalize, html => html);
+     const data = {data: {name: "Mobile", content: h(1, "first") + p("Body") + h(2, "second") + h(6, "sixth", true)}};
+     const mobileHTML = await onExport(data, undefined, "/", {type: "pdf", id: "root"});
+     const ordinaryHTML = await onExport(data, undefined, "/", {type: "html", id: "root"});
+diff --git a/app/tests/pdfPageSize.test.js b/app/tests/pdfPageSize.test.js
+index e6c015c..a164fb5 100644
+--- a/app/tests/pdfPageSize.test.js
++++ b/app/tests/pdfPageSize.test.js
+@@ -31,7 +31,14 @@ const browserCases = async (renderSource, persistSource) => {
+         "getIconScript", "getSnippetCSS", "getSnippetJS", "getExportLanguages", "setInlineStyle", "getCustomFontStyle",
+         "getPluginStyle", "fetchPost", "headingPageBreakControls", "replaceLocalPath", renderSource + ";return renderPDF;")(
+         Constants, ipcRenderer, async () => "", () => ({}), () => "", () => "", () => "", () => "{}",
+-        async () => "", async () => "", async () => "", (_url, data) => html = data.content, () => "", name => name);
++        async () => "", async () => "", async () => "", (_url, data, callback) => {
++            html = data.content;
++            // 预览正文预取（payload 无 blockRefMode）是回调式接口，必须回调否则 await 永不结束；
++            // 其余调用保持上游同步桩行为。
++            if (callback && data.blockRefMode === undefined) {
++                callback({code: -1});
++            }
++        }, () => "", name => name);
+     const tick = () => new Promise(resolve => setTimeout(resolve, 30));
+     const open = async (pageSize = "A4") => {
+         exported = undefined;
+diff --git a/app/tests/remoteDocumentTransfer.test.js b/app/tests/remoteDocumentTransfer.test.js
+index ac1880d..a8bc74e 100644
+--- a/app/tests/remoteDocumentTransfer.test.js
++++ b/app/tests/remoteDocumentTransfer.test.js
+@@ -24,6 +24,8 @@ const createEnvironment = ({browser = false, mobile = false, remote = true} = {}
+         "util/pathName": {isEncryptedBox: () => false},
+         "util/assets": {getThemeMode: () => 0, setInlineStyle: async () => ""},
+         "constants": {Constants: {SIYUAN_GET: "siyuan-get", HELP_PATH: {}}},
++        // 导出端不加载真实 mathRender；烘焙公式对已渲染的 HTML 是恒等变换。
++        "protyle/render/mathRender": {bakeMathInHtml: html => html},
+         "menus/Menu": {MenuItem: class {constructor(options) {this.element = options;}}},
+         "dialog/message": {showMessage: (...args) => {messages.push(args); return "message";}, hideMessage: id => hidden.push(id)},
+         "dialog/confirmDialog": {confirmDialog: ({confirm}) => confirm()},

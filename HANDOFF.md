@@ -7,8 +7,8 @@
 | 项 | 值 |
 |---|---|
 | main | 见 `git log -1` |
-| 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`（amd64 + arm64，index digest `sha256:88eb9bd0…`，匿名可拉）；`latest` 已指向它；历史 p0/p1/p4/p5 仍在 GHCR |
-| `PATCH_REVISION` | `6`（对应 `v3.8.12-p6`，2026-11-25 构建发布） |
+| 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`（amd64 + arm64，index digest `sha256:88eb9bd0…`，匿名可拉）；`latest` 已指向它；历史 p0/p1/p4/p5 仍在 GHCR。p7 构建后接替 |
+| `PATCH_REVISION` | `7`（对应 `v3.8.12-p7`；p7 只修测试夹具，镜像内容与 p6 等价） |
 | 线上部署 | 已在私有 config 仓库 `LeonhardtHUST/config` 手动跑了一次 `deploy-siyuan`：`v3.8.11-p5` → `v3.8.12-p6`，健康检查通过（镜像引用 `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`、`/api/system/version` = `3.8.12`） |
 | 构建入口 | docker：`watch-upstream`（每 6 小时）→ `release-docker`；Windows 桌面端：`release-cron`（每天 12:00 UTC）→ `release-windows` → `release-checksums` |
 
@@ -18,7 +18,11 @@
    `windows-11-arm` ARM64），重新引入 `release-cron.yml`（只派发 Windows）与
    `release-checksums.yml`。Windows 应用 5 个补丁（不含 `docker-build` / `math-renderer-registry`）。
    **尚未在 Actions 实跑验证**。
-2. **临时架构 tag 改为自动清理**：新增独立的 `gc-staging-tags.yml`（每天 04:17）+ 
+2. **补丁集修成 test-green**：`math-renderer-registry.patch` 与 `content-prefetch.patch` 现在同时更新上游那批
+   「剔除 import + 手工注入依赖表」的隔离夹具（12 个测试文件），补上 `findMathRenderer` /
+   `applyInlineMathBoundaries` / `invalidateContentPrefetchFor` 等桩。这样「打完 7 个补丁的 v3.8.12 树」
+   跑 `pnpm test` 不再有补丁引入的红灯。`PATCH_REVISION` 因此 6 → 7。
+3. **临时架构 tag 改为自动清理**：新增独立的 `gc-staging-tags.yml`（每天 04:17）+ 
    `scripts/gc-staging-tags.py`，只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定 tag 保护集合里的
    digest；因为不改 `release-docker.yml`，不需要递增 `PATCH_REVISION`。
 
@@ -78,15 +82,10 @@
 3. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 / v3.8.12 已走不到（构建用
    `--build-arg ONNX_IMAGE` 复用官方镜像产物），留着是为了将来没有 digest 的版本。
    上游若恢复 `microsoft/onnxruntime` 应重新评估。
-4. **`math-renderer-registry` 把上游 `mathLayout.test.ts` 打挂**：该测试用注入式依赖表单独编译
-   `mathRender.ts`，补丁新增的 `findMathRenderer` / `applyInlineMathBoundaries` 没补进表里，
-   打过补丁后报 `ReferenceError`（未打补丁 1/1 通过）。docker 构建不跑测试，所以不影响发布，
-   但会让打过补丁的树 `pnpm test` 出现 1 个红灯。修它要动 `patches/siyuan/math-renderer-registry.patch`
-   （按纪律递增 N）。详见 `RUNTIME-REGRESSION.md`。
-5. **`wip/math-conversion/` 与 `content-prefetch` 尚未在 v3.8.12 上做组合重基线**。v3.8.11 上
+4. **`wip/math-conversion/` 与 `content-prefetch` 尚未在 v3.8.12 上做组合重基线**。v3.8.11 上
    已验证组合后只剩两处同址冲突（22 个语言包、`app/src/protyle/util/destroy.ts`），v3.8.12
    需重做；且插件侧目前没有调用方，接入前应先确认产品需求。
-6. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
+5. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
    的提交，该步骤已降级为告警，issue 正文给出不依赖分支的 `git fetch` + `git merge FETCH_HEAD`。
 
 ## 边界

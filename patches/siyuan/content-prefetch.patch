@@ -407,6 +407,35 @@ index fc562ef..a655027 100644
              if (options.type === "main") {
                  const {cancelTemplateHTTPExecutions}: typeof import("../template/http") = require("../template/http");
                  cancelTemplateHTTPExecutions();
+diff --git a/app/src/protyle/gutter/embedConversion.test.ts b/app/src/protyle/gutter/embedConversion.test.ts
+index c6685a6..b093f93 100644
+--- a/app/src/protyle/gutter/embedConversion.test.ts
++++ b/app/src/protyle/gutter/embedConversion.test.ts
+@@ -29,9 +29,10 @@ const browserCases = async (source: string, helpers: string) => {
+         refExpired: "Missing source", embedToBlocks: "Convert to regular blocks", embedToReferences: "Convert to references",
+     }} as unknown as typeof window.siyuan;
+     let replayReloads = 0;
+-    const copiedHelpers = new Function("Constants", "BLOCK_SELECTION_MODE_CLASS", "reloadProtyle", helpers +
++    const copiedHelpers = new Function("Constants", "BLOCK_SELECTION_MODE_CLASS", "reloadProtyle",
++        "invalidateContentPrefetchFor", helpers +
+         "; return {clearBlockElement, remapTabsDOMIDs, wrapPastedTabItems, removeFoldHeading, onTransaction};")(
+-        constants, "block-selection-mode", () => replayReloads++);
++        constants, "block-selection-mode", () => replayReloads++, () => {});
+     let context: {allowChildOperation: boolean; targetElement: Element} | undefined;
+     let hook: () => void;
+     let pending: Promise<void> = Promise.resolve();
+diff --git a/app/src/protyle/header/documentTitleDialog.test.ts b/app/src/protyle/header/documentTitleDialog.test.ts
+index ac66a31..faf439f 100644
+--- a/app/src/protyle/header/documentTitleDialog.test.ts
++++ b/app/src/protyle/header/documentTitleDialog.test.ts
+@@ -532,6 +532,7 @@ for (const mobile of [false, true]) {
+             Constants: {CUSTOM_SY_READONLY: attr}, ignoresProtyleEditLock: state.runtime.ignoresProtyleEditLock,
+             disabledProtyle: (protyle: IProtyle) => { protyle.disabled = true; },
+             shouldReloadForEmbedConversion: () => false, handleViewFoldSourceOperation: () => false,
++            invalidateContentPrefetchFor: () => {},
+             invalidateTrackedRangesByOperations() {}, invalidateViewFoldRequests() {}, escapeHtmlTextAndAttr: (value: string) => value,
+             getBlockSelectionStatusIDs: (): string[] => [], isUndoViewportPreserved: () => false, applyViewFoldStates() {},
+             queueHeadingNumberRefresh() {}, refreshHeadingFoldIndicators() {}, shouldReloadForHeadingBatch: () => false,
 diff --git a/app/src/protyle/index.ts b/app/src/protyle/index.ts
 index 51af361..7c80948 100644
 --- a/app/src/protyle/index.ts
@@ -2082,6 +2111,18 @@ index 0545b1e..d592a25 100644
              fetchPost: (_url: string, data: any, callback: (data: any) => void) => new Promise<void>(finish => {
                  requests.push({data, callback, finish});
              }),
+diff --git a/app/src/protyle/undo/undoStatus.test.ts b/app/src/protyle/undo/undoStatus.test.ts
+index 3ddc0a8..f5f99d8 100644
+--- a/app/src/protyle/undo/undoStatus.test.ts
++++ b/app/src/protyle/undo/undoStatus.test.ts
+@@ -63,6 +63,7 @@ test("history invalidation broadcasts refresh buttons without editor operations"
+         },
+         getTransactionOperations: (): unknown[] => [],
+         queueDatabaseRowRefreshForOperations() {},
++        invalidateContentPrefetchFor() {},
+     };
+     const code = transpileModule(readFileSync("src/protyle/index.ts", "utf8"), {
+         compilerOptions: {module: ModuleKind.CommonJS, target: ScriptTarget.ES2021},
 diff --git a/app/src/protyle/util/destroy.ts b/app/src/protyle/util/destroy.ts
 index d72cbeb..53d6860 100644
 --- a/app/src/protyle/util/destroy.ts
@@ -2234,6 +2275,27 @@ index df7442a..e75dc46 100644
          /**
           * Whether the embedded block displays breadcrumbs
           */
+diff --git a/app/tests/tabsFocus.test.js b/app/tests/tabsFocus.test.js
+index 07b09a0..325cd61 100644
+--- a/app/tests/tabsFocus.test.js
++++ b/app/tests/tabsFocus.test.js
+@@ -82,6 +82,7 @@ const cases = async (source) => {
+     const api = new Function("Constants", "Menu", "copySubMenu", "transaction", "zoomOut", "hideElements",
+         "focusBlock", "focusByRange", "queueTransaction", "fetchPost", "openAttr", "processRender", "avRender",
+         "getSelectAllBlockAction", "countBlockWord", "getTaskStatusItems", "replayDeps",
++        "invalidateContentPrefetchFor",
+         "const {invalidateTrackedRangesByOperations, invalidateViewFoldRequests, handleViewFoldSourceOperation, " +
+         "updateBlock, syncTrackedRanges, applyViewFoldStates, queueHeadingNumberRefresh, refreshHeadingFoldIndicators} = replayDeps;" +
+         source + "; return {initEditorTabs, openTabsMenu, changeTabs, selectAll, destroyTabsRender, onTransaction, bindTitleKeydown};")(
+@@ -104,7 +105,7 @@ const cases = async (source) => {
+             handleViewFoldSourceOperation: () => false, syncTrackedRanges: () => {},
+             applyViewFoldStates: () => {}, queueHeadingNumberRefresh: () => {}, refreshHeadingFoldIndicators: () => {},
+             updateBlock: (items, _protyle, operation) => items.forEach(item => { item.outerHTML = operation.data; }),
+-        });
++        }, () => {});
+ 
+     for (const readonly of [false, true]) {
+         for (const position of ["top", "left"]) {
 diff --git a/kernel/api/setting_contract.go b/kernel/api/setting_contract.go
 index 323079f..2c9467b 100644
 --- a/kernel/api/setting_contract.go

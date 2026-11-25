@@ -75,6 +75,9 @@ docker 镜像的构建入口仍是 `watch-upstream` → `release-docker`。
 | **`patches/siyuan/content-prefetch.patch`** | **可选的块边界内容预取与同源图片预取** | **docker** | **默认关闭，见下；已重基线到 v3.8.12** |
 | **`patches/siyuan/startup-slow-loading.patch`** | **慢启动诊断：页面资源阶段独立 120 秒预算，业务阶段仍 30 秒** | **docker** | **本 fork 新增，见下** |
 
+> `math-renderer-registry` 与 `content-prefetch` 还会同步更新上游那批「剔除 import + 手工注入依赖表」的
+> 隔离夹具（12 个测试文件），保证打完补丁的源码树 `pnpm test` 无补丁引入的红灯。
+>
 > Windows 桌面端构建（`release-windows.yml`）应用上表中的 `disable-update`、`default-config`、
 > `mock-vip-user`、`content-prefetch`、`startup-slow-loading` 五项；`docker-build` 与
 > `math-renderer-registry` 是 docker 专用，Windows 不应用（与历史 PC 构建一致）。
