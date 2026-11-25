@@ -37,6 +37,7 @@ import sys
 import tempfile
 
 REGISTRY = "https://ghcr.io"
+API = "https://api.github.com"
 STAGING_RE = re.compile(r"^v\d+\.\d+\.\d+-p\d+-(amd64|arm64)-\d+$")
 ACCEPT = ", ".join(
     [
@@ -166,6 +167,46 @@ def delete_manifest(token: str, owner: str, package: str, digest: str) -> tuple[
     return status, (body or "")[:200]
 
 
+
+def api_request(method: str, url: str, token: str) -> tuple[int, str]:
+    proc = subprocess.run(
+        ["curl", "-sS", "--max-time", "90", "-X", method,
+         "-H", f"Authorization: Bearer {token}",
+         "-H", "Accept: application/vnd.github+json",
+         "-H", "X-GitHub-Api-Version: 2022-11-28",
+         "-w", "\n%{http_code}", url],
+        capture_output=True, text=True, timeout=120,
+    )
+    if proc.returncode != 0:
+        return -1, proc.stderr.strip()
+    body, _, code = proc.stdout.rpartition("\n")
+    try:
+        return int(code.strip()), body
+    except ValueError:
+        return -1, body
+
+
+def list_package_versions(token: str, owner: str, package: str) -> list[dict]:
+    """列出版本（name 是 manifest digest，metadata.container.tags 是其 tag 列表）。"""
+    versions: list[dict] = []
+    page = 1
+    while True:
+        url = f"{API}/users/{owner}/packages/container/{package}/versions?per_page=100&page={page}"
+        status, body = api_request("GET", url, token)
+        if status != 200:
+            raise SystemExit(f"列出版本失败：HTTP {status} {body[:200]}")
+        batch = json.loads(body or "[]")
+        versions.extend(batch)
+        if len(batch) < 100:
+            return versions
+        page += 1
+
+
+def delete_version_via_api(token: str, owner: str, package: str, version_id: int) -> tuple[int, str]:
+    url = f"{API}/users/{owner}/packages/container/{package}/versions/{version_id}"
+    return api_request("DELETE", url, token)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="只打印将要删除的 tag，不真的删")
@@ -206,6 +247,16 @@ def main() -> int:
             protected.update(d for d in child_digests(token, owner, package, digest) if d)
     print(f"保护集合 digest 数：{len(protected)}")
 
+    # GHCR 的 registry API 不支持按 digest 删除 manifest（HTTP 405 UNSUPPORTED），
+    # 因此删除走 GitHub Packages 的 REST API：按 digest 找到 package version id 再删除。
+    versions = list_package_versions(token, owner, package)
+    by_digest: dict[str, dict] = {}
+    for version in versions:
+        digest = version.get("name") or ""
+        if digest:
+            by_digest[digest] = version
+    print(f"package versions：{len(versions)}")
+
     failures = 0
     for tag in staging:
         digest, _ = manifest_digest(token, owner, package, tag)
@@ -216,15 +267,30 @@ def main() -> int:
         if digest in protected:
             print(f"skip  {tag}（digest {digest[:19]}… 被稳定 tag 引用，保留）")
             continue
-        if args.dry_run:
-            print(f"dry-run delete {tag}（digest {digest[:19]}…）")
-            continue
-        status, detail = delete_manifest(token, owner, package, digest)
-        if 200 <= status < 300:
-            print(f"deleted {tag}（digest {digest[:19]}…，HTTP {status}）")
-        else:
+        version = by_digest.get(digest)
+        if version is None:
+            print(f"::warning::{tag} 在 package versions 里找不到对应 digest，跳过")
             failures += 1
-            print(f"::warning::删除 {tag} 失败：HTTP {status} {detail}")
+            continue
+        other_tags = [x for x in ((version.get("metadata") or {}).get("container", {}).get("tags") or [])
+                      if not STAGING_RE.match(x)]
+        if other_tags:
+            print(f"skip  {tag}（该 version 还挂着稳定 tag：{', '.join(other_tags)}）")
+            continue
+        if args.dry_run:
+            print(f"dry-run delete {tag}（version id {version.get('id')}，digest {digest[:19]}…）")
+            continue
+        status, detail = delete_version_via_api(token, owner, package, int(version["id"]))
+        if 200 <= status < 300:
+            print(f"deleted {tag}（version id {version['id']}，HTTP {status}）")
+        else:
+            status2, detail2 = delete_manifest(token, owner, package, digest)
+            if 200 <= status2 < 300:
+                print(f"deleted {tag}（digest {digest[:19]}…，registry HTTP {status2}）")
+            else:
+                failures += 1
+                print(f"::warning::删除 {tag} 失败：api HTTP {status} {detail[:120]}；"
+                      f"registry HTTP {status2} {detail2[:120]}")
 
     if failures:
         print(f"有 {failures} 个临时 tag 未能处理（其余已清理）", file=sys.stderr)
