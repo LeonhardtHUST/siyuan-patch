@@ -226,7 +226,7 @@ pnpm run test:focused src/boot/startupError.test.ts
   （`ghcr.io/<owner>/siyuan`，使用内置 `GITHUB_TOKEN`，**无需配置任何 secrets**）；
   镜像按 canonical tag `vX.Y.Z-pN` 发布，见上文「镜像版本与不可变 tag 纪律」。
   平台产物工作流：`release-pc.yml`（Linux/macOS）/ `release-android.yml` / `release-ios.yml`
-  已于 2026-11-24 删除；`release-windows.yml` 于 2026-11-25 恢复（x86_64 + ARM64），
+  已于 2026-11-24 删除；`release-windows.yml` 于 2026-11-25 恢复（当前只 x86_64，ARM64 暂停），
   `release-cron.yml` 重新引入但只派发 Windows，`release-checksums.yml` 供其生成校验和。
 - GHCR 上的 `siyuan` 包**当前是 public**，匿名即可拉取与查询 tag。`deploy-siyuan` 的
   `tag_version.py pick` 走匿名令牌，因此**不要把包改回 private**，否则部署会在选版本阶段失败。
@@ -249,7 +249,15 @@ publish 再用 `docker buildx imagetools create` 把它们**扁平化**合并成
 - 保护集合 = 所有稳定 tag（canonical、`latest`、历史无后缀 tag）的 digest 及其一层子 digest，
   临时 tag 的 digest 命中保护集合时一律跳过；
 - 删除临时 tag 自己的 index digest；每个 tag 失败只告警，不中断其余清理；
-- 只读场景可用 `--dry-run`（匿名 token 即可）。
+- 只读场景可用 `--dry-run`（匿名 token 即可）；真正删除需要一个带 `read:packages` + `delete:packages`
+  的 token（`GITHUB_TOKEN` 不够，实测 401）。工作流读 `secrets.GC_STAGING_TOKEN`，未配置时只列出不删。
+- 手工清理（等价于工作流）：
+  ```bash
+  OWNER=leonhardthust PACKAGE=siyuan TOKEN=$(gh auth token) python3 scripts/gc-staging-tags.py --dry-run
+  OWNER=leonhardthust PACKAGE=siyuan TOKEN=$(gh auth token) python3 scripts/gc-staging-tags.py
+  ```
+- 2026-11-25 首次清理已完成：删掉 p1/p4/p5/p6 的 8 个临时 tag（HTTP 204），GHCR 上只剩 11 个稳定 tag，
+  canonical/latest 的 digest 与平台层未受影响。
 
 **为什么不做成 `release-docker` 的后续 step**：`release-docker.yml` 属镜像相关输入，按版本纪律
 必须递增 `PATCH_REVISION`，会为一个纯清理动作产出内容相同的 `pN` 并重启线上。独立工作流不在
@@ -266,7 +274,7 @@ publish 再用 `docker buildx imagetools create` 把它们**扁平化**合并成
 | `release-docker.yml` | 手动 / 被 watch 触发 | 发布不可变多架构镜像 `vX.Y.Z-pN` 到 GHCR |
 | `gc-staging-tags.yml` | 每天 04:17 + 手动 | 删除临时架构 tag；稳定 tag 与其 digest 在保护集合里 |
 | `release-cron.yml` | 每天 12:00 UTC + 手动 | 按上游 `vX.Y.Z` 创建 Release（若缺失）并派发 `release-windows`；不派发 docker |
-| `release-windows.yml` | 手动 / 被 cron 派发 | 构建 Windows x86_64 + ARM64 安装包并上传到 Release |
+| `release-windows.yml` | 手动 / 被 cron 派发 | 构建 Windows x86_64 安装包并上传到 Release（ARM64 暂停） |
 | `release-checksums.yml` | 被 Windows 构建调用 | 生成并上传 `SHA256SUMS.txt` |
 | `deploy-siyuan`（私有 config 仓库） | schedule 每 30 分钟 + 手动 | 按上游版本与补丁修订号选镜像，在服务器 runner 上更新、健康检查及失败回滚 |
 

@@ -1,6 +1,7 @@
 name: release-windows
 
-# Windows 桌面端 dist 构建（x86_64 + ARM64），产物上传到上游语义的 GitHub Release（tag = 上游 vX.Y.Z）。
+# Windows 桌面端 dist 构建（当前只 x86_64；ARM64 于 2026-11-25 暂停，原因见矩阵注释），
+# 产物上传到上游语义的 GitHub Release（tag = 上游 vX.Y.Z）。
 #
 # 历史沿革：
 # - 2026-11-24 删除全部平台 dist 构建；本次只恢复 Windows 部分，Linux / macOS / iOS / Android 不恢复。
@@ -43,17 +44,24 @@ jobs:
             msys_packages: "p7zip mingw-w64-x86_64-lua"
             goarch: "amd64"
             suffix: "win.exe"
-          # Windows ARM64
-          - os: windows-11-arm
-            kernel_path: "../app/kernel-arm64/SiYuan-Kernel.exe"
-            build_args: "-s -w -H=windowsgui -X github.com/siyuan-note/siyuan/kernel/util.Mode=prod"
-            electron_args: "dist-arm64"
-            goos: "windows"
-            gobin: "bin"
-            mingwsys: "CLANGARM64"
-            msys_packages: "p7zip mingw-w64-clang-aarch64-clang"
-            goarch: "arm64"
-            suffix: "win-arm64.exe"
+          # Windows ARM64 —— **暂停**（2026-11-25）。保留原矩阵项备查，不参与构建。
+          #
+          # 失败根因：上游 v3.8.12 的 scripts/ocr-assets.json 只为 amd64/linux/darwin 配了
+          # runtimeRecovery，windows-arm64 仍指向 microsoft/onnxruntime（该仓库整仓 404），
+          # prepare-ocr.py 又写死 NSIS 成员 $PLUGINSDIR/app-64.7z。历史由
+          # patches/siyuan/ocr-arm64-recovery.patch 补这两处，该补丁在平台清理时被删除。
+          # 重新启用前必须先：① 恢复并按 v3.8.12 更新该补丁（runtimeRecovery 加 windows-arm64
+          # 条目 + prepare-ocr 用 app-arm64.7z）；② 解注释下面的矩阵项；③ 实跑验证。
+          # - os: windows-11-arm
+          #   kernel_path: "../app/kernel-arm64/SiYuan-Kernel.exe"
+          #   build_args: "-s -w -H=windowsgui -X github.com/siyuan-note/siyuan/kernel/util.Mode=prod"
+          #   electron_args: "dist-arm64"
+          #   goos: "windows"
+          #   gobin: "bin"
+          #   mingwsys: "CLANGARM64"
+          #   msys_packages: "p7zip mingw-w64-clang-aarch64-clang"
+          #   goarch: "arm64"
+          #   suffix: "win-arm64.exe"
 
     steps:
       - uses: actions/checkout@v7.0.1

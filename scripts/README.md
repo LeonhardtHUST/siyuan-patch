@@ -36,7 +36,7 @@ python3 scripts/build-patch.py      # 输出 /tmp/pw/math-renderer-registry.patc
 |---|---|
 | `image-version.mjs` | 解析上游/完整 tag、校验 N 与 `PATCH_REVISION` 相等、构造临时架构 tag、prepare/publish 决策 |
 | `registry-tag-state.mjs` | GHCR manifest HEAD 查询；200=exists、404=absent，鉴权/网络/超时/重定向一律 fail closed |
-| `gc-staging-tags.py` | 删除 `vX.Y.Z-pN-<arch>-<run_id>` 临时 tag；稳定 tag 及其子 digest 一律保护，支持 `--dry-run` |
+| `gc-staging-tags.py` | 删除 `vX.Y.Z-pN-<arch>-<run_id>` 临时 tag；稳定 tag 及其子 digest 一律保护，支持 `--dry-run`。删除需要 `read:packages`+`delete:packages` 的 token（`gh auth refresh -s read:packages,delete:packages`），工作流读 `secrets.GC_STAGING_TOKEN` |
 | `check-image-version.mjs` | `ci`：基线 diff 校验；`gate`：要求该 commit 的 `check-image-version` push 运行已在 main 通过 |
 
 ```bash

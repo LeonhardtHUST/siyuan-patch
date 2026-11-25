@@ -44,10 +44,14 @@ Windows 安装包随上游语义的 GitHub Release（tag = `vX.Y.Z`）发布，�
 | Platform | Architecture | Asset |
 |---|---|---|
 | Windows | x86_64 | `siyuan-vX.Y.Z-win.exe` |
-| Windows | ARM64 | `siyuan-vX.Y.Z-win-arm64.exe` |
+| Windows | ARM64 | **暂停**（2026-11-25 起；见下） |
 
 每个 Release 还附带 `SHA256SUMS.txt`。Windows 构建不应用 `docker-build` 与 `math-renderer-registry`
 两个 docker 专用补丁，其余补丁与 docker 一致。
+
+> ARM64 暂停原因：上游 `scripts/ocr-assets.json` 缺少 `windows-arm64` 的 `runtimeRecovery` 条目，
+> `microsoft/onnxruntime` 整仓 404，`prepare-ocr.py` 又写死 `$PLUGINSDIR/app-64.7z`，Electron 打包阶段
+> 必然失败。重新启用前需先恢复并按当前上游版本更新 `patches/siyuan/ocr-arm64-recovery.patch`。
 
 ## Feature Modifications
 
