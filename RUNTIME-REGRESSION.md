@@ -59,6 +59,29 @@ pnpm run test:focused src/protyle/scroll/contentPrefetch.test.ts \
 覆盖：预取策略/边界、失效与取消逻辑、启动诊断的计时与阶段机。
 注意：这些测试是补丁自带的，要用**反向验证**确认它们不是空转——在未打补丁的源码树上这些文件不存在或无法运行。
 
+2026-11-25 在真实 v3.8.12 + 全部 7 个补丁的源码树上实测：
+
+| 测试文件 | 结果 |
+|---|---|
+| `src/protyle/scroll/contentPrefetch.test.ts`（补丁新增，21 用例，含 9 个 `node:vm` 真跑 dynamic load） | ✅ 21/21 |
+| `src/protyle/scroll/indexRequest.test.ts` | ✅ 2/2 |
+| `src/boot/startupError.test.ts`（补丁把用例从 10 扩到 16） | ✅ 16/16 |
+| `src/protyle/render/mathRenderSecurity.test.ts` | ✅ 11/11 |
+| 4 个 `transaction*.test.ts` | ✅ 91/91 |
+| `src/protyle/render/mathLayout.test.ts` | ❌ **1/1 失败**（见下） |
+
+**已知真实回归（待修）**：`mathLayout.test.ts` 用 `transpileModule` 把 `mathRender.ts` 单独编译并注入一张固定依赖表；
+`math-renderer-registry` 补丁新增了 `findMathRenderer` / `applyInlineMathBoundaries` 两个运行时依赖，但没同步补进那张表，
+因此打过补丁后该用例报 `ReferenceError: findMathRenderer is not defined`（未打补丁的树 1/1 通过）。
+修法：在该测试的依赖表里补这两个符号（推荐，还能顺带断言"渲染器认领"路径），或改为真实 import。
+docker 构建不跑测试，所以这个问题不会挡住发布，但会让「打过补丁的树跑 `pnpm test`」出现红。
+
+反向验证：未打补丁的 worktree 里 `contentPrefetch.test.ts` 不存在、直接拒跑，`indexRequest/startupError` 只有 12 个用例
+（10+2）；打过补丁后变 18 个 → 测试确实随补丁新增，不是把旧用例重跑一遍。
+
+`pnpm run typecheck`（4 个 tsc 项目）✅；补丁触及的 12 个文件 eslint ✅；`pnpm run api:check` 无法运行（需要 Go 解析
+kernel apicontract，本机无 Go）。
+
 ## L4 部署烟测（自动，已在生产跑过）
 
 `deploy-siyuan`（私有 config 仓库 `LeonhardtHUST/config`）每 30 分钟轮询 GHCR，切换后要求：
@@ -127,6 +150,8 @@ docker inspect -f '{{.Config.Image}}' siyuan
 ## 现状缺口（2026-11-25）
 
 - L5 三项都没有自动跑；L3 只覆盖前端单测，Go 侧（`kernel/mathconversion`、`kernel/model` 事务）**未跑**
-  （本机无 Go 工具链；docker 构建只编译不测试）。
+  （本机无 Go 工具链；docker 构建只编译不测试），`pnpm run api:check` 因此也未验证。
+- `mathLayout.test.ts` 的回归（见 L3）尚未修；修它需要动 `patches/siyuan/math-renderer-registry.patch`，
+  按版本纪律会强制递增 `PATCH_REVISION`。
 - 没有可登录的测试实例：生产实例的访问码只在服务器 `.env`，本地 WSL 也没有 docker。
   要长期跑 L5，建议单独起一个带固定 `--accessAuthCode` 的测试容器（与生产隔离）。

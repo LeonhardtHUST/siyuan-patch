@@ -63,18 +63,30 @@
 
 ## 已知债务
 
-1. **Windows 构建尚未实跑**：`release-windows.yml` 的 runner（`windows-11-arm`）、Go/pnpm/msys2
-   版本、ARM64 依赖上游 `dist-arm64` 都未经验证；`actions.lock` 也还没有该工作流的条目
-   （该文件由 `gh actions-lock` 机器生成，下一次 bot 更新会补上，同时清掉已删工作流的条目）。
+1. **Windows 构建：x86_64 已跑通，ARM64 卡在上游 OCR 资源**。2026-11-25 实跑
+   [release-windows 45609418100](https://github.com/LeonhardtHUST/siyuan-patch/actions/runs/45609418100)：
+   x64 全流程成功并上传 `siyuan-v3.8.12-win.exe`；ARM64 在 `Building Electron` 阶段失败，
+   原因是 `prepare-ocr.py` 去 `microsoft/onnxruntime` 下载 `windows-arm64` 运行时（整仓 404），
+   而 v3.8.12 的 `runtimeRecovery` 只有 amd64/linux/ darwin，没有 windows-arm64。
+   历史上由 `patches/siyuan/ocr-arm64-recovery.patch` 补这两处（runtimeRecovery 条目 +
+   `app-arm64.7z` 成员名）；该补丁随平台清理被删除，恢复它需要把 URL/sha256 更新到 v3.8.12。
+   修法二选一：恢复该补丁（属 `patches/**`，按纪律要递增 N）或在 `release-windows`
+   构建前用脚本从上游安装包预置 runtime（改动只在 workflow/scripts，不动镜像身份）。
+   `actions.lock` 也还没有该工作流的条目（机器生成，下一次 bot 更新补上）。
 2. **临时架构 tag 由 `gc-staging-tags.yml` 自动清理**：只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定
    tag 保护集合里的 digest；清理滞后最多 24 小时。首次上线时需手动跑一次把历史 8 个临时 tag 清掉。
 3. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 / v3.8.12 已走不到（构建用
    `--build-arg ONNX_IMAGE` 复用官方镜像产物），留着是为了将来没有 digest 的版本。
    上游若恢复 `microsoft/onnxruntime` 应重新评估。
-4. **`wip/math-conversion/` 与 `content-prefetch` 尚未在 v3.8.12 上做组合重基线**。v3.8.11 上
+4. **`math-renderer-registry` 把上游 `mathLayout.test.ts` 打挂**：该测试用注入式依赖表单独编译
+   `mathRender.ts`，补丁新增的 `findMathRenderer` / `applyInlineMathBoundaries` 没补进表里，
+   打过补丁后报 `ReferenceError`（未打补丁 1/1 通过）。docker 构建不跑测试，所以不影响发布，
+   但会让打过补丁的树 `pnpm test` 出现 1 个红灯。修它要动 `patches/siyuan/math-renderer-registry.patch`
+   （按纪律递增 N）。详见 `RUNTIME-REGRESSION.md`。
+5. **`wip/math-conversion/` 与 `content-prefetch` 尚未在 v3.8.12 上做组合重基线**。v3.8.11 上
    已验证组合后只剩两处同址冲突（22 个语言包、`app/src/protyle/util/destroy.ts`），v3.8.12
    需重做；且插件侧目前没有调用方，接入前应先确认产品需求。
-5. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
+6. **`sync-upstream` 推不了分支**：`GITHUB_TOKEN` 无权推送含 `.github/workflows/*.yml`
    的提交，该步骤已降级为告警，issue 正文给出不依赖分支的 `git fetch` + `git merge FETCH_HEAD`。
 
 ## 边界

@@ -209,6 +209,8 @@ jobs:
   checksums:
     name: Update release checksums
     needs: build
+    # 任一架构上传成功就应该生成校验和；arm64 单独失败不应让 SHA256SUMS.txt 缺失。
+    if: ${{ !cancelled() }}
     uses: ./.github/workflows/release-checksums.yml
     with:
       version: ${{ github.event.inputs.version }}
