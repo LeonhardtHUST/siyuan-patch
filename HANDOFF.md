@@ -7,9 +7,9 @@
 | 项 | 值 |
 |---|---|
 | main | 见 `git log -1` |
-| 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`（amd64 + arm64，index digest `sha256:88eb9bd0…`，匿名可拉）；`latest` 已指向它；历史 p0/p1/p4/p5 仍在 GHCR。p7 构建后接替 |
-| `PATCH_REVISION` | `7`（对应 `v3.8.12-p7`；p7 只修测试夹具，镜像内容与 p6 等价） |
-| 线上部署 | 已在私有 config 仓库 `LeonhardtHUST/config` 手动跑了一次 `deploy-siyuan`：`v3.8.11-p5` → `v3.8.12-p6`，健康检查通过（镜像引用 `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`、`/api/system/version` = `3.8.12`） |
+| 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.12-p7`（amd64 + arm64，index digest `sha256:947edfd5…`，匿名可拉）；`latest` 已指向它；历史 p0/p1/p4/p5/p6 仍在 GHCR |
+| `PATCH_REVISION` | `7`（对应 `v3.8.12-p7`，2026-11-25 构建发布；相对 p6 只改了测试夹具） |
+| 线上部署 | 在 `LeonhardtHUST/config` 手动跑 `deploy-siyuan` 两次：`v3.8.11-p5` → `v3.8.12-p6` → `v3.8.12-p7`，两次健康检查都通过（镜像引用 = 目标完整 tag，`/api/system/version` = `3.8.12`） |
 | 构建入口 | docker：`watch-upstream`（每 6 小时）→ `release-docker`；Windows 桌面端：`release-cron`（每天 12:00 UTC）→ `release-windows` → `release-checksums` |
 
 ### 2026-11-25 的变更
@@ -22,7 +22,9 @@
    「剔除 import + 手工注入依赖表」的隔离夹具（12 个测试文件），补上 `findMathRenderer` /
    `applyInlineMathBoundaries` / `invalidateContentPrefetchFor` 等桩。这样「打完 7 个补丁的 v3.8.12 树」
    跑 `pnpm test` 不再有补丁引入的红灯。`PATCH_REVISION` 因此 6 → 7。
-3. **临时架构 tag 改为自动清理**：新增独立的 `gc-staging-tags.yml`（每天 04:17）+ 
+3. **p7 已发布并上线**：`v3.8.12-p7`（index digest `sha256:947edfd5…`，labels `ref.name=v3.8.12-p7`、
+   `revision=ea4f491`、`patch-revision=7`），`latest` 已指向它；`deploy-siyuan` 已切到 p7 并通过健康检查。
+4. **临时架构 tag 改为自动清理**：新增独立的 `gc-staging-tags.yml`（每天 04:17）+ 
    `scripts/gc-staging-tags.py`，只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定 tag 保护集合里的
    digest；因为不改 `release-docker.yml`，不需要递增 `PATCH_REVISION`。
 
@@ -77,8 +79,12 @@
    修法二选一：恢复该补丁（属 `patches/**`，按纪律要递增 N）或在 `release-windows`
    构建前用脚本从上游安装包预置 runtime（改动只在 workflow/scripts，不动镜像身份）。
    `actions.lock` 也还没有该工作流的条目（机器生成，下一次 bot 更新补上）。
-2. **临时架构 tag 由 `gc-staging-tags.yml` 自动清理**：只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定
-   tag 保护集合里的 digest；清理滞后最多 24 小时。首次上线时需手动跑一次把历史 8 个临时 tag 清掉。
+2. **临时架构 tag 清理需要 token**：`gc-staging-tags.yml` 只删 `vX.Y.Z-pN-<arch>-<run_id>` 且不在稳定
+   tag 保护集合里的 digest，但 `GITHUB_TOKEN` 无权调 Packages API（实测 401），需要仓库 secret
+   `GC_STAGING_TOKEN`（PAT，`read:packages`+`delete:packages`）。2026-11-25 已用带权限的 gh token 手工删掉
+   p1/p4/p5/p6 的 8 个临时 tag（HTTP 204，canonical/latest 未受影响）；**p7 的 2 个临时 tag 仍在**
+   （本地手工删除被审批策略拒绝），可用
+   `OWNER=leonhardthust PACKAGE=siyuan TOKEN=$(gh auth token) python3 scripts/gc-staging-tags.py` 清掉。
 3. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 / v3.8.12 已走不到（构建用
    `--build-arg ONNX_IMAGE` 复用官方镜像产物），留着是为了将来没有 digest 的版本。
    上游若恢复 `microsoft/onnxruntime` 应重新评估。
