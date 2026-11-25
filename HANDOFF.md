@@ -1,15 +1,15 @@
 # 当前状态
 
-本文件是 2026-11-24 傍晚的快照，不是长期契约。实时真相以 `git log`、CI 运行记录与 GHCR 为准。
+本文件是 2026-11-25 晚的快照，不是长期契约。实时真相以 `git log`、CI 运行记录与 GHCR 为准。
 
 ## 现在跑的是什么
 
 | 项 | 值 |
 |---|---|
 | main | 见 `git log -1` |
-| 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.11-p5`（amd64 + arm64，匿名可拉）；历史 p0/p1/p4 与 `latest` 仍在 GHCR |
-| `PATCH_REVISION` | `6` —— 下一次 docker 构建产出 `v3.8.12-p6` |
-| 线上部署 | 私有 config 仓库 `deploy-siyuan` 每 30 分钟轮询；已知最后切换目标是 `v3.8.11-p5`（部署状态无法从本仓库核对） |
+| 已发布镜像 | `ghcr.io/leonhardthust/siyuan:v3.8.12-p6`（amd64 + arm64，index digest `sha256:88eb9bd0…`，匿名可拉）；`latest` 已指向它；历史 p0/p1/p4/p5 仍在 GHCR |
+| `PATCH_REVISION` | `6`（对应 `v3.8.12-p6`，2026-11-25 构建发布） |
+| 线上部署 | 私有 config 仓库 `deploy-siyuan` 每 30 分钟轮询；p6 发布后它应在下一轮自动切到 `v3.8.12-p6`（服务器侧状态无法从本仓库核对） |
 | 构建入口 | **只有 docker**：`watch-upstream`（每 6 小时）→ `release-docker` |
 
 ### 2026-11-24 的两项变更
@@ -22,6 +22,12 @@
    22 个语言包头部追加 22 个新键、`destroy.ts` 新增 `invalidateMobileEditorSheet` /
    `destroyAVHorizontalScrollbar`、`index.d.ts` 改写 `SettingEditing` / `SettingEditor` 等类型。
    本次按语义重放，上游改动全部保留；`PATCH_REVISION` 因此 5 → 6。
+
+镜像身份已核对：`org.opencontainers.image.version=v3.8.12`、`ref.name=v3.8.12-p6`、
+`revision=d5d2069`、`io.siyuan-patch.patch-revision=6`。CI 记录：`check-image-version` 在
+`d5d2069` 上 success，`watch-upstream` 预演打补丁全通过并触发
+[release-docker 45596790786](https://github.com/LeonhardtHUST/siyuan-patch/actions/runs/45596790786)，
+两个架构 `Clone upstream and apply patches` 与 publish 均 success。
 
 已接入 docker 构建的补丁，顺序固定为：`disable-update` → `default-config` → `mock-vip-user` →
 `docker-build` → `math-renderer-registry` → `content-prefetch` → `startup-slow-loading`。
@@ -49,7 +55,7 @@
 1. **GHCR 的 staging tag 不回收**。`release-docker` 的 publish 只用
    `vX.Y.Z-pN-<arch>-<run_id>` 合并出 canonical 与 `latest`，之后不删，每次构建永久留 2 个。
    现存 `v3.8.10-p1-amd64/arm64-43829202417`、`v3.8.11-p4-amd64/arm64-44761883782`、
-   `v3.8.11-p5-amd64/arm64-45191492273`。清理要加在 publish 与 `latest` 之后（`latest` 也引用
+   `v3.8.11-p5-amd64/arm64-45191492273`、`v3.8.12-p6-amd64/arm64-45596790786`（共 8 个）。清理要加在 publish 与 `latest` 之后（`latest` 也引用
    它们），失败只告警；改 `release-docker.yml` 必须递增 N，因此并到下一次真正的补丁内容变更里做。
 2. **`docker-build.patch` 里的 ONNX 源码回退链**在 v3.8.11 / v3.8.12 已走不到（构建用
    `--build-arg ONNX_IMAGE` 复用官方镜像产物），留着是为了将来没有 digest 的版本。
@@ -62,7 +68,8 @@
 
 ## 边界
 
-本次只做到「补丁在 v3.8.12 源码树上按 docker 顺序干净应用」。镜像未构建、CI 未跑、
-`v3.8.12-p6` 未发布，因此 `content-prefetch` 的重基线**尚未经过编译、单测与线上验证**。
-`content-prefetch` 的弱网收益与额外流量、Typst 渲染器认领、慢启动诊断在真实 CDN 下的表现，
-也仍然没有专项回归。
+`v3.8.12-p6` 已构建发布，docker 镜像构建流程包含前端与内核编译，因此「补丁能编译进镜像」
+这一层已验证。但**运行时行为没有专项回归**：`content-prefetch` 的弱网收益与额外流量、
+Typst 渲染器认领、慢启动诊断在真实 CDN 下的表现，以及 `content-prefetch` 在 v3.8.12 上
+那三处语义重放（语言包键、`destroy.ts` 清理调用、`index.d.ts` 类型成员）的实际效果，
+都还需要真实使用验证。`deploy-siyuan` 的线上切换结果也不在本仓库可核对范围内。
